@@ -13,11 +13,24 @@ import {
 import Link from 'next/link';
 import { useState } from 'react';
 import { ModeToggle } from './darkModeToggler';
+import { cn } from '@/lib/utils';
 
-export default function Header() {
+interface HeaderProps {
+	className?: string;
+}
+
+const Header: React.FC<HeaderProps> = ({ className = '' }) => {
 	const navItems = [
 		{
 			name: 'Home',
+			link: '#features',
+		},
+		{
+			name: 'Tracker',
+			link: '#features',
+		},
+		{
+			name: 'Study',
 			link: '#features',
 		},
 	];
@@ -25,7 +38,7 @@ export default function Header() {
 	const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
 
 	return (
-		<div className='relative w-full'>
+		<header className={cn('relative w-full', className)}>
 			<Navbar>
 				{/* Desktop Navigation */}
 				<NavBody>
@@ -48,9 +61,7 @@ export default function Header() {
 							isOpen={isMobileMenuOpen}
 							onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
 						/>
-						<NavbarButton
-							variant='gradient'
-							className='w-fit'>
+						<NavbarButton variant='gradient' className='w-fit'>
 							{/* Dark Mode Toggle Button */}
 							<ModeToggle />
 						</NavbarButton>
@@ -85,6 +96,8 @@ export default function Header() {
 					</MobileNavMenu>
 				</MobileNav>
 			</Navbar>
-		</div>
+		</header>
 	);
-}
+};
+
+export default Header;

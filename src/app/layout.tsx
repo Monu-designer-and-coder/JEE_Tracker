@@ -3,6 +3,7 @@ import { Geist, Geist_Mono, Roboto, Roboto_Slab } from 'next/font/google';
 import './globals.css';
 import { cn } from '@/lib/utils';
 import { ThemeProvider } from '@/components/theme-provider';
+import Header from '@/components/Header';
 
 const robotoSlabHeading = Roboto_Slab({
 	subsets: ['latin'],
@@ -37,6 +38,7 @@ export default function RootLayout({
 			lang='en'
 			className={cn(
 				'h-full',
+				'scroll-smooth',
 				'antialiased',
 				geistSans.variable,
 				geistMono.variable,
@@ -44,14 +46,35 @@ export default function RootLayout({
 				roboto.variable,
 				robotoSlabHeading.variable,
 			)}>
-			<body className='min-h-full flex flex-col'>
+			<body
+				className={`
+					min-h-screen
+					antialiased 
+					font-sans
+					bg-background 
+					text-foreground
+					selection:bg-primary/20
+        	`}>
 				{' '}
 				<ThemeProvider
-					attribute='class'
-					defaultTheme='system'
-					enableSystem
-					disableTransitionOnChange>
-					{children}
+					attribute='class' // * Uses class-based theme switching
+					defaultTheme='system' // * Respects user's system preference
+					enableSystem // * Enables system theme detection
+					disableTransitionOnChange // * Prevents flash during theme changes
+					storageKey='app-theme' // * Custom storage key for theme persistence
+				>
+					{/* ! APP STRUCTURE */}
+					<div className='flex min-h-screen flex-col'>
+						{/* ? Header with consistent height */}
+						<Header className='h-[20%] shrink-0' />{' '}
+						{/* * Changed from vh to fixed height for consistency */}
+						{/* ? Main content area with proper spacing */}
+						<main className='flex-1 h-[79%] overflow-hidden'>
+							<div className='h-full w-full'>{children}</div>
+						</main>
+						{/* TODO: Add footer component if needed */}
+						{/* <Footer className="shrink-0" /> */}
+					</div>
 				</ThemeProvider>
 			</body>
 		</html>

@@ -17,16 +17,8 @@ import { ModeToggle } from './darkModeToggler';
 export default function Header() {
 	const navItems = [
 		{
-			name: 'Features',
+			name: 'Home',
 			link: '#features',
-		},
-		{
-			name: 'Pricing',
-			link: '#pricing',
-		},
-		{
-			name: 'Contact',
-			link: '#contact',
 		},
 	];
 
@@ -41,7 +33,7 @@ export default function Header() {
 					<NavItems items={navItems} />
 					<div className='flex items-center gap-4'>
 						<NavbarButton variant='secondary'>Login</NavbarButton>
-						<NavbarButton variant='primary'>Book a call</NavbarButton>
+						<NavbarButton variant='primary'>Button</NavbarButton>
 						<NavbarButton variant='gradient'>
 							<ModeToggle />
 						</NavbarButton>

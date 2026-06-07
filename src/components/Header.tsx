@@ -23,11 +23,11 @@ const Header: React.FC<HeaderProps> = ({ className = '' }) => {
 	const navItems = [
 		{
 			name: 'Home',
-			link: '#features',
+			link: '/',
 		},
 		{
 			name: 'Tracker',
-			link: '#features',
+			link: '/tracker',
 		},
 		{
 			name: 'Study',

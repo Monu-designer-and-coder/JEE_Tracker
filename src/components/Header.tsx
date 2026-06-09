@@ -33,6 +33,10 @@ const Header: React.FC<HeaderProps> = ({ className = '' }) => {
 			name: 'Study',
 			link: '#features',
 		},
+		{
+			name: 'Pomodoro',
+			link: '/pomodoro',
+		},
 	];
 
 	const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);

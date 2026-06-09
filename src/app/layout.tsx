@@ -1,16 +1,23 @@
 import type { Metadata } from 'next';
-import { Geist, Geist_Mono, Roboto, Roboto_Slab } from 'next/font/google';
+import {
+	Geist,
+	Geist_Mono,
+	Roboto,
+	Roboto_Slab,
+	Inter,
+} from 'next/font/google';
 import './globals.css';
 import { cn } from '@/lib/utils';
 import { ThemeProvider } from '@/components/theme-provider';
 import Header from '@/components/Header';
+import { TooltipProvider } from '@/components/ui/tooltip';
 
 const robotoSlabHeading = Roboto_Slab({
 	subsets: ['latin'],
 	variable: '--font-heading',
 });
 
-const roboto = Roboto({ subsets: ['latin'], variable: '--font-sans' });
+const inter = Inter({ subsets: ['latin'], variable: '--font-sans' });
 
 const geistSans = Geist({
 	variable: '--font-geist-sans',
@@ -43,8 +50,10 @@ export default function RootLayout({
 				geistSans.variable,
 				geistMono.variable,
 				'font-sans',
-				roboto.variable,
 				robotoSlabHeading.variable,
+				'font-sans',
+				'font-sans',
+				inter.variable,
 			)}>
 			<body
 				className={`
@@ -70,7 +79,7 @@ export default function RootLayout({
 						{/* * Changed from vh to fixed height for consistency */}
 						{/* ? Main content area with proper spacing */}
 						<main className='flex-1 h-[79%] overflow-hidden'>
-							<div className='h-full w-full'>{children}</div>
+							<TooltipProvider>{children}</TooltipProvider>
 						</main>
 						{/* TODO: Add footer component if needed */}
 						{/* <Footer className="shrink-0" /> */}

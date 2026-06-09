@@ -4,7 +4,7 @@ import {
 	TARGET_DATE,
 	TimeBreakdown,
 	homePageConfig,
-	START_DATE
+	START_DATE,
 } from '@/config/frontend/homePage.config';
 import { Card, CardContent } from '@/components/ui/card';
 import { useCallback, useEffect, useState } from 'react';
@@ -86,9 +86,8 @@ export default function Home() {
 		setCurrentTimeDetails(currentTimeData);
 	}, [countdownTimeLeft]);
 
-
-	useEffect(()=>{
-				// * Calculate time remaining percentage
+	useEffect(() => {
+		// * Calculate time remaining percentage
 		const calculateTimePercentage = (): void => {
 			const currentTime = new Date().getTime();
 			const totalTimeSpan = TARGET_DATE.getTime() - START_DATE.getTime();
@@ -104,12 +103,11 @@ export default function Home() {
 		};
 
 		calculateTimePercentage();
-	},[])
-
+	}, []);
 
 	return (
 		<>
-			<Card className='overflow-hidden border-0 text-white shadow-2xl mx-5 mt-2'>
+			<Card className='overflow-hidden border-0  shadow-2xl mx-5 mt-2'>
 				<CardContent className='p-6'>
 					<div className='mb-6 flex items-center justify-between'>
 						<h2 className='flex items-center gap-2 text-xl font-semibold'>
@@ -118,7 +116,7 @@ export default function Home() {
 						</h2>
 						<Badge
 							variant='secondary'
-							className='bg-white/20 text-white hover:bg-white/30'>
+							className='bg-white/20  hover:bg-white/30'>
 							{Math.round(100 - timeRemainingPercentage)}% elapsed
 						</Badge>
 					</div>
@@ -126,7 +124,7 @@ export default function Home() {
 					<div className='grid grid-cols-2 gap-4 md:grid-cols-4'>
 						{/* * Days Counter */}
 						<div className='group relative overflow-hidden rounded-2xl bg-white/10 p-6 text-center backdrop-blur-sm transition-all duration-300 hover:bg-white/20 hover:scale-105'>
-							<div className='absolute inset-0 bg-gradient-to-br from-white/20 to-transparent opacity-0 transition-opacity group-hover:opacity-100' />
+							<div className='absolute inset-0 bg-linear-to-br from-white/20 to-transparent opacity-0 transition-opacity group-hover:opacity-100' />
 							<div className='relative'>
 								<div className='text-3xl font-bold md:text-4xl'>
 									{countdownBreakdown.days}
@@ -140,7 +138,7 @@ export default function Home() {
 
 						{/* * Hours Counter */}
 						<div className='group relative overflow-hidden rounded-2xl bg-white/10 p-6 text-center backdrop-blur-sm transition-all duration-300 hover:bg-white/20 hover:scale-105'>
-							<div className='absolute inset-0 bg-gradient-to-br from-white/20 to-transparent opacity-0 transition-opacity group-hover:opacity-100' />
+							<div className='absolute inset-0 bg-linear-to-br from-white/20 to-transparent opacity-0 transition-opacity group-hover:opacity-100' />
 							<div className='relative'>
 								<div className='text-3xl font-bold md:text-4xl'>
 									{String(countdownBreakdown.hours).padStart(2, '0')}
@@ -155,7 +153,7 @@ export default function Home() {
 
 						{/* * Minutes Counter */}
 						<div className='group relative overflow-hidden rounded-2xl bg-white/10 p-6 text-center backdrop-blur-sm transition-all duration-300 hover:bg-white/20 hover:scale-105'>
-							<div className='absolute inset-0 bg-gradient-to-br from-white/20 to-transparent opacity-0 transition-opacity group-hover:opacity-100' />
+							<div className='absolute inset-0 bg-linear-to-br from-white/20 to-transparent opacity-0 transition-opacity group-hover:opacity-100' />
 							<div className='relative'>
 								<div className='text-3xl font-bold md:text-4xl'>
 									{String(countdownBreakdown.minutes).padStart(2, '0')}
@@ -166,7 +164,7 @@ export default function Home() {
 
 						{/* * Seconds Counter */}
 						<div className='group relative overflow-hidden rounded-2xl bg-white/10 p-6 text-center backdrop-blur-sm transition-all duration-300 hover:bg-white/20 hover:scale-105'>
-							<div className='absolute inset-0 bg-gradient-to-br from-white/20 to-transparent opacity-0 transition-opacity group-hover:opacity-100' />
+							<div className='absolute inset-0 bg-linear-to-br from-white/20 to-transparent opacity-0 transition-opacity group-hover:opacity-100' />
 							<div className='relative'>
 								<div className='text-3xl font-bold md:text-4xl'>
 									{String(countdownBreakdown.seconds).padStart(2, '0')}
@@ -182,10 +180,7 @@ export default function Home() {
 							<span>Overall Time Passed</span>
 							<span>{Math.round(100 - timeRemainingPercentage)}%</span>
 						</div>
-						<Progress
-							value={100 - timeRemainingPercentage}
-							className='h-3'
-						/>
+						<Progress value={100 - timeRemainingPercentage} className='h-3' />
 					</div>
 				</CardContent>
 			</Card>

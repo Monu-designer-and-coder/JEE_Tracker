@@ -47,7 +47,7 @@ const Header: React.FC<HeaderProps> = ({ className = '' }) => {
 					<div className='flex items-center gap-4'>
 						<NavbarButton variant='secondary'>Login</NavbarButton>
 						<NavbarButton variant='primary'>Button</NavbarButton>
-						<NavbarButton variant='gradient'>
+						<NavbarButton variant='secondary'>
 							<ModeToggle />
 						</NavbarButton>
 					</div>
@@ -61,7 +61,7 @@ const Header: React.FC<HeaderProps> = ({ className = '' }) => {
 							isOpen={isMobileMenuOpen}
 							onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
 						/>
-						<NavbarButton variant='gradient' className='w-fit'>
+						<NavbarButton variant='secondary' className='w-fit'>
 							{/* Dark Mode Toggle Button */}
 							<ModeToggle />
 						</NavbarButton>
@@ -85,12 +85,6 @@ const Header: React.FC<HeaderProps> = ({ className = '' }) => {
 								variant='primary'
 								className='w-full'>
 								Login
-							</NavbarButton>
-							<NavbarButton
-								onClick={() => setIsMobileMenuOpen(false)}
-								variant='primary'
-								className='w-full'>
-								Book a call
 							</NavbarButton>
 						</div>
 					</MobileNavMenu>

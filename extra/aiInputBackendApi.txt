@@ -1,0 +1,771 @@
+Optimize this nextJs api code, make this code faster, well structure the code, and make it well commented using the features of better comment extension of Vs code also make the variable names better where needed. To the same for all the pages.
+
+and at the end of file add these comments Accordingly
+
+// ! IMPROVEMENTS IMPLEMENTED:
+// * 1. ...
+// ...
+
+// ! PERFORMANCE OPTIMIZATIONS MAINTAINED:
+// * 1. ...
+// ...
+
+// ! FUTURE IMPROVEMENTS:
+// TODO: ...
+// ...
+
+Code file for more context:
+
+path: 'src/model/questionStreak.model.ts'
+code:
+import mongoose, { Schema, Document, Types } from 'mongoose';
+import mongooseAggregatePaginate from 'mongoose-aggregate-paginate-v2';
+
+/**
+ * ! QuestionStreak Model Interface
+ */
+export interface QuestionStreakModelInterface extends Document {
+    date: Date;
+    questionsDone: number;
+    subject: Types.ObjectId
+}
+
+const QuestionStreakSchema = new Schema<QuestionStreakModelInterface>(
+    {
+        // * QuestionStreak display name
+        date: {
+            type: Date,
+            required: true,
+        },
+        questionsDone: {
+            type: Number,
+            default: 0,
+        },
+        subject: {
+            type: Schema.Types.ObjectId,
+            ref: 'Subject',
+            required: true,
+        },
+
+    },
+    { timestamps: true },
+);
+
+// * Attach pagination plugin for aggregated queries
+QuestionStreakSchema.plugin(mongooseAggregatePaginate);
+
+const QuestionStreakModel =
+    (mongoose.models.QuestionStreak as mongoose.Model<QuestionStreakModelInterface>) ||
+    mongoose.model<QuestionStreakModelInterface>('QuestionStreak', QuestionStreakSchema);
+
+export default QuestionStreakModel;
+
+
+
+
+
+path: 'src/schema/questionStreak.schema.ts'
+code:
+import { z } from 'zod';
+
+export const questionStreakPostSchema = z.object({
+    date: z.date(),
+    subject: z.string(),
+});
+export const questionStreakGetSchema = z.object({
+    date: z.date().optional(),
+    subject: z.string().optional(),
+});
+export const questionStreakPlusOneSchema = z.object({
+    _id: z.string(),
+});
+
+
+path: 'src/app/tracker/page.tsx
+code: 
+'use client';
+
+// * ==========================================================================
+// * Imports
+// * ==========================================================================
+import { useEffect, useState } from 'react';
+import axios, { AxiosResponse } from 'axios';
+import { Button } from '@/components/ui/button';
+import { Card, CardContent, CardHeader } from '@/components/ui/card';
+import {
+	Tooltip,
+	TooltipContent,
+	TooltipProvider,
+	TooltipTrigger,
+} from '@/components/ui/tooltip';
+import { axiosConfig } from '@/config/axios.config';
+import { getQuestionStreakTodayResponse } from '@/types/res/questionStreak.types';
+
+// * ==========================================================================
+// * Main Component: Tracker Dashboard
+// * ==========================================================================
+export default function Tracker() {
+	// * State Management
+	const [subjectStreaks, setSubjectStreaks] = useState<
+		getQuestionStreakTodayResponse[]
+	>([]);
+	const [isLoading, setIsLoading] = useState<boolean>(true);
+
+	// ! Hydration Safety Pattern: Prevents mismatches between SSR and Client rendering
+	const [isMounted, setIsMounted] = useState<boolean>(false);
+
+	// * Lifecycle Hooks
+	useEffect(() => {
+		setIsMounted(true);
+		fetchTodayStreaks();
+	}, []);
+
+	// * ==========================================================================
+	// * API Methods
+	// * ==========================================================================
+
+	// * Fetch initial data for today's question streaks
+	const fetchTodayStreaks = async () => {
+		try {
+			setIsLoading(true);
+			const response: AxiosResponse<getQuestionStreakTodayResponse[]> =
+				await axios.request(axiosConfig('questionStreak?type=today', 'get'));
+			setSubjectStreaks(response.data);
+		} catch (error) {
+			console.error('Failed to fetch streaks:', error);
+		} finally {
+			setIsLoading(false);
+		}
+	};
+
+	// * Increment question streak with Optimistic UI updates for faster UX
+	const incrementQuestionStreak = async (
+		streakId: string,
+		subjectId: string,
+	) => {
+		// * Optimistically update the UI before the API responds for instant feedback
+		setSubjectStreaks((prev) =>
+			prev.map((item) =>
+				item._id === streakId
+					? { ...item, questionsDone: item.questionsDone + 1 }
+					: item,
+			),
+		);
+
+		try {
+			// * Execute the background API call
+			await axios.request(
+				axiosConfig(
+					'questionStreak',
+					'put',
+					{ 'Content-Type': 'application/json' },
+					{ _id: streakId },
+				),
+			);
+
+			// * Optionally re-sync with server to ensure data consistency
+			const response: AxiosResponse<getQuestionStreakTodayResponse[]> =
+				await axios.request(
+					axiosConfig(
+						`questionStreak?type=today&subjectId=${subjectId}`,
+						'get',
+					),
+				);
+
+			const updatedItem = response.data[0];
+			if (updatedItem) {
+				setSubjectStreaks((prev) =>
+					prev.map((item) =>
+						item._id === updatedItem._id ? { ...item, ...updatedItem } : item,
+					),
+				);
+			}
+		} catch (error) {
+			// ! Rollback on failure
+			console.error('Failed to update streak, rolling back...', error);
+			fetchTodayStreaks();
+		}
+	};
+
+	// * ==========================================================================
+	// * Helper Methods
+	// * ==========================================================================
+
+	// * Formats date cleanly using Intl API to avoid manual month indexing bugs
+	const formatDate = (dateText: string) => {
+		if (!dateText) return '';
+		const date = new Date(dateText);
+		return new Intl.DateTimeFormat('en-IN', {
+			weekday: 'short',
+			day: '2-digit',
+			month: 'short',
+			year: 'numeric',
+		}).format(date);
+	};
+
+	// ! Hydration check: Return null or a skeleton loader until mounted
+	if (!isMounted) return null;
+
+	// * ==========================================================================
+	// * Render
+	// * ==========================================================================
+	return (
+		<main className='relative min-h-[80vh] w-full overflow-hidden bg-background px-4 py-8 md:px-8'>
+			{/* * Ambient Background Effects (Aceternity / Minimalist styling) */}
+			<div className='pointer-events-none absolute inset-0 z-0 overflow-hidden'>
+				<div className='absolute -left-[10%] top-[20%] h-125 w-125 rounded-full bg-primary/10 blur-[120px] mix-blend-screen' />
+				<div className='absolute right-[5%] top-[10%] h-100 w-100 rounded-full bg-blue-500/10 blur-[100px] mix-blend-screen' />
+			</div>
+
+			{/* * Content Section */}
+			<section className='relative z-10 mx-auto max-w-7xl h-[80vh] flex flex-col justify-center'>
+				{isLoading ? (
+					// * Loading State
+					<div className='flex h-64 items-center justify-center'>
+						<div className='h-8 w-8 animate-spin rounded-full border-b-2 border-primary' />
+					</div>
+				) : (
+					// ! Added TooltipProvider here to ensure tooltips portal correctly and don't get clipped by overflow-hidden
+					<TooltipProvider delayDuration={200}>
+						<div className='grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3'>
+							{subjectStreaks.map((item) => (
+								<Card
+									key={item._id}
+									size='sm'
+									// * Applied glassmorphism, depth, and consistent border radius
+									className='group/card relative overflow-hidden rounded-[1.5rem] border border-white/10 bg-white/5 shadow-2xl backdrop-blur-xl transition-all duration-500 hover:shadow-primary/5 dark:bg-black/40 h-full'>
+									{/* * Micro-interaction gradient overlay */}
+									<div className='pointer-events-none absolute inset-0 bg-linear-to-br from-white/10 via-transparent to-transparent opacity-0 transition-opacity duration-500 group-hover/card:opacity-100' />
+
+									<CardHeader className='relative z-10 pb-2'>
+										<Tooltip>
+											<TooltipTrigger asChild>
+												<Button
+													variant='outline'
+													size='lg'
+													className='w-full capitalize tracking-wide bg-background/50 backdrop-blur-md border-white/10 hover:bg-primary/20 hover:text-primary transition-colors text-base py-6'>
+													{item.subject?.name || 'Unknown Subject'}
+												</Button>
+											</TooltipTrigger>
+											{/* ! FIXED: Tooltip visibility, positioning, sizing, and padding issues */}
+											<TooltipContent
+												side='top'
+												sideOffset={12}
+												className='z-100 min-w-45 p-4 bg-popover/95 backdrop-blur-xl border border-white/20 shadow-[0_10px_40px_-10px_rgba(0,0,0,0.5)] rounded-xl text-center'>
+												<div className='flex flex-col gap-1.5'>
+													<p className='text-sm font-bold uppercase tracking-wider text-primary'>
+														Active Streak
+													</p>
+													<p className='text-base font-medium text-foreground'>
+														{formatDate(item.date)}
+													</p>
+												</div>
+											</TooltipContent>
+										</Tooltip>
+									</CardHeader>
+
+									<CardContent className='relative z-10 flex flex-col gap-4 pt-4'>
+										{/* * Interactive Stat Block: Questions Done */}
+										<button
+											onClick={() =>
+												incrementQuestionStreak(item._id, item.subject._id)
+											}
+											className='group/btn relative flex w-full flex-col items-center justify-center overflow-hidden rounded-[1.25rem] border border-white/5 bg-black/20 p-6 text-center backdrop-blur-md transition-all duration-300 hover:-translate-y-1 hover:bg-primary/10 hover:border-primary/30 hover:shadow-[0_0_20px_rgba(var(--primary),0.2)] focus:outline-none focus:ring-2 focus:ring-primary/50'
+											aria-label={`Increment questions done for ${item.subject?.name}`}>
+											<div className='relative z-10 flex flex-col items-center'>
+												<span className='text-4xl font-extrabold tracking-tight md:text-5xl bg-linear-to-br from-foreground to-foreground/70 bg-clip-text text-transparent transition-transform duration-300 group-hover/btn:scale-110'>
+													{item.questionsDone}
+												</span>
+												<span className='mt-2 text-xs font-medium uppercase tracking-wider text-muted-foreground opacity-90 transition-colors group-hover/btn:text-foreground'>
+													Questions Done Today
+												</span>
+											</div>
+										</button>
+
+										{/* * Static Stat Block: Hours Studied */}
+										<div className='relative flex w-full flex-col items-center justify-center overflow-hidden rounded-[1.25rem] border border-white/5 bg-black/20 p-6 text-center backdrop-blur-md transition-all duration-300 hover:bg-white/5'>
+											<div className='relative z-10 flex flex-col items-center'>
+												<span className='text-4xl font-extrabold tracking-tight md:text-5xl text-foreground/80'>
+													0 {/* TODO: Implement dynamic hours tracking */}
+												</span>
+												<span className='mt-2 text-xs font-medium uppercase tracking-wider text-muted-foreground opacity-90'>
+													Hours Studied Today
+												</span>
+											</div>
+										</div>
+									</CardContent>
+								</Card>
+							))}
+						</div>
+					</TooltipProvider>
+				)}
+			</section>
+		</main>
+	);
+}
+
+// ! UI/UX IMPROVEMENTS IMPLEMENTED:
+// * 1. Modern minimalistic backgrounds with simple color transitions (Added mix-blend-screen blurred orbs).
+// * 2. Glass morphism effects with backdrop blur and transparency (Cards utilize bg-white/5 with backdrop-blur-xl).
+// * 3. Animated orbs for visual depth and movement (Ambient background divs added at root level).
+// * 4. Enhanced floating dock with improved glass styling (Applied glass styling to buttons).
+// * 5. Subtle particle animations for ambient background effects (Simulated via gradient blurred orbs).
+// * 6. Improved responsive design with better mobile adaptation (Shifted from hardcoded w-1/3 to grid-cols-1 md:grid-cols-2 lg:grid-cols-3).
+// * 7. Enhanced dark mode compatibility with better contrast ratios (Used semantic colors like text-foreground and text-muted-foreground).
+// * 8. Interactive hover effects with scale transformations on icons (Added hover:-translate-y-1 and group-hover:scale-110 to stats).
+// * 9. Professional color scheme using --preset b2oqCh768 (Utilized shadcn standard primary variables meant to dynamically inherit the preset).
+// * 10. Layered visual hierarchy with proper z-indexing (Added z-[100] to Tooltips and strictly managed parent z-indexes).
+// * 11. Smooth micro-animations and transitions throughout (Applied transition-all duration-300/500 everywhere).
+// * 12. Better accessibility with proper ARIA labels and semantic structure (Added aria-label to the interactive increment button).
+// * 13. Enhanced shadow system for depth perception (Added heavy shadows to the tooltip and hover glow to buttons).
+// * 14. Consistent border radius system for modern appearance (Used rounded-[1.5rem] and rounded-[1.25rem] universally).
+// * 15. Optimized backdrop filters for performance (Used backdrop-blur-md/xl judiciously on parent containers).
+// * 16. Improved spacing and padding system (Standardized gaps using gap-6 and padding p-6, increased Tooltip p-4).
+// * 17. Better content isolation with backdrop effects (Added border-white/10 to explicitly separate cards from the background).
+// * 18. Enhanced visual feedback on interactive elements (Clicking the streak now provides visual hover states).
+// * 19. Modern CSS animations with proper timing functions (Handled via Tailwind's optimized transition utility classes).
+// * 20. Responsive viewport handling with proper overflow management (TooltipProvider fixes clipping issues on Overflow).
+
+// ! PERFORMANCE OPTIMIZATIONS MAINTAINED:
+// * 1. Optimistic UI Updates: Incrementing the streak instantly updates the DOM before waiting for the Axios PUT request.
+// * 2. Hydration Safety: Implemented the `isMounted` pattern to prevent costly hydration errors caused by `Intl.DateTimeFormat`.
+// * 3. Semantic HTML: Replaced interactive `div` wrappers with `button` tags to leverage native browser click handling.
+
+// ! FUTURE IMPROVEMENTS:
+// TODO: Abstract the API endpoints into a dedicated services file to decouple Axios logic from the UI component.
+// TODO: Connect the 'Hours Studied Today' UI block to an actual backend datastore (currently hardcoded to 0).
+// TODO: Add toast notifications (e.g. Sonner / React-Hot-Toast) for error handling in the `catch` blocks.
+
+
+
+
+
+
+
+
+
+
+['Implement pagination to the get endpoints in this file and implement in the frontend page provide above as path: "src/app/tracker/page.tsx and try not to implement any UI/UX changes to the frontend file."']
+path: 'src/app/api/questionStreak/route.ts'
+code: 
+import dbConn from "@/lib/dbConn";
+import QuestionStreakModel from "@/model/questionStreak.model";
+import { questionStreakPlusOneSchema, questionStreakPostSchema } from "@/schema/questionStreak.schema";
+import { NextResponse } from "next/server";
+import { QuestionStreakModelInterface } from './../../../model/questionStreak.model';
+import { getQuestionStreakByDateResponse, getQuestionStreakBySubjectResponse, getQuestionStreakTodayResponse } from "@/types/res/questionStreak.types";
+import mongoose from "mongoose";
+import SubjectModel from "@/model/subject.model";
+
+export async function POST(request: Request) {
+    await dbConn();
+    const requestBody = await request.json();
+    if (requestBody.date) { requestBody.date = new Date(requestBody.date) }
+    if (!requestBody) return NextResponse.json({ err: "" }, { status: 400 })
+    // * Validate payload
+    const validationResult = questionStreakPostSchema.safeParse(requestBody);
+    if (!validationResult.success) {
+        // ! Return detailed validation errors
+        return NextResponse.json(
+            { errors: validationResult.error.format(), requestBody },
+            { status: 400 },
+        );
+    }
+
+    // * Direct creation for brevity
+    try {
+        const newQuestionStreak = await QuestionStreakModel.create(validationResult.data);
+        return NextResponse.json<QuestionStreakModelInterface>(newQuestionStreak, { status: 201 });
+    } catch (error) {
+        return NextResponse.json({ error }, { status: 400 });
+    }
+}
+export async function GET(request: Request) {
+    await dbConn();
+
+    const { searchParams } = new URL(request.url);
+    const getParamType = searchParams.get('type');
+    if (!getParamType) {
+        const questionStreakList = await QuestionStreakModel.find({})
+
+        return NextResponse.json(questionStreakList);
+    }
+    if (getParamType === 'byDate') {
+        const questionStreakSortByDate: getQuestionStreakByDateResponse[] = await QuestionStreakModel.aggregate([
+            {
+                $lookup: {
+                    from: "subjects",
+                    localField: "subject",
+                    foreignField: "_id",
+                    as: "subject",
+                    pipeline: [
+                        {
+                            $project: {
+                                _id: 1,
+                                name: 1
+                            }
+                        }
+                    ]
+                }
+            },
+            {
+                $addFields: {
+                    subject: { $first: "$subject" }
+                }
+            },
+            {
+                $group: {
+                    _id: "$date",
+                    details: {
+                        $push: {
+                            _id: "$_id",
+                            subject: "$subject",
+                            questionsDone: "$questionsDone",
+                            date: "$date",
+                        }
+                    }
+                }
+            },
+            {
+                $sort: {
+                    "_id.name": 1
+                }
+            }
+        ]);
+        return NextResponse.json(questionStreakSortByDate);
+    }
+    if (getParamType === 'bySubject') {
+        const questionStreakSortByDate: getQuestionStreakBySubjectResponse[] = await QuestionStreakModel.aggregate([
+            {
+                $lookup: {
+                    from: "subjects",
+                    localField: "subject",
+                    foreignField: "_id",
+                    as: "subject",
+                    pipeline: [
+                        {
+                            $project: {
+                                _id: 1,
+                                name: 1
+                            }
+                        }
+                    ]
+                }
+            },
+            {
+                $addFields: {
+                    subject: { $first: "$subject" }
+                }
+            },
+            {
+                $group: {
+                    _id: "$subject",
+                    details: {
+                        $push: {
+                            _id: "$_id",
+                            subject: "$subject",
+                            questionsDone: "$questionsDone",
+                            date: "$date",
+                        }
+                    }
+                }
+            }
+        ]);
+        return NextResponse.json(questionStreakSortByDate);
+    }
+    if (getParamType === 'today') {
+        // 1. Get the current date and time
+        const startOfToday = new Date();
+
+        // 2. Set time to the absolute beginning of the day (00:00:00.000)
+        startOfToday.setHours(0, 0, 0, 0);
+
+        // 3. Create an upper boundary for the absolute end of the day (23:59:59.999)
+        const endOfToday = new Date(startOfToday);
+        endOfToday.setHours(23, 59, 59, 999);
+
+
+        const getParamSubjectId = searchParams.get('subjectId');
+        if (!getParamSubjectId) {
+            // 4. Query events matching the range: startOfToday <= eventDate <= endOfToday
+            const todayEvents: getQuestionStreakTodayResponse[] = await QuestionStreakModel.aggregate([
+                {
+                    // 1. Filter documents within the date range (Equivalent to .find)
+                    $match: {
+                        date: {
+                            $gte: startOfToday,
+                            $lte: endOfToday
+                        }
+                    }
+                },
+                {
+                    $lookup: {
+                        from: "subjects",
+                        localField: "subject",
+                        foreignField: "_id",
+                        as: "subject",
+                        pipeline: [
+                            {
+                                $project: {
+                                    _id: 1,
+                                    name: 1
+                                }
+                            }
+                        ]
+                    }
+                },
+                {
+                    $addFields: {
+                        subject: { $first: "$subject" }
+                    }
+                },
+                {
+                    // 2. Sort by eventDate in ascending order (Equivalent to .sort)
+                    $sort: {
+                        date: 1
+                    }
+                },
+                {
+                    $project: {
+                        _id: 1,
+                        date: 1,
+                        subject: 1,
+                        questionsDone: 1,
+                    }
+                }
+            ]);
+            if (!todayEvents.length) {
+                const subjectsList: { _id: string }[] = await SubjectModel.aggregate([
+                    { $project: { _id: 1 } },
+                ]);
+
+                subjectsList.map(async (subject) => {
+                    await QuestionStreakModel.create({
+                        date: new Date(),
+                        subject: subject._id
+                    });
+                })
+
+                const updatedTodayEvents: getQuestionStreakTodayResponse[] = await QuestionStreakModel.aggregate([
+                    {
+                        // 1. Filter documents within the date range (Equivalent to .find)
+                        $match: {
+                            date: {
+                                $gte: startOfToday,
+                                $lte: endOfToday
+                            }
+                        }
+                    },
+                    {
+                        $lookup: {
+                            from: "subjects",
+                            localField: "subject",
+                            foreignField: "_id",
+                            as: "subject",
+                            pipeline: [
+                                {
+                                    $project: {
+                                        _id: 1,
+                                        name: 1
+                                    }
+                                }
+                            ]
+                        }
+                    },
+                    {
+                        $addFields: {
+                            subject: { $first: "$subject" }
+                        }
+                    },
+                    {
+                        // 2. Sort by eventDate in ascending order (Equivalent to .sort)
+                        $sort: {
+                            date: 1
+                        }
+                    },
+                    {
+                        $project: {
+                            _id: 1,
+                            date: 1,
+                            subject: 1,
+                            questionsDone: 1,
+                        }
+                    }
+                ]);
+
+                return NextResponse.json(updatedTodayEvents, { status: 200 });
+            }
+
+            return NextResponse.json(todayEvents, { status: 200 });
+        }
+
+        const todaySubjectEvents: getQuestionStreakTodayResponse[] = await QuestionStreakModel.aggregate([
+            {
+                // 1. Filter documents within the date range (Equivalent to .find)
+                $match: {
+                    date: {
+                        $gte: startOfToday,
+                        $lte: endOfToday
+                    },
+                }
+            },
+            {
+                // 1. Filter documents within the date range (Equivalent to .find)
+                $match: {
+                    subject: new mongoose.Types.ObjectId(getParamSubjectId),
+                }
+            },
+            {
+                $lookup: {
+                    from: "subjects",
+                    localField: "subject",
+                    foreignField: "_id",
+                    as: "subject",
+                    pipeline: [
+                        {
+                            $project: {
+                                _id: 1,
+                                name: 1
+                            }
+                        }
+                    ]
+                }
+            },
+            {
+                $addFields: {
+                    subject: { $first: "$subject" }
+                }
+            },
+            {
+                // 2. Sort by eventDate in ascending order (Equivalent to .sort)
+                $sort: {
+                    date: 1
+                }
+            },
+            {
+                $project: {
+                    _id: 1,
+                    date: 1,
+                    subject: 1,
+                    questionsDone: 1,
+                }
+            }
+        ]);
+
+        try {
+
+            const getSubjectBySubjectID = await SubjectModel.findById(getParamSubjectId)
+            if (getSubjectBySubjectID && !todaySubjectEvents.length) {
+                const validationResult = questionStreakPostSchema.safeParse({
+                    subject: getParamSubjectId,
+                    date: new Date()
+                });
+                if (validationResult.success) {
+                    await QuestionStreakModel.create(validationResult.data);
+                    const newTodaySubjectEvents: getQuestionStreakTodayResponse[] = await QuestionStreakModel.aggregate([
+                        {
+                            // 1. Filter documents within the date range (Equivalent to .find)
+                            $match: {
+                                date: {
+                                    $gte: startOfToday,
+                                    $lte: endOfToday
+                                },
+                            }
+                        },
+                        {
+                            // 1. Filter documents within the date range (Equivalent to .find)
+                            $match: {
+                                subject: new mongoose.Types.ObjectId(getParamSubjectId),
+                            }
+                        },
+                        {
+                            $lookup: {
+                                from: "subjects",
+                                localField: "subject",
+                                foreignField: "_id",
+                                as: "subject",
+                                pipeline: [
+                                    {
+                                        $project: {
+                                            _id: 1,
+                                            name: 1
+                                        }
+                                    }
+                                ]
+                            }
+                        },
+                        {
+                            $addFields: {
+                                subject: { $first: "$subject" }
+                            }
+                        },
+                        {
+                            // 2. Sort by eventDate in ascending order (Equivalent to .sort)
+                            $sort: {
+                                date: 1
+                            }
+                        },
+                        {
+                            $project: {
+                                _id: 1,
+                                date: 1,
+                                subject: 1,
+                                questionsDone: 1,
+                            }
+                        }
+
+                    ])
+                    return NextResponse.json(newTodaySubjectEvents, { status: 200 });
+                }
+                else {
+                    return NextResponse.json(validationResult)
+                }
+            }
+        } catch (err) {
+            return NextResponse.json({ error: err }, { status: 400 })
+        }
+
+
+        return NextResponse.json(todaySubjectEvents, { status: 200 });
+    }
+
+    // * CASE 2: Fetch single subject by ID
+    const subjectById = await QuestionStreakModel.findById(getParamType);
+    if (!subjectById) {
+        return NextResponse.json({ message: 'Subject not found' }, { status: 404 });
+    }
+
+    return NextResponse.json<QuestionStreakModelInterface>(subjectById);
+}
+export async function PUT(request: Request) {
+    await dbConn();
+    const requestBody = await request.json();
+    const validationResult = questionStreakPlusOneSchema.safeParse(requestBody);
+    if (!validationResult.success) {
+        // ! Return detailed validation errors
+        return NextResponse.json(
+            { errors: validationResult.error.format() },
+            { status: 400 },
+        );
+    }
+
+    const updatedStreak = await QuestionStreakModel.findByIdAndUpdate(
+        validationResult.data._id,
+        { $inc: { questionsDone: 1 } },
+        { new: true, runValidators: true }
+    );
+
+    if (!updatedStreak) {
+        return NextResponse.json(
+            { error: 'Streak record not found' },
+            { status: 404 }
+        );
+    }
+
+    return NextResponse.json(
+        updatedStreak,
+        { status: 200 }
+    );
+}
+
+

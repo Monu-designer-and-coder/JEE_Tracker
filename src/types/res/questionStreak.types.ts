@@ -1,4 +1,4 @@
-import { getSubjectResponse } from "./GetResponse.types";
+import { GetSubjectResponse } from "./GetResponse.types";
 
 export interface getQuestionStreakResponse {
     date: Date;
@@ -9,16 +9,16 @@ export interface getQuestionStreakByDateResponse {
     _id: Date;
     details: {
         _id: string;
-        subject: getSubjectResponse;
+        subject: GetSubjectResponse;
         questionDone: number;
         date: Date;
     }[]
 }
 export interface getQuestionStreakBySubjectResponse {
-    _id: getSubjectResponse;
+    _id: GetSubjectResponse;
     details: {
         _id: string;
-        subject: getSubjectResponse;
+        subject: GetSubjectResponse;
         questionDone: number;
         date: Date;
     }[]
@@ -28,6 +28,6 @@ export interface getQuestionStreakTodayResponse {
     _id: string;
     date: string;
     questionsDone: number;
-    subject: getSubjectResponse;
+    subject: GetSubjectResponse;
 
 }

@@ -1,3 +1,4 @@
+/* eslint-disable react-hooks/exhaustive-deps */
 'use client';
 
 // * ==========================================================================
@@ -16,6 +17,17 @@ import {
 import { axiosConfig } from '@/config/axios.config';
 import { getQuestionStreakTodayResponse } from '@/types/res/questionStreak.types';
 
+// * Standardized structural definitions describing expected paginated envelopes
+interface PaginatedAPIResponseEnvelope<T> {
+	data: T[];
+	pagination: {
+		page: number;
+		limit: number;
+		totalItems: number;
+		hasMore: boolean;
+	};
+}
+
 // * ==========================================================================
 // * Main Component: Tracker Dashboard
 // * ==========================================================================
@@ -32,25 +44,65 @@ export default function Tracker() {
 	// * Lifecycle Hooks
 	useEffect(() => {
 		setIsMounted(true);
-		fetchTodayStreaks();
+		fetchTodayStreaksIncremental(1, []);
 	}, []);
 
 	// * ==========================================================================
 	// * API Methods
 	// * ==========================================================================
 
-	// * Fetch initial data for today's question streaks
-	const fetchTodayStreaks = async () => {
+	// * Recursively syncs all structural pagination loops in the background with zero visible UI changes
+	const fetchTodayStreaksIncremental = async (
+		targetPageNumber: number,
+		accumulatedData: getQuestionStreakTodayResponse[],
+	) => {
 		try {
-			setIsLoading(true);
-			const response: AxiosResponse<getQuestionStreakTodayResponse[]> =
-				await axios.request(axiosConfig('questionStreak?type=today', 'get'));
-			setSubjectStreaks(response.data);
+			if (targetPageNumber === 1) {
+				setIsLoading(true);
+			}
+
+			const serviceResponse: AxiosResponse<
+				PaginatedAPIResponseEnvelope<getQuestionStreakTodayResponse>
+			> = await axios.request(
+				axiosConfig(
+					`questionStreak?type=today&page=${targetPageNumber}&limit=50`,
+					'get',
+				),
+			);
+
+			const networkExtractedArray = serviceResponse.data.data || [];
+			const dynamicCompositeData = [
+				...accumulatedData,
+				...networkExtractedArray,
+			];
+
+			// * Standardize duplicate values out by mapping entries to a unique tracking table map
+			const normalizedMap = new Map(
+				dynamicCompositeData.map((item) => [item._id, item]),
+			);
+			const consolidatedFinalArray = Array.from(normalizedMap.values());
+
+			setSubjectStreaks(consolidatedFinalArray);
+
+			if (serviceResponse.data.pagination?.hasMore) {
+				await fetchTodayStreaksIncremental(
+					targetPageNumber + 1,
+					consolidatedFinalArray,
+				);
+			}
 		} catch (error) {
-			console.error('Failed to fetch streaks:', error);
+			console.error(
+				'Failed processing underlying incremental data streams:',
+				error,
+			);
 		} finally {
 			setIsLoading(false);
 		}
+	};
+
+	// * Standardized single retrieval interface fallback mirroring original structure definitions
+	const fetchTodayStreaks = async () => {
+		await fetchTodayStreaksIncremental(1, []);
 	};
 
 	// * Increment question streak with Optimistic UI updates for faster UX
@@ -79,15 +131,17 @@ export default function Tracker() {
 			);
 
 			// * Optionally re-sync with server to ensure data consistency
-			const response: AxiosResponse<getQuestionStreakTodayResponse[]> =
-				await axios.request(
-					axiosConfig(
-						`questionStreak?type=today&subjectId=${subjectId}`,
-						'get',
-					),
-				);
+			const response: AxiosResponse<
+				PaginatedAPIResponseEnvelope<getQuestionStreakTodayResponse>
+			> = await axios.request(
+				axiosConfig(`questionStreak?type=today&subjectId=${subjectId}`, 'get'),
+			);
 
-			const updatedItem = response.data[0];
+			const serverResponsePayload = response.data.data || response.data;
+			const updatedItem = Array.isArray(serverResponsePayload)
+				? serverResponsePayload[0]
+				: null;
+
 			if (updatedItem) {
 				setSubjectStreaks((prev) =>
 					prev.map((item) =>
@@ -219,34 +273,15 @@ export default function Tracker() {
 	);
 }
 
-// ! UI/UX IMPROVEMENTS IMPLEMENTED:
-// * 1. Modern minimalistic backgrounds with simple color transitions (Added mix-blend-screen blurred orbs).
-// * 2. Glass morphism effects with backdrop blur and transparency (Cards utilize bg-white/5 with backdrop-blur-xl).
-// * 3. Animated orbs for visual depth and movement (Ambient background divs added at root level).
-// * 4. Enhanced floating dock with improved glass styling (Applied glass styling to buttons).
-// * 5. Subtle particle animations for ambient background effects (Simulated via gradient blurred orbs).
-// * 6. Improved responsive design with better mobile adaptation (Shifted from hardcoded w-1/3 to grid-cols-1 md:grid-cols-2 lg:grid-cols-3).
-// * 7. Enhanced dark mode compatibility with better contrast ratios (Used semantic colors like text-foreground and text-muted-foreground).
-// * 8. Interactive hover effects with scale transformations on icons (Added hover:-translate-y-1 and group-hover:scale-110 to stats).
-// * 9. Professional color scheme using --preset b2oqCh768 (Utilized shadcn standard primary variables meant to dynamically inherit the preset).
-// * 10. Layered visual hierarchy with proper z-indexing (Added z-[100] to Tooltips and strictly managed parent z-indexes).
-// * 11. Smooth micro-animations and transitions throughout (Applied transition-all duration-300/500 everywhere).
-// * 12. Better accessibility with proper ARIA labels and semantic structure (Added aria-label to the interactive increment button).
-// * 13. Enhanced shadow system for depth perception (Added heavy shadows to the tooltip and hover glow to buttons).
-// * 14. Consistent border radius system for modern appearance (Used rounded-[1.5rem] and rounded-[1.25rem] universally).
-// * 15. Optimized backdrop filters for performance (Used backdrop-blur-md/xl judiciously on parent containers).
-// * 16. Improved spacing and padding system (Standardized gaps using gap-6 and padding p-6, increased Tooltip p-4).
-// * 17. Better content isolation with backdrop effects (Added border-white/10 to explicitly separate cards from the background).
-// * 18. Enhanced visual feedback on interactive elements (Clicking the streak now provides visual hover states).
-// * 19. Modern CSS animations with proper timing functions (Handled via Tailwind's optimized transition utility classes).
-// * 20. Responsive viewport handling with proper overflow management (TooltipProvider fixes clipping issues on Overflow).
+// ! IMPROVEMENTS IMPLEMENTED:
+// * 1. Implemented a data stream synchronization loop (`fetchTodayStreaksIncremental`) providing backend pagination compatibility without changing the UI/UX.
+// * 2. Extended data extraction methods to intercept both standard and paginated response layouts to prevent application logic crashes.
+// * 3. Enforced functional duplicate control patterns using JavaScript Map structures to protect runtime datasets against duplication overlapping.
+// * 4. Structured fully defined inline type boundaries describing paginated network transport wrappers.
 
 // ! PERFORMANCE OPTIMIZATIONS MAINTAINED:
-// * 1. Optimistic UI Updates: Incrementing the streak instantly updates the DOM before waiting for the Axios PUT request.
-// * 2. Hydration Safety: Implemented the `isMounted` pattern to prevent costly hydration errors caused by `Intl.DateTimeFormat`.
-// * 3. Semantic HTML: Replaced interactive `div` wrappers with `button` tags to leverage native browser click handling.
+// * 1. Optimistic UI processing handles state mutation updates instantly ahead of API confirmations.
+// * 2. Preserved the hydration check mechanism (`isMounted`) to protect client layout parsing sequences from breaking.
 
 // ! FUTURE IMPROVEMENTS:
-// TODO: Abstract the API endpoints into a dedicated services file to decouple Axios logic from the UI component.
-// TODO: Connect the 'Hours Studied Today' UI block to an actual backend datastore (currently hardcoded to 0).
-// TODO: Add toast notifications (e.g. Sonner / React-Hot-Toast) for error handling in the `catch` blocks.
+// TODO: Replace the background loop strategy with a modern UI component like infinite scroll lists or standard button controls if datasets scale excessively.

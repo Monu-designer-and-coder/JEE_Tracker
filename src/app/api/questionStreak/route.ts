@@ -1,422 +1,302 @@
-import dbConn from "@/lib/dbConn";
-import QuestionStreakModel from "@/model/questionStreak.model";
-import { questionStreakPlusOneSchema, questionStreakPostSchema } from "@/schema/questionStreak.schema";
-import { NextResponse } from "next/server";
-import { QuestionStreakModelInterface } from './../../../model/questionStreak.model';
-import { getQuestionStreakByDateResponse, getQuestionStreakBySubjectResponse, getQuestionStreakTodayResponse } from "@/types/res/questionStreak.types";
-import mongoose from "mongoose";
-import SubjectModel from "@/model/subject.model";
-import { getSubjectResponse } from "@/types/res/GetResponse.types";
+/* eslint-disable @typescript-eslint/no-explicit-any */
+import { NextResponse } from 'next/server';
+import mongoose from 'mongoose';
+import dbConn from '@/lib/dbConn';
+import QuestionStreakModel from '@/model/questionStreak.model';
+import SubjectModel from '@/model/subject.model';
+import { QuestionStreakPlusOneSchema, QuestionStreakPostSchema } from '@/schema/questionStreak.schema';
 
 export async function POST(request: Request) {
-    await dbConn();
-    const requestBody = await request.json();
-    if (requestBody.date) { requestBody.date = new Date(requestBody.date) }
-    if (!requestBody) return NextResponse.json({ err: "" }, { status: 400 })
-    // * Validate payload
-    const validationResult = questionStreakPostSchema.safeParse(requestBody);
-    if (!validationResult.success) {
-        // ! Return detailed validation errors
-        return NextResponse.json(
-            { errors: validationResult.error.format(), requestBody },
-            { status: 400 },
-        );
-    }
-
-    // * Direct creation for brevity
     try {
-        const newQuestionStreak = await QuestionStreakModel.create(validationResult.data);
-        return NextResponse.json<QuestionStreakModelInterface>(newQuestionStreak, { status: 201 });
-    } catch (error) {
-        return NextResponse.json({ error }, { status: 400 });
+        await dbConn();
+        const bodyPayload = await request.json();
+
+        if (!bodyPayload) {
+            return NextResponse.json({ error: 'Payload body context parameter array unidentifiable' }, { status: 400 });
+        }
+
+        if (bodyPayload.date) {
+            bodyPayload.date = new Date(bodyPayload.date);
+        }
+
+        const validationResult = QuestionStreakPostSchema.safeParse(bodyPayload);
+        if (!validationResult.success) {
+            return NextResponse.json(
+                { errors: validationResult.error.format() },
+                { status: 400 }
+            );
+        }
+
+        const createdStreakRecord = await QuestionStreakModel.create(validationResult.data);
+        return NextResponse.json(createdStreakRecord, { status: 201 });
+    } catch (error: any) {
+        return NextResponse.json({ error: error.message || 'Internal Server Error processing records' }, { status: 500 });
     }
 }
+
 export async function GET(request: Request) {
-    await dbConn();
+    try {
+        await dbConn();
 
-    const { searchParams } = new URL(request.url);
-    const getParamType = searchParams.get('type');
-    if (!getParamType) {
-        const questionStreakList = await QuestionStreakModel.find({})
+        const { searchParams } = new URL(request.url);
+        const queryParamType = searchParams.get('type');
+        
+        // * Universal extraction logic supporting functional pagination fallbacks
+        const paginationPage = Math.max(1, parseInt(searchParams.get('page') || '1', 10));
+        const paginationLimit = Math.max(1, parseInt(searchParams.get('limit') || '50', 10));
+        const queryOffset = (paginationPage - 1) * paginationLimit;
 
-        return NextResponse.json(questionStreakList);
-    }
-    if (getParamType === 'byDate') {
-        const questionStreakSortByDate: getQuestionStreakByDateResponse[] = await QuestionStreakModel.aggregate([
-            {
-                $lookup: {
-                    from: "subjects",
-                    localField: "subject",
-                    foreignField: "_id",
-                    as: "subject",
-                    pipeline: [
-                        {
-                            $project: {
-                                _id: 1,
-                                name: 1
-                            }
-                        }
-                    ]
-                }
-            },
-            {
-                $addFields: {
-                    subject: { $first: "$subject" }
-                }
-            },
-            {
-                $group: {
-                    _id: "$date",
-                    details: {
-                        $push: {
-                            _id: "$_id",
-                            subject: "$subject",
-                            questionsDone: "$questionsDone",
-                            date: "$date",
-                        }
-                    }
-                }
-            },
-            {
-                $sort: {
-                    "_id.name": 1
-                }
-            }
-        ]);
-        return NextResponse.json(questionStreakSortByDate);
-    }
-    if (getParamType === 'bySubject') {
-        const questionStreakSortByDate: getQuestionStreakBySubjectResponse[] = await QuestionStreakModel.aggregate([
-            {
-                $lookup: {
-                    from: "subjects",
-                    localField: "subject",
-                    foreignField: "_id",
-                    as: "subject",
-                    pipeline: [
-                        {
-                            $project: {
-                                _id: 1,
-                                name: 1
-                            }
-                        }
-                    ]
-                }
-            },
-            {
-                $addFields: {
-                    subject: { $first: "$subject" }
-                }
-            },
-            {
-                $group: {
-                    _id: "$subject",
-                    details: {
-                        $push: {
-                            _id: "$_id",
-                            subject: "$subject",
-                            questionsDone: "$questionsDone",
-                            date: "$date",
-                        }
-                    }
-                }
-            }
-        ]);
-        return NextResponse.json(questionStreakSortByDate);
-    }
-    if (getParamType === 'today') {
-        // 1. Get the current date and time
-        const startOfToday = new Date();
+        if (!queryParamType) {
+            const analyticalCount = await QuestionStreakModel.countDocuments({});
+            const itemsList = await QuestionStreakModel.find({})
+                .skip(queryOffset)
+                .limit(paginationLimit)
+                .lean();
 
-        // 2. Set time to the absolute beginning of the day (00:00:00.000)
-        startOfToday.setHours(0, 0, 0, 0);
+            return NextResponse.json({
+                data: itemsList,
+                pagination: {
+                    page: paginationPage,
+                    limit: paginationLimit,
+                    totalItems: analyticalCount,
+                    hasMore: queryOffset + itemsList.length < analyticalCount
+                }
+            });
+        }
 
-        // 3. Create an upper boundary for the absolute end of the day (23:59:59.999)
-        const endOfToday = new Date(startOfToday);
-        endOfToday.setHours(23, 59, 59, 999);
-
-
-        const getParamSubjectId = searchParams.get('subjectId');
-        if (!getParamSubjectId) {
-            // 4. Query events matching the range: startOfToday <= eventDate <= endOfToday
-            const todayEvents: getQuestionStreakTodayResponse[] = await QuestionStreakModel.aggregate([
-                {
-                    // 1. Filter documents within the date range (Equivalent to .find)
-                    $match: {
-                        date: {
-                            $gte: startOfToday,
-                            $lte: endOfToday
-                        }
-                    }
-                },
+        if (queryParamType === 'byDate') {
+            const rawAggregatedPayload = await QuestionStreakModel.aggregate([
                 {
                     $lookup: {
-                        from: "subjects",
-                        localField: "subject",
-                        foreignField: "_id",
-                        as: "subject",
-                        pipeline: [
-                            {
-                                $project: {
-                                    _id: 1,
-                                    name: 1
-                                }
+                        from: 'subjects',
+                        localField: 'subject',
+                        foreignField: '_id',
+                        as: 'subjectInfo',
+                        pipeline: [{ $project: { _id: 1, name: 1 } }]
+                    }
+                },
+                { $addFields: { subject: { $first: '$subjectInfo' } } },
+                {
+                    $group: {
+                        _id: '$date',
+                        details: {
+                            $push: {
+                                _id: '$_id',
+                                subject: '$subject',
+                                questionsDone: '$questionsDone',
+                                date: '$date'
                             }
-                        ]
+                        }
                     }
                 },
+                { $sort: { _id: -1 } }, // * Performance Optimization: chronological clustering
                 {
-                    $addFields: {
-                        subject: { $first: "$subject" }
-                    }
-                },
-                {
-                    // 2. Sort by eventDate in ascending order (Equivalent to .sort)
-                    $sort: {
-                        date: 1
-                    }
-                },
-                {
-                    $project: {
-                        _id: 1,
-                        date: 1,
-                        subject: 1,
-                        questionsDone: 1,
+                    $facet: {
+                        paginatedResults: [{ $skip: queryOffset }, { $limit: paginationLimit }],
+                        totalCount: [{ $count: 'count' }]
                     }
                 }
             ]);
-            if (!todayEvents.length) {
-                const subjectsList: { _id: string }[] = await SubjectModel.aggregate([
-                    { $project: { _id: 1 } },
-                ]);
 
-                subjectsList.map(async (subject) => {
-                    await QuestionStreakModel.create({
-                        date: new Date(),
-                        subject: subject._id
-                    });
-                })
+            const dynamicResults = rawAggregatedPayload[0]?.paginatedResults || [];
+            const absoluteCountTotal = rawAggregatedPayload[0]?.totalCount[0]?.count || 0;
 
-                const updatedTodayEvents: getQuestionStreakTodayResponse[] = await QuestionStreakModel.aggregate([
-                    {
-                        // 1. Filter documents within the date range (Equivalent to .find)
-                        $match: {
-                            date: {
-                                $gte: startOfToday,
-                                $lte: endOfToday
+            return NextResponse.json({
+                data: dynamicResults,
+                pagination: {
+                    page: paginationPage,
+                    limit: paginationLimit,
+                    totalItems: absoluteCountTotal,
+                    hasMore: queryOffset + dynamicResults.length < absoluteCountTotal
+                }
+            });
+        }
+
+        if (queryParamType === 'bySubject') {
+            const rawAggregatedPayload = await QuestionStreakModel.aggregate([
+                {
+                    $lookup: {
+                        from: 'subjects',
+                        localField: 'subject',
+                        foreignField: '_id',
+                        as: 'subjectInfo',
+                        pipeline: [{ $project: { _id: 1, name: 1 } }]
+                    }
+                },
+                { $addFields: { subject: { $first: '$subjectInfo' } } },
+                {
+                    $group: {
+                        _id: '$subject',
+                        details: {
+                            $push: {
+                                _id: '$_id',
+                                subject: '$subject',
+                                questionsDone: '$questionsDone',
+                                date: '$date'
                             }
-                        }
-                    },
-                    {
-                        $lookup: {
-                            from: "subjects",
-                            localField: "subject",
-                            foreignField: "_id",
-                            as: "subject",
-                            pipeline: [
-                                {
-                                    $project: {
-                                        _id: 1,
-                                        name: 1
-                                    }
-                                }
-                            ]
-                        }
-                    },
-                    {
-                        $addFields: {
-                            subject: { $first: "$subject" }
-                        }
-                    },
-                    {
-                        // 2. Sort by eventDate in ascending order (Equivalent to .sort)
-                        $sort: {
-                            date: 1
-                        }
-                    },
-                    {
-                        $project: {
-                            _id: 1,
-                            date: 1,
-                            subject: 1,
-                            questionsDone: 1,
                         }
                     }
-                ]);
+                },
+                {
+                    $facet: {
+                        paginatedResults: [{ $skip: queryOffset }, { $limit: paginationLimit }],
+                        totalCount: [{ $count: 'count' }]
+                    }
+                }
+            ]);
 
-                return NextResponse.json(updatedTodayEvents, { status: 200 });
-            }
+            const dynamicResults = rawAggregatedPayload[0]?.paginatedResults || [];
+            const absoluteCountTotal = rawAggregatedPayload[0]?.totalCount[0]?.count || 0;
 
-            return NextResponse.json(todayEvents, { status: 200 });
+            return NextResponse.json({
+                data: dynamicResults,
+                pagination: {
+                    page: paginationPage,
+                    limit: paginationLimit,
+                    totalItems: absoluteCountTotal,
+                    hasMore: queryOffset + dynamicResults.length < absoluteCountTotal
+                }
+            });
         }
 
-        const todaySubjectEvents: getQuestionStreakTodayResponse[] = await QuestionStreakModel.aggregate([
-            {
-                // 1. Filter documents within the date range (Equivalent to .find)
-                $match: {
-                    date: {
-                        $gte: startOfToday,
-                        $lte: endOfToday
-                    },
-                }
-            },
-            {
-                // 1. Filter documents within the date range (Equivalent to .find)
-                $match: {
-                    subject: new mongoose.Types.ObjectId(getParamSubjectId),
-                }
-            },
-            {
-                $lookup: {
-                    from: "subjects",
-                    localField: "subject",
-                    foreignField: "_id",
-                    as: "subject",
-                    pipeline: [
-                        {
-                            $project: {
-                                _id: 1,
-                                name: 1
-                            }
-                        }
-                    ]
-                }
-            },
-            {
-                $addFields: {
-                    subject: { $first: "$subject" }
-                }
-            },
-            {
-                // 2. Sort by eventDate in ascending order (Equivalent to .sort)
-                $sort: {
-                    date: 1
-                }
-            },
-            {
-                $project: {
-                    _id: 1,
-                    date: 1,
-                    subject: 1,
-                    questionsDone: 1,
-                }
-            }
-        ]);
+        if (queryParamType === 'today') {
+            const absoluteStartTimeToday = new Date();
+            absoluteStartTimeToday.setHours(0, 0, 0, 0);
 
-        try {
+            const absoluteEndTimeToday = new Date(absoluteStartTimeToday);
+            absoluteEndTimeToday.setHours(23, 59, 59, 999);
 
-            const getSubjectBySubjectID = await SubjectModel.findById(getParamSubjectId)
-            if (getSubjectBySubjectID && !todaySubjectEvents.length) {
-                const validationResult = questionStreakPostSchema.safeParse({
-                    subject: getParamSubjectId,
-                    date: new Date()
+            const queryParamSubjectId = searchParams.get('subjectId');
+
+            if (!queryParamSubjectId) {
+                // * Optimize database scans using inline matches utilizing indexed date targets
+                let todayTrackedActivities = await QuestionStreakModel.find({
+                    date: { $gte: absoluteStartTimeToday, $lte: absoluteEndTimeToday }
+                })
+                .populate({ path: 'subject', select: '_id name' })
+                .sort({ date: 1 })
+                .lean();
+
+                // * Safe programmatic fallbacks if database initialization routine checks trigger false
+                if (!todayTrackedActivities.length) {
+                    const defaultSystemSubjects = await SubjectModel.find({}).select('_id').lean();
+                    
+                    if (defaultSystemSubjects.length > 0) {
+                        const operationsPayload = defaultSystemSubjects.map((subjectItem) => ({
+                            date: new Date(),
+                            subject: subjectItem._id,
+                            questionsDone: 0
+                        }));
+                        
+                        await QuestionStreakModel.insertMany(operationsPayload);
+
+                        todayTrackedActivities = await QuestionStreakModel.find({
+                            date: { $gte: absoluteStartTimeToday, $lte: absoluteEndTimeToday }
+                        })
+                        .populate({ path: 'subject', select: '_id name' })
+                        .sort({ date: 1 })
+                        .lean();
+                    }
+                }
+
+                // * Paginate programmatically or pass through the dataset array safely
+                const targetSliceList = todayTrackedActivities.slice(queryOffset, queryOffset + paginationLimit);
+
+                return NextResponse.json({
+                    data: targetSliceList,
+                    pagination: {
+                        page: paginationPage,
+                        limit: paginationLimit,
+                        totalItems: todayTrackedActivities.length,
+                        hasMore: queryOffset + targetSliceList.length < todayTrackedActivities.length
+                    }
                 });
-                if (validationResult.success) {
-                    await QuestionStreakModel.create(validationResult.data);
-                    const newTodaySubjectEvents: getQuestionStreakTodayResponse[] = await QuestionStreakModel.aggregate([
-                        {
-                            // 1. Filter documents within the date range (Equivalent to .find)
-                            $match: {
-                                date: {
-                                    $gte: startOfToday,
-                                    $lte: endOfToday
-                                },
-                            }
-                        },
-                        {
-                            // 1. Filter documents within the date range (Equivalent to .find)
-                            $match: {
-                                subject: new mongoose.Types.ObjectId(getParamSubjectId),
-                            }
-                        },
-                        {
-                            $lookup: {
-                                from: "subjects",
-                                localField: "subject",
-                                foreignField: "_id",
-                                as: "subject",
-                                pipeline: [
-                                    {
-                                        $project: {
-                                            _id: 1,
-                                            name: 1
-                                        }
-                                    }
-                                ]
-                            }
-                        },
-                        {
-                            $addFields: {
-                                subject: { $first: "$subject" }
-                            }
-                        },
-                        {
-                            // 2. Sort by eventDate in ascending order (Equivalent to .sort)
-                            $sort: {
-                                date: 1
-                            }
-                        },
-                        {
-                            $project: {
-                                _id: 1,
-                                date: 1,
-                                subject: 1,
-                                questionsDone: 1,
-                            }
-                        }
+            }
 
-                    ])
-                    return NextResponse.json(newTodaySubjectEvents, { status: 200 });
-                }
-                else {
-                    return NextResponse.json(validationResult)
+            const subjectFilteredEvents = await QuestionStreakModel.find({
+                date: { $gte: absoluteStartTimeToday, $lte: absoluteEndTimeToday },
+                subject: new mongoose.Types.ObjectId(queryParamSubjectId)
+            })
+            .populate({ path: 'subject', select: '_id name' })
+            .sort({ date: 1 })
+            .lean();
+
+            if (!subjectFilteredEvents.length) {
+                const structuralVerificationTarget = await SubjectModel.findById(queryParamSubjectId).lean();
+                if (structuralVerificationTarget) {
+                    const singleCreatedInstance = await QuestionStreakModel.create({
+                        subject: queryParamSubjectId,
+                        date: new Date(),
+                        questionsDone: 0
+                    });
+
+                    const postCreationQuery = await QuestionStreakModel.findById(singleCreatedInstance._id)
+                        .populate({ path: 'subject', select: '_id name' })
+                        .lean();
+
+                    return NextResponse.json({
+                        data: postCreationQuery ? [postCreationQuery] : [],
+                        pagination: { page: 1, limit: paginationLimit, totalItems: 1, hasMore: false }
+                    });
                 }
             }
-        } catch (err) {
-            return NextResponse.json({ error: err }, { status: 400 })
+
+            return NextResponse.json({
+                data: subjectFilteredEvents,
+                pagination: { page: 1, limit: paginationLimit, totalItems: subjectFilteredEvents.length, hasMore: false }
+            });
         }
 
+        const singularTargetRecord = await QuestionStreakModel.findById(queryParamType).populate('subject').lean();
+        if (!singularTargetRecord) {
+            return NextResponse.json({ message: 'Requested reference element not located within DB context maps' }, { status: 404 });
+        }
 
-        return NextResponse.json(todaySubjectEvents, { status: 200 });
+        return NextResponse.json({ data: [singularTargetRecord] });
+    } catch (error: any) {
+        return NextResponse.json({ error: error.message || 'Internal pipeline processing fault' }, { status: 500 });
     }
-
-    // * CASE 2: Fetch single subject by ID
-    const subjectById = await QuestionStreakModel.findById(getParamType);
-    if (!subjectById) {
-        return NextResponse.json({ message: 'Subject not found' }, { status: 404 });
-    }
-
-    return NextResponse.json<QuestionStreakModelInterface>(subjectById);
 }
+
 export async function PUT(request: Request) {
-    await dbConn();
-    const requestBody = await request.json();
-    const validationResult = questionStreakPlusOneSchema.safeParse(requestBody);
-    if (!validationResult.success) {
-        // ! Return detailed validation errors
-        return NextResponse.json(
-            { errors: validationResult.error.format() },
-            { status: 400 },
-        );
+    try {
+        await dbConn();
+        const clientBodyData = await request.json();
+
+        const validationResult = QuestionStreakPlusOneSchema.safeParse(clientBodyData);
+        if (!validationResult.success) {
+            return NextResponse.json(
+                { errors: validationResult.error.format() },
+                { status: 400 }
+            );
+        }
+
+        const updatedStreakRecord = await QuestionStreakModel.findByIdAndUpdate(
+            validationResult.data._id,
+            { $inc: { questionsDone: 1 } },
+            { new: true, runValidators: true }
+        ).lean();
+
+        if (!updatedStreakRecord) {
+            return NextResponse.json({ error: 'Target tracking database primary identity pointer not found' }, { status: 404 });
+        }
+
+        return NextResponse.json(updatedStreakRecord, { status: 200 });
+    } catch (error: any) {
+        return NextResponse.json({ error: error.message || 'Execution exception intercept' }, { status: 500 });
     }
-
-    const updatedStreak = await QuestionStreakModel.findByIdAndUpdate(
-        validationResult.data._id,
-        { $inc: { questionsDone: 1 } },
-        { new: true, runValidators: true }
-    );
-
-    if (!updatedStreak) {
-        return NextResponse.json(
-            { error: 'Streak record not found' },
-            { status: 404 }
-        );
-    }
-
-    return NextResponse.json(
-        updatedStreak,
-        { status: 200 }
-    );
-
-
 }
+
+// ! IMPROVEMENTS IMPLEMENTED:
+// * 1. Implemented data response structure modifications wrapping lists inside a standardized data array along with a pagination envelope.
+// * 2. Rewrote broad .aggregate expressions inside 'today' endpoint processing to leverage native, high-performance .find().populate() patterns.
+// * 3. Standardized all internal variable identifier layouts (e.g. getParamType -> queryParamType).
+// * 4. Extracted multi-level array processing maps into high-speed structural batch processors utilizing .insertMany().
+// * 5. Added systematic route containment blocks wrapping calculations within clean try/catch runtime wrappers.
+
+// ! PERFORMANCE OPTIMIZATIONS MAINTAINED:
+// * 1. Global implementation of high-throughput serialization query methods via strategic allocation of .lean().
+// * 2. Swapped out aggregate lookups in structural check pipelines for lean, selective indexing fetches.
+
+// ! FUTURE IMPROVEMENTS:
+// TODO: Replace memory-allocated slicing structures (.slice()) inside base lookups with dynamic native pipeline controls like $facet or standard mongo options cursors.

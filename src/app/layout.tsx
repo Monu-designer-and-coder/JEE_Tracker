@@ -10,7 +10,6 @@ import './globals.css';
 import { cn } from '@/lib/utils';
 import { ThemeProvider } from '@/components/theme-provider';
 import Header from '@/components/Header';
-import { TooltipProvider } from '@/components/ui/tooltip';
 
 const robotoSlabHeading = Roboto_Slab({
 	subsets: ['latin'],
@@ -78,9 +77,7 @@ export default function RootLayout({
 						<Header className='h-[20%] shrink-0' />{' '}
 						{/* * Changed from vh to fixed height for consistency */}
 						{/* ? Main content area with proper spacing */}
-						<main className='flex-1 h-[79%] overflow-hidden'>
-							<TooltipProvider>{children}</TooltipProvider>
-						</main>
+						<main className='flex-1 h-[79%] overflow-hidden'>{children}</main>
 						{/* TODO: Add footer component if needed */}
 						{/* <Footer className="shrink-0" /> */}
 					</div>

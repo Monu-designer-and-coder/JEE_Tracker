@@ -16,6 +16,7 @@ import {
 } from '@/components/ui/tooltip';
 import { axiosConfig } from '@/config/axios.config';
 import { getQuestionStreakTodayResponse } from '@/types/res/questionStreak.types';
+import { HomeIcon } from 'lucide-react';
 
 // * Standardized structural definitions describing expected paginated envelopes
 interface PaginatedAPIResponseEnvelope<T> {
@@ -262,6 +263,9 @@ export default function Tracker() {
 												</span>
 											</div>
 										</div>
+
+										{/* Study Button  */}
+										<Button size={'lg'}> <HomeIcon/>  Start Study Session</Button>
 									</CardContent>
 								</Card>
 							))}

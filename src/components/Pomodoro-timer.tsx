@@ -12,7 +12,7 @@ import React, {
 // ! SHADCN UI COMPONENTS
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { Card, CardContent, CardHeader } from '@/components/ui/card';
+import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Progress } from '@/components/ui/progress';
 
@@ -21,7 +21,6 @@ import {
 	Play,
 	Pause,
 	RotateCcw,
-	Clock,
 	Coffee,
 	Timer,
 	Zap,
@@ -145,33 +144,21 @@ const MODE_CONFIGURATION = {
 	},
 } as const;
 
-/**
- * * Keyboard shortcuts configuration
- */
-const KEYBOARD_SHORTCUTS = {
-	toggleTimer: 'Space',
-	reset: 'R',
-	settings: 'S',
-	fullscreen: 'F',
-	workMode: '1',
-	shortBreak: '2',
-	longBreak: '3',
-} as const;
 
 // ! MAIN COMPONENT
 /**
  * * Enhanced Pomodoro Timer Component
  * ? Modern, feature-rich timer following the Pomodoro Technique with fullscreen support
  * * Features:
- * - Customizable durations for all timer modes
- * - Visual progress indication with circular progress
- * - Responsive design with multiple size options
- * - Smooth animations and transitions
- * - Auto-progression between modes
- * - Fullscreen focus mode with dramatic UI
- * - Keyboard shortcuts support
- * - Enhanced animations and visual effects
- * * @param props - Component configuration options
+ ** - Customizable durations for all timer modes
+ ** - Visual progress indication with circular progress
+ ** - Responsive design with multiple size options
+ ** - Smooth animations and transitions
+ ** - Auto-progression between modes
+ ** - Fullscreen focus mode with dramatic UI
+ ** - Keyboard shortcuts support
+ ** - Enhanced animations and visual effects
+ ** * @param props - Component configuration options
  * @returns JSX element containing the complete timer interface
  */
 const PomodoroTimer: React.FC<PomodoroTimerProps> = ({

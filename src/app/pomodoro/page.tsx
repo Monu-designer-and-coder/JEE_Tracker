@@ -10,9 +10,7 @@ import PomodoroTimer from '@/components/Pomodoro-timer';
 import { Brain, Target, Clock, Sparkles } from 'lucide-react';
 
 // ! SHADCN UI COMPONENTS
-import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-import { cn } from '@/lib/utils';
 
 // ! TYPE DEFINITIONS
 /**
@@ -23,49 +21,6 @@ import { cn } from '@/lib/utils';
 interface PomodoroPageProps {
 	// TODO: Add props for user preferences, session history, etc.
 }
-
-// ! CONSTANTS
-/**
- * * Pomodoro technique benefits data
- * ? Educational content to help users understand the technique
- */
-const POMODORO_BENEFITS = [
-	{
-		icon: Brain,
-		title: 'Enhanced Focus',
-		description:
-			'Break work into focused intervals to maintain peak concentration',
-		color: 'text-blue-600 dark:text-blue-400',
-		bgColor: 'bg-blue-50 dark:bg-blue-950/20',
-	},
-	{
-		icon: Target,
-		title: 'Better Productivity',
-		description: 'Complete more tasks with structured work and break cycles',
-		color: 'text-green-600 dark:text-green-400',
-		bgColor: 'bg-green-50 dark:bg-green-950/20',
-	},
-	{
-		icon: Clock,
-		title: 'Time Management',
-		description:
-			'Develop better awareness of time spent on different activities',
-		color: 'text-purple-600 dark:text-purple-400',
-		bgColor: 'bg-purple-50 dark:bg-purple-950/20',
-	},
-] as const;
-
-/**
- * * Pomodoro technique steps
- * ? Guide users through the proper technique implementation
- */
-const TECHNIQUE_STEPS = [
-	'Choose a task to focus on',
-	'Set timer for 25-45 minutes (work session)',
-	'Work on the task until timer rings',
-	'Take a 5-minute short break',
-	'After 4 work sessions, take a 15-30 minute long break',
-] as const;
 
 // ! MAIN COMPONENT
 /**
@@ -127,7 +82,7 @@ const PomodoroFocusPage: React.FC<PomodoroPageProps> = () => {
 						<div className='backdrop-blur-sm rounded-3xl border  shadow-2xl p-6'>
 							<PomodoroTimer
 								size='xl'
-								initialWorkDuration={45}
+								initialWorkDuration={60}
 								initialShortBreakDuration={5}
 								initialLongBreakDuration={15}
 								autoStartBreaks={false}

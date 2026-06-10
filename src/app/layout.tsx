@@ -10,6 +10,7 @@ import './globals.css';
 import { cn } from '@/lib/utils';
 import { ThemeProvider } from '@/components/theme-provider';
 import Header from '@/components/Header';
+import StoreProvider from '@/store/StoreProvider';
 
 const robotoSlabHeading = Roboto_Slab({
 	subsets: ['latin'],
@@ -64,24 +65,29 @@ export default function RootLayout({
 					selection:bg-primary/20
         	`}>
 				{' '}
-				<ThemeProvider
-					attribute='class' // * Uses class-based theme switching
-					defaultTheme='system' // * Respects user's system preference
-					enableSystem // * Enables system theme detection
-					disableTransitionOnChange // * Prevents flash during theme changes
-					storageKey='app-theme' // * Custom storage key for theme persistence
-				>
-					{/* ! APP STRUCTURE */}
-					<div className='flex min-h-screen flex-col'>
-						{/* ? Header with consistent height */}
-						<Header className='h-[20%] shrink-0' />{' '}
-						{/* * Changed from vh to fixed height for consistency */}
-						{/* ? Main content area with proper spacing */}
-						<main className='flex-1 h-[79%] overflow-hidden'>{children}</main>
-						{/* TODO: Add footer component if needed */}
-						{/* <Footer className="shrink-0" /> */}
-					</div>
-				</ThemeProvider>
+				<StoreProvider>
+					<ThemeProvider
+						attribute='class' // * Uses class-based theme switching
+						defaultTheme='system' // * Respects user's system preference
+						enableSystem // * Enables system theme detection
+						disableTransitionOnChange // * Prevents flash during theme changes
+						storageKey='app-theme' // * Custom storage key for theme persistence
+					>
+						{/* ! APP STRUCTURE */}
+						<div className='flex min-h-screen flex-col'>
+							{/* ? Header with consistent height */}
+							<Header className='h-[20%] shrink-0' />{' '}
+							{/* * Changed from vh to fixed height for consistency */}
+							{/* ? Main content area with proper spacing */}
+							<main className='flex-1 h-[79%] overflow-hidden'>
+								{' '}
+								{children}
+							</main>
+							{/* TODO: Add footer component if needed */}
+							{/* <Footer className="shrink-0" /> */}
+						</div>
+					</ThemeProvider>
+				</StoreProvider>
 			</body>
 		</html>
 	);

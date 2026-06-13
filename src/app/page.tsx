@@ -118,7 +118,7 @@ export default function Home() {
 		// * Utilizes responsive max-width and center alignment for larger screens
 		<div className='mx-auto w-full max-w-5xl px-4 py-8 animate-in fade-in slide-in-from-bottom-4 duration-700 ease-in-out'>
 			{/* ! GLASSMORPHIC CARD WRAPPER */}
-			<Card className='relative overflow-hidden border border-border/40 bg-background/60 backdrop-blur-xl shadow-2xl rounded-[2rem] transition-all duration-500 hover:shadow-primary/5'>
+			<Card className='relative overflow-hidden border border-border/40 bg-background/60 backdrop-blur-xl shadow-2xl rounded-[2rem] transition-all duration-500 hover:shadow-primary/5 my-2'>
 				{/* ? Ambient Inner Glow */}
 				<div className='absolute -top-40 -right-40 -z-10 h-96 w-96 rounded-full bg-primary/10 blur-[100px]' />
 
@@ -171,7 +171,7 @@ export default function Home() {
 							<div
 								key={`countdown-block-${idx}`}
 								className={cn(
-									'group relative isolate flex flex-col items-center justify-center overflow-hidden rounded-2xl border border-border/30 bg-background/40 p-6 text-center backdrop-blur-md transition-all duration-500',
+									'group relative isolate flex flex-col items-center justify-center overflow-hidden rounded-4xl border border-border/30 bg-background/40 p-6 text-center backdrop-blur-md transition-all duration-500',
 									'hover:-translate-y-1 hover:border-primary/30 hover:bg-accent/20 hover:shadow-lg hover:shadow-primary/10',
 								)}>
 								{/* * Micro-interaction gradient sweep on hover */}
@@ -199,7 +199,7 @@ export default function Home() {
 					</div>
 
 					{/* ? PROGRESS BAR SECTION */}
-					<div className='mt-10 space-y-4 rounded-2xl border border-border/30 bg-background/40 p-6 backdrop-blur-sm'>
+					<div className='mt-10 space-y-4 rounded-4xl border border-border/30 bg-background/40 p-6 backdrop-blur-sm'>
 						<div className='flex justify-between items-end text-sm font-medium'>
 							<span className='text-muted-foreground'>
 								Overall Timeline Progress
@@ -220,7 +220,7 @@ export default function Home() {
 					</div>
 				</CardContent>
 			</Card>
-			<Card className='relative overflow-hidden border border-border/40 bg-background/60 backdrop-blur-xl shadow-2xl rounded-[2rem] transition-all duration-500 hover:shadow-primary/5'>
+			<Card className='relative overflow-hidden border border-border/40 bg-background/60 backdrop-blur-xl shadow-2xl rounded-[2rem] transition-all duration-500 hover:shadow-primary/5 my-1'>
 				{/* ? Ambient Inner Glow */}
 				<div className='absolute -top-40 -right-40 -z-10 h-96 w-96 rounded-full bg-primary/10 blur-[100px]' />
 
@@ -254,9 +254,9 @@ export default function Home() {
 							},
 						].map((block, idx) => (
 							<div
-								key={`countdown-block-${idx}`}
+								key={`current-study-Session-${idx}`}
 								className={cn(
-									'group relative isolate flex flex-col items-center justify-center overflow-hidden rounded-2xl border border-border/30 bg-background/40 p-6 text-center backdrop-blur-md transition-all duration-500',
+									'group relative isolate flex flex-col items-center justify-center overflow-hidden rounded-4xl border border-border/30 bg-background/40 p-6 text-center backdrop-blur-md transition-all duration-500',
 									'hover:-translate-y-1 hover:border-primary/30 hover:bg-accent/20 hover:shadow-lg hover:shadow-primary/10 w-full',
 								)}>
 								{/* * Micro-interaction gradient sweep on hover */}
@@ -298,7 +298,7 @@ export default function Home() {
 // * 11. Smooth micro-animations: Global entrance animation added (`animate-in fade-in slide-in-from-bottom-4`).
 // * 12. Better accessibility: Added strict `aria-label` to the Progress bar and utilized semantic `<h2 />` tags over simple divs.
 // * 13. Enhanced shadow system: Replaced flat borders with multi-layered shadows (`hover:shadow-primary/10` and `shadow-inner` on the progress bar track).
-// * 14. Consistent border radius system: Employed `rounded-[2rem]` for outer containers and `rounded-2xl` for inner containers for soft, modern curves.
+// * 14. Consistent border radius system: Employed `rounded-[2rem]` for outer containers and `rounded-4xl` for inner containers for soft, modern curves.
 // * 21. Deals both dark and light mode: Completely responsive to `next-themes` via the semantic utility classes.
 
 // ! PERFORMANCE OPTIMIZATIONS MAINTAINED:

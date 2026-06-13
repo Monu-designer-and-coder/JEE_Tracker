@@ -30,8 +30,12 @@ const Header: React.FC<HeaderProps> = ({ className = '' }) => {
 			link: '/tracker',
 		},
 		{
-			name: 'Study',
-			link: '#features',
+			name: 'Syllabus',
+			link: '/syllabus',
+		},
+		{
+			name: 'System',
+			link: '/system',
 		},
 		{
 			name: 'Pomodoro',

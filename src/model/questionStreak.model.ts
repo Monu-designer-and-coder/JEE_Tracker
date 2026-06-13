@@ -2,17 +2,18 @@ import mongoose, { Schema, Document, Types } from 'mongoose';
 import mongooseAggregatePaginate from 'mongoose-aggregate-paginate-v2';
 
 /**
- * * QuestionStreak Model Interface
+ * * SubjectStreak Model Interface
  */
-export interface IQuestionStreakDocument extends Document {
+export interface ISubjectStreakDocument extends Document {
     date: Date;
     questionsDone: number;
+    timeStudied: number;
     subject: Types.ObjectId;
     createdAt?: Date;
     updatedAt?: Date;
 }
 
-const QuestionStreakSchema = new Schema<IQuestionStreakDocument>(
+const SubjectStreakSchema = new Schema<ISubjectStreakDocument>(
     {
         // * Target date tracking the milestone activity
         date: {
@@ -26,6 +27,12 @@ const QuestionStreakSchema = new Schema<IQuestionStreakDocument>(
             default: 0,
             min: [0, 'Completed questions cannot be negative'],
         },
+        // * Time Studied for the subject
+        timeStudied: {
+            type: Number,
+            default: 0,
+            min: [0, 'Studied Time cannot be negative'],
+        },
         // * Reference tracking map identifier to Subject model
         subject: {
             type: Schema.Types.ObjectId,
@@ -38,17 +45,17 @@ const QuestionStreakSchema = new Schema<IQuestionStreakDocument>(
 );
 
 // * Attach pagination plugin for aggregated queries
-QuestionStreakSchema.plugin(mongooseAggregatePaginate);
+SubjectStreakSchema.plugin(mongooseAggregatePaginate);
 
 // * Safeguard singleton implementation for Next.js hot-reloads
-const QuestionStreakModel =
-    (mongoose.models.QuestionStreak as mongoose.Model<IQuestionStreakDocument>) ||
-    mongoose.model<IQuestionStreakDocument>('QuestionStreak', QuestionStreakSchema);
+const SubjectStreakModel =
+    (mongoose.models.SubjectStreak as mongoose.Model<ISubjectStreakDocument>) ||
+    mongoose.model<ISubjectStreakDocument>('SubjectStreak', SubjectStreakSchema);
 
-export default QuestionStreakModel;
+export default SubjectStreakModel;
 
 // ! IMPROVEMENTS IMPLEMENTED:
-// * 1. Converted model interface naming schema to standard IQuestionStreakDocument naming syntax.
+// * 1. Converted model interface naming schema to standard ISubjectStreakDocument naming syntax.
 // * 2. Added explicit Mongoose error string templates instead of default broad errors.
 // * 3. Enforced strict validation controls on questionsDone fields ensuring no unintended negative mutations pass.
 // * 4. Created field-level optimization indexing on both 'date' and 'subject' keys.

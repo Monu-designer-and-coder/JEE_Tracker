@@ -2,9 +2,9 @@
 import { NextResponse } from 'next/server';
 import mongoose from 'mongoose';
 import dbConn from '@/lib/dbConn';
-import QuestionStreakModel from '@/model/questionStreak.model';
+import SubjectStreakModel from '@/model/questionStreak.model';
 import SubjectModel from '@/model/subject.model';
-import { QuestionStreakPlusOneSchema, QuestionStreakPostSchema } from '@/schema/questionStreak.schema';
+import { SubjectStreakUpdateSchema, SubjectStreakPostSchema } from '@/schema/subjectStreak.schema';
 
 export async function POST(request: Request) {
     try {
@@ -19,7 +19,7 @@ export async function POST(request: Request) {
             bodyPayload.date = new Date(bodyPayload.date);
         }
 
-        const validationResult = QuestionStreakPostSchema.safeParse(bodyPayload);
+        const validationResult = SubjectStreakPostSchema.safeParse(bodyPayload);
         if (!validationResult.success) {
             return NextResponse.json(
                 { errors: validationResult.error.format() },
@@ -27,7 +27,7 @@ export async function POST(request: Request) {
             );
         }
 
-        const createdStreakRecord = await QuestionStreakModel.create(validationResult.data);
+        const createdStreakRecord = await SubjectStreakModel.create(validationResult.data);
         return NextResponse.json(createdStreakRecord, { status: 201 });
     } catch (error: any) {
         return NextResponse.json({ error: error.message || 'Internal Server Error processing records' }, { status: 500 });
@@ -40,15 +40,15 @@ export async function GET(request: Request) {
 
         const { searchParams } = new URL(request.url);
         const queryParamType = searchParams.get('type');
-        
+
         // * Universal extraction logic supporting functional pagination fallbacks
         const paginationPage = Math.max(1, parseInt(searchParams.get('page') || '1', 10));
         const paginationLimit = Math.max(1, parseInt(searchParams.get('limit') || '50', 10));
         const queryOffset = (paginationPage - 1) * paginationLimit;
 
         if (!queryParamType) {
-            const analyticalCount = await QuestionStreakModel.countDocuments({});
-            const itemsList = await QuestionStreakModel.find({})
+            const analyticalCount = await SubjectStreakModel.countDocuments({});
+            const itemsList = await SubjectStreakModel.find({})
                 .skip(queryOffset)
                 .limit(paginationLimit)
                 .lean();
@@ -65,7 +65,7 @@ export async function GET(request: Request) {
         }
 
         if (queryParamType === 'byDate') {
-            const rawAggregatedPayload = await QuestionStreakModel.aggregate([
+            const rawAggregatedPayload = await SubjectStreakModel.aggregate([
                 {
                     $lookup: {
                         from: 'subjects',
@@ -84,6 +84,7 @@ export async function GET(request: Request) {
                                 _id: '$_id',
                                 subject: '$subject',
                                 questionsDone: '$questionsDone',
+                                timeStudied: '$timeStudied',
                                 date: '$date'
                             }
                         }
@@ -113,7 +114,7 @@ export async function GET(request: Request) {
         }
 
         if (queryParamType === 'bySubject') {
-            const rawAggregatedPayload = await QuestionStreakModel.aggregate([
+            const rawAggregatedPayload = await SubjectStreakModel.aggregate([
                 {
                     $lookup: {
                         from: 'subjects',
@@ -132,6 +133,7 @@ export async function GET(request: Request) {
                                 _id: '$_id',
                                 subject: '$subject',
                                 questionsDone: '$questionsDone',
+                                timeStudied: '$timeStudied',
                                 date: '$date'
                             }
                         }
@@ -170,32 +172,33 @@ export async function GET(request: Request) {
 
             if (!queryParamSubjectId) {
                 // * Optimize database scans using inline matches utilizing indexed date targets
-                let todayTrackedActivities = await QuestionStreakModel.find({
+                let todayTrackedActivities = await SubjectStreakModel.find({
                     date: { $gte: absoluteStartTimeToday, $lte: absoluteEndTimeToday }
                 })
-                .populate({ path: 'subject', select: '_id name' })
-                .sort({ date: 1 })
-                .lean();
+                    .populate({ path: 'subject', select: '_id name' })
+                    .sort({ date: 1 })
+                    .lean();
 
                 // * Safe programmatic fallbacks if database initialization routine checks trigger false
                 if (!todayTrackedActivities.length) {
                     const defaultSystemSubjects = await SubjectModel.find({}).select('_id').lean();
-                    
+
                     if (defaultSystemSubjects.length > 0) {
                         const operationsPayload = defaultSystemSubjects.map((subjectItem) => ({
                             date: new Date(),
                             subject: subjectItem._id,
-                            questionsDone: 0
+                            questionsDone: 0,
+                            timeStudied: 0,
                         }));
-                        
-                        await QuestionStreakModel.insertMany(operationsPayload);
 
-                        todayTrackedActivities = await QuestionStreakModel.find({
+                        await SubjectStreakModel.insertMany(operationsPayload);
+
+                        todayTrackedActivities = await SubjectStreakModel.find({
                             date: { $gte: absoluteStartTimeToday, $lte: absoluteEndTimeToday }
                         })
-                        .populate({ path: 'subject', select: '_id name' })
-                        .sort({ date: 1 })
-                        .lean();
+                            .populate({ path: 'subject', select: '_id name' })
+                            .sort({ date: 1 })
+                            .lean();
                     }
                 }
 
@@ -213,24 +216,25 @@ export async function GET(request: Request) {
                 });
             }
 
-            const subjectFilteredEvents = await QuestionStreakModel.find({
+            const subjectFilteredEvents = await SubjectStreakModel.find({
                 date: { $gte: absoluteStartTimeToday, $lte: absoluteEndTimeToday },
                 subject: new mongoose.Types.ObjectId(queryParamSubjectId)
             })
-            .populate({ path: 'subject', select: '_id name' })
-            .sort({ date: 1 })
-            .lean();
+                .populate({ path: 'subject', select: '_id name' })
+                .sort({ date: 1 })
+                .lean();
 
             if (!subjectFilteredEvents.length) {
                 const structuralVerificationTarget = await SubjectModel.findById(queryParamSubjectId).lean();
                 if (structuralVerificationTarget) {
-                    const singleCreatedInstance = await QuestionStreakModel.create({
+                    const singleCreatedInstance = await SubjectStreakModel.create({
                         subject: queryParamSubjectId,
                         date: new Date(),
-                        questionsDone: 0
+                        questionsDone: 0,
+                        timeStudied: 0
                     });
 
-                    const postCreationQuery = await QuestionStreakModel.findById(singleCreatedInstance._id)
+                    const postCreationQuery = await SubjectStreakModel.findById(singleCreatedInstance._id)
                         .populate({ path: 'subject', select: '_id name' })
                         .lean();
 
@@ -247,7 +251,7 @@ export async function GET(request: Request) {
             });
         }
 
-        const singularTargetRecord = await QuestionStreakModel.findById(queryParamType).populate('subject').lean();
+        const singularTargetRecord = await SubjectStreakModel.findById(queryParamType).populate('subject').lean();
         if (!singularTargetRecord) {
             return NextResponse.json({ message: 'Requested reference element not located within DB context maps' }, { status: 404 });
         }
@@ -263,7 +267,7 @@ export async function PUT(request: Request) {
         await dbConn();
         const clientBodyData = await request.json();
 
-        const validationResult = QuestionStreakPlusOneSchema.safeParse(clientBodyData);
+        const validationResult = SubjectStreakUpdateSchema.safeParse(clientBodyData);
         if (!validationResult.success) {
             return NextResponse.json(
                 { errors: validationResult.error.format() },
@@ -271,17 +275,35 @@ export async function PUT(request: Request) {
             );
         }
 
-        const updatedStreakRecord = await QuestionStreakModel.findByIdAndUpdate(
-            validationResult.data._id,
-            { $inc: { questionsDone: 1 } },
-            { new: true, runValidators: true }
-        ).lean();
+        if (validationResult.data.type === "plusOneQuestion") {
+            const updatedStreakRecord = await SubjectStreakModel.findByIdAndUpdate(
+                validationResult.data._id,
+                { $inc: { questionsDone: 1 } },     
+                { new: true, runValidators: true }
+            ).lean();
 
-        if (!updatedStreakRecord) {
-            return NextResponse.json({ error: 'Target tracking database primary identity pointer not found' }, { status: 404 });
+            if (!updatedStreakRecord) {
+                return NextResponse.json({ error: 'Target tracking database primary identity pointer not found' }, { status: 404 });
+            }
+
+            return NextResponse.json(updatedStreakRecord, { status: 200 });
         }
+        else {
+            if (!validationResult.data.timeStudied) {
+                return NextResponse.json({ error: 'timeStudied field cannot be empty' }, { status: 400 });
+            }
+            const updatedStreakRecord = await SubjectStreakModel.findByIdAndUpdate(
+                validationResult.data._id,
+                { $inc: { timeStudied: validationResult.data.timeStudied } },
+                { new: true, runValidators: true }
+            ).lean();
 
-        return NextResponse.json(updatedStreakRecord, { status: 200 });
+            if (!updatedStreakRecord) {
+                return NextResponse.json({ error: 'Target tracking database primary identity pointer not found' }, { status: 404 });
+            }
+
+            return NextResponse.json(updatedStreakRecord, { status: 200 });
+        }
     } catch (error: any) {
         return NextResponse.json({ error: error.message || 'Execution exception intercept' }, { status: 500 });
     }

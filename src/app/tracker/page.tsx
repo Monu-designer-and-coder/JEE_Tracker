@@ -15,8 +15,12 @@ import {
 	TooltipTrigger,
 } from '@/components/ui/tooltip';
 import { axiosConfig } from '@/config/axios.config';
-import { getQuestionStreakTodayResponse } from '@/types/res/questionStreak.types';
-import { HomeIcon } from 'lucide-react';
+import { getSubjectStreakTodayResponse } from '@/types/res/subjectStreak.types';
+import { useAppDispatch, useAppSelector } from '@/hooks/actions';
+import { IconTimeDuration10, IconTimeDurationOff } from '@tabler/icons-react';
+import { endStudySession, startStudySession } from '@/reducers/streak.slice';
+import { cn } from '@/lib/utils';
+import { STORAGE_KEYS } from '@/config/constants';
 
 // * Standardized structural definitions describing expected paginated envelopes
 interface PaginatedAPIResponseEnvelope<T> {
@@ -29,15 +33,30 @@ interface PaginatedAPIResponseEnvelope<T> {
 	};
 }
 
+
 // * ==========================================================================
 // * Main Component: Tracker Dashboard
 // * ==========================================================================
 export default function Tracker() {
+	// ! HOOKS
+	/**
+	 * * Redux dispatch hook for state management
+	 * ? Used to update global application state
+	 */
+	const dispatch = useAppDispatch();
+
+	// ! STATE DECLARATIONS
+
+	// * Redux State
+	const currentStudySession = useAppSelector((state) => state.studySession);
+
 	// * State Management
 	const [subjectStreaks, setSubjectStreaks] = useState<
-		getQuestionStreakTodayResponse[]
+		getSubjectStreakTodayResponse[]
 	>([]);
 	const [isLoading, setIsLoading] = useState<boolean>(true);
+
+	const [liveTimestamp, setLiveTimestamp] = useState<number>(0);
 
 	// ! Hydration Safety Pattern: Prevents mismatches between SSR and Client rendering
 	const [isMounted, setIsMounted] = useState<boolean>(false);
@@ -46,7 +65,34 @@ export default function Tracker() {
 	useEffect(() => {
 		setIsMounted(true);
 		fetchTodayStreaksIncremental(1, []);
+		const initialStateOfStudySession = {
+			isStudySessionActive: false,
+			subjectDetails: {
+				_id: '',
+				subjectName: 'No Study Session',
+			},
+			sessionStartTime: 0,
+		};
+		const StudySessionLocalStorage = JSON.parse(
+			localStorage.getItem(STORAGE_KEYS.STUDY_SESSION) ||
+				JSON.stringify(initialStateOfStudySession),
+		);
+		if (StudySessionLocalStorage.isStudySessionActive) {
+			dispatch(startStudySession(StudySessionLocalStorage));
+		} else {
+			dispatch(endStudySession(StudySessionLocalStorage));
+		}
 	}, []);
+
+	useEffect(() => {
+		if (!currentStudySession.isStudySessionActive) return;
+
+		const interval = setInterval(() => {
+			setLiveTimestamp(Date.now() - currentStudySession.sessionStartTime);
+		}, 1000);
+
+		return () => clearInterval(interval); // cleans up when session ends or component unmounts
+	}, [currentStudySession.isStudySessionActive]);
 
 	// * ==========================================================================
 	// * API Methods
@@ -55,7 +101,7 @@ export default function Tracker() {
 	// * Recursively syncs all structural pagination loops in the background with zero visible UI changes
 	const fetchTodayStreaksIncremental = async (
 		targetPageNumber: number,
-		accumulatedData: getQuestionStreakTodayResponse[],
+		accumulatedData: getSubjectStreakTodayResponse[],
 	) => {
 		try {
 			if (targetPageNumber === 1) {
@@ -63,10 +109,10 @@ export default function Tracker() {
 			}
 
 			const serviceResponse: AxiosResponse<
-				PaginatedAPIResponseEnvelope<getQuestionStreakTodayResponse>
+				PaginatedAPIResponseEnvelope<getSubjectStreakTodayResponse>
 			> = await axios.request(
 				axiosConfig(
-					`questionStreak?type=today&page=${targetPageNumber}&limit=50`,
+					`subjectStreak?type=today&page=${targetPageNumber}&limit=50`,
 					'get',
 				),
 			);
@@ -124,18 +170,18 @@ export default function Tracker() {
 			// * Execute the background API call
 			await axios.request(
 				axiosConfig(
-					'questionStreak',
+					'subjectStreak',
 					'put',
 					{ 'Content-Type': 'application/json' },
-					{ _id: streakId },
+					{ _id: streakId, type: 'plusOneQuestion' },
 				),
 			);
 
 			// * Optionally re-sync with server to ensure data consistency
 			const response: AxiosResponse<
-				PaginatedAPIResponseEnvelope<getQuestionStreakTodayResponse>
+				PaginatedAPIResponseEnvelope<getSubjectStreakTodayResponse>
 			> = await axios.request(
-				axiosConfig(`questionStreak?type=today&subjectId=${subjectId}`, 'get'),
+				axiosConfig(`subjectStreak?type=today&subjectId=${subjectId}`, 'get'),
 			);
 
 			const serverResponsePayload = response.data.data || response.data;
@@ -157,6 +203,104 @@ export default function Tracker() {
 		}
 	};
 
+	// * Handel Toggle Study Session Button
+	const studySessionToggle = async (
+		streakId: string,
+		subjectId: string,
+		subjectName: string,
+	) => {
+		const currentTime = Date.now();
+		if (!currentStudySession.isStudySessionActive) {
+			dispatch(
+				startStudySession({
+					sessionStartTime: currentTime,
+					subjectDetails: {
+						_id: subjectId,
+						subjectName: subjectName,
+					},
+				}),
+			);
+			localStorage.setItem(
+				STORAGE_KEYS.STUDY_SESSION,
+				JSON.stringify({
+					isStudySessionActive: true,
+					sessionStartTime: currentTime,
+					subjectDetails: {
+						_id: subjectId,
+						subjectName: subjectName,
+					},
+				}),
+			);
+		} else {
+			const currentTime = Date.now();
+			const currentStudySessionStartTime: number =
+				currentTime - currentStudySession.sessionStartTime;
+
+			// * Optimistically update the UI before the API responds for instant feedback
+			setSubjectStreaks((prev) =>
+				prev.map((item) =>
+					item._id === streakId
+						? { ...item, questionsDone: item.questionsDone + 1 }
+						: item,
+				),
+			);
+
+			try {
+				// * Execute the background API call
+				await axios.request(
+					axiosConfig(
+						'subjectStreak',
+						'put',
+						{ 'Content-Type': 'application/json' },
+						{
+							_id: streakId,
+							type: 'addTimeStudied',
+							timeStudied: currentStudySessionStartTime,
+						},
+					),
+				);
+
+				// * Optionally re-sync with server to ensure data consistency
+				const response: AxiosResponse<
+					PaginatedAPIResponseEnvelope<getSubjectStreakTodayResponse>
+				> = await axios.request(
+					axiosConfig(`subjectStreak?type=today&subjectId=${subjectId}`, 'get'),
+				);
+
+				const serverResponsePayload = response.data.data || response.data;
+				const updatedItem = Array.isArray(serverResponsePayload)
+					? serverResponsePayload[0]
+					: null;
+
+				if (updatedItem) {
+					setSubjectStreaks((prev) =>
+						prev.map((item) =>
+							item._id === updatedItem._id ? { ...item, ...updatedItem } : item,
+						),
+					);
+				}
+			} catch (error) {
+				// ! Rollback on failure
+				console.error('Failed to update streak, rolling back...', error);
+				fetchTodayStreaks();
+			}
+
+			dispatch(
+				endStudySession({
+					subjectDetails: { _id: '', subjectName: 'No Study Session' },
+				}),
+			);
+			localStorage.setItem(
+				STORAGE_KEYS.STUDY_SESSION,
+				JSON.stringify({
+					isStudySessionActive: false,
+					sessionStartTime: 0,
+					subjectDetails: { _id: '', subjectName: 'No Study Session' },
+				}),
+			);
+		}
+	};
+
 	// * ==========================================================================
 	// * Helper Methods
 	// * ==========================================================================
@@ -172,6 +316,18 @@ export default function Tracker() {
 			year: 'numeric',
 		}).format(date);
 	};
+
+	function formatMilliseconds(ms: number): string {
+		const totalSeconds = Math.floor(ms / 1000);
+		const seconds = totalSeconds % 60;
+		const totalMinutes = Math.floor(totalSeconds / 60);
+		const minutes = totalMinutes % 60;
+		const hours = Math.floor(totalMinutes / 60);
+
+		const pad = (num: number) => String(num).padStart(2, '0');
+
+		return `${pad(hours)}.${pad(minutes)}.${pad(seconds)}`;
+	}
 
 	// ! Hydration check: Return null or a skeleton loader until mounted
 	if (!isMounted) return null;
@@ -189,6 +345,12 @@ export default function Tracker() {
 
 			{/* * Content Section */}
 			<section className='relative z-10 mx-auto max-w-7xl h-[80vh] flex flex-col justify-center'>
+				<h1
+					className={`text-4xl ${currentStudySession.isStudySessionActive ? 'bg-primary' : 'bg-destructive/10 text-destructive '} rounded-full px-7 py-4 my-5 mx-2 font-mono`}>
+					Current Study Session:
+					{''}
+					{currentStudySession.subjectDetails.subjectName}{' '}
+				</h1>
 				{isLoading ? (
 					// * Loading State
 					<div className='flex h-64 items-center justify-center'>
@@ -255,17 +417,69 @@ export default function Tracker() {
 										{/* * Static Stat Block: Hours Studied */}
 										<div className='relative flex w-full flex-col items-center justify-center overflow-hidden rounded-[1.25rem] border border-white/5 bg-black/20 p-6 text-center backdrop-blur-md transition-all duration-300 hover:bg-white/5'>
 											<div className='relative z-10 flex flex-col items-center'>
-												<span className='text-4xl font-extrabold tracking-tight md:text-5xl text-foreground/80'>
-													0 {/* TODO: Implement dynamic hours tracking */}
+												<span
+													className={`text-4xl font-extrabold tracking-tight md:text-5xl text-foreground/80
+														${
+															currentStudySession.isStudySessionActive &&
+															currentStudySession.subjectDetails._id ===
+																item.subject._id
+																? 'text-primary'
+																: 'text-foreground/80'
+														}
+															`}>
+													{formatMilliseconds(
+														currentStudySession.isStudySessionActive &&
+															currentStudySession.subjectDetails._id ===
+																item.subject._id
+															? liveTimestamp
+															: item.timeStudied,
+													)}
 												</span>
 												<span className='mt-2 text-xs font-medium uppercase tracking-wider text-muted-foreground opacity-90'>
-													Hours Studied Today
+													{currentStudySession.isStudySessionActive &&
+													currentStudySession.subjectDetails._id ===
+														item.subject._id
+														? 'Current Study Session'
+														: 'Hours Studied Today'}
 												</span>
 											</div>
 										</div>
 
 										{/* Study Button  */}
-										<Button size={'lg'}> <HomeIcon/>  Start Study Session</Button>
+										<Button
+											size={'lg'}
+											variant={
+												!currentStudySession.isStudySessionActive
+													? 'default'
+													: 'destructive'
+											}
+											onClick={() => {
+												studySessionToggle(
+													item._id,
+													item.subject._id,
+													item.subject.name,
+												);
+											}}
+											disabled={
+												currentStudySession.isStudySessionActive &&
+												currentStudySession.subjectDetails._id !=
+													item.subject._id
+											}
+											className='cursor-pointer'>
+											{' '}
+											{!currentStudySession.isStudySessionActive ? (
+												<>
+													{' '}
+													<IconTimeDuration10 /> &apos;Start Study Session&apos;
+												</>
+											) : (
+												<>
+													<IconTimeDurationOff /> &apos;End Study Session{' '}
+													{String(currentStudySession.isStudySessionActive)}{' '}
+													&apos;
+												</>
+											)}
+										</Button>
 									</CardContent>
 								</Card>
 							))}

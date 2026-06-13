@@ -17,6 +17,7 @@ import {
 	START_DATE,
 	homePageConfig,
 } from '@/config/frontend/homePage.config';
+import { STORAGE_KEYS } from '@/config/constants';
 
 export default function Home() {
 	// ! HYDRATION & STATE MANAGEMENT
@@ -28,6 +29,15 @@ export default function Home() {
 	const d = new Date();
 	const [currentTimeMs, setCurrentTimeMs] = useState<number>(Number(d));
 
+	const [currentStudySession, setCurrentStudySession] = useState({
+		isStudySessionActive: false,
+		subjectDetails: {
+			_id: '',
+			subjectName: 'No Study Session',
+		},
+		sessionStartTime: 0,
+	});
+
 	// ! SIDE EFFECTS
 	useEffect(() => {
 		setIsMounted(true);
@@ -37,6 +47,21 @@ export default function Home() {
 		const timerInterval = setInterval(() => {
 			setCurrentTimeMs(Date.now());
 		}, 1000);
+
+		const initialStateOfStudySession = {
+			isStudySessionActive: false,
+			subjectDetails: {
+				_id: '',
+				subjectName: 'No Study Session',
+			},
+			sessionStartTime: 0,
+		};
+		const StudySessionLocalStorage = JSON.parse(
+			localStorage.getItem(STORAGE_KEYS.STUDY_SESSION) ||
+				JSON.stringify(initialStateOfStudySession),
+		);
+
+		setCurrentStudySession(StudySessionLocalStorage);
 
 		return () => clearInterval(timerInterval);
 	}, []);
@@ -192,6 +217,70 @@ export default function Home() {
 								aria-label='Countdown Progress'
 							/>
 						</div>
+					</div>
+				</CardContent>
+			</Card>
+			<Card className='relative overflow-hidden border border-border/40 bg-background/60 backdrop-blur-xl shadow-2xl rounded-[2rem] transition-all duration-500 hover:shadow-primary/5'>
+				{/* ? Ambient Inner Glow */}
+				<div className='absolute -top-40 -right-40 -z-10 h-96 w-96 rounded-full bg-primary/10 blur-[100px]' />
+
+				<CardContent className='p-6 md:p-10'>
+					{/* ? HEADER SECTION */}
+					<div className='mb-10 flex flex-col items-start justify-between gap-4 sm:flex-row sm:items-center'>
+						<div className='space-y-1'>
+							<h2 className='flex items-center gap-3 text-2xl font-bold tracking-tight text-foreground'>
+								<div className='flex h-10 w-10 items-center justify-center rounded-xl bg-primary/10 text-primary'>
+									<Clock className='h-5 w-5' />
+								</div>
+								Current Study Session
+							</h2>
+							<p className='text-sm text-muted-foreground ml-13'>
+								Tracking progress towards your current goal.
+							</p>
+						</div>
+					</div>
+
+					{/* ? COUNTDOWN GRID */}
+					<div className='flex items-center justify-center'>
+						{/* * Reusable structural pattern mapped for readability */}
+						{[
+							{
+								label: 'Starts At:',
+								value: currentStudySession.subjectDetails.subjectName,
+								subtext: new Date(
+									currentStudySession.sessionStartTime,
+								).toLocaleString(),
+								animate: currentStudySession.isStudySessionActive,
+							},
+						].map((block, idx) => (
+							<div
+								key={`countdown-block-${idx}`}
+								className={cn(
+									'group relative isolate flex flex-col items-center justify-center overflow-hidden rounded-2xl border border-border/30 bg-background/40 p-6 text-center backdrop-blur-md transition-all duration-500',
+									'hover:-translate-y-1 hover:border-primary/30 hover:bg-accent/20 hover:shadow-lg hover:shadow-primary/10 w-full',
+								)}>
+								{/* * Micro-interaction gradient sweep on hover */}
+								<div className='absolute inset-0 -z-10 bg-linear-to-br from-primary/10 via-transparent to-transparent opacity-0 transition-opacity duration-500 group-hover:opacity-100' />
+
+								<div className='relative flex flex-col items-center'>
+									<span
+										className={cn(
+											'text-4xl font-extrabold tracking-tighter text-foreground md:text-5xl lg:text-6xl transition-transform duration-300 group-hover:scale-105',
+											block.animate && 'text-primary drop-shadow-sm capitalize',
+										)}>
+										{block.value}
+									</span>
+									<span className='mt-2 text-sm font-semibold tracking-wider text-muted-foreground uppercase'>
+										{block.label}
+									</span>
+									{block.subtext && (
+										<span className='mt-1 font-medium text-foreground/70'>
+											{block.subtext}
+										</span>
+									)}
+								</div>
+							</div>
+						))}
 					</div>
 				</CardContent>
 			</Card>

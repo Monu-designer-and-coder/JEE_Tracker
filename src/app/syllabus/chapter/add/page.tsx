@@ -1,9 +1,14 @@
 /* eslint-disable react-hooks/set-state-in-effect */
 'use client';
 
-import { Badge } from '@/components/ui/badge';
-import { Breadcrumb, BreadcrumbItem, BreadcrumbLink, BreadcrumbList, BreadcrumbPage, BreadcrumbSeparator } from '@/components/ui/breadcrumb';
-import { STORAGE_KEYS } from '@/config/constants';
+import {
+	Breadcrumb,
+	BreadcrumbItem,
+	BreadcrumbLink,
+	BreadcrumbList,
+	BreadcrumbPage,
+	BreadcrumbSeparator,
+} from '@/components/ui/breadcrumb';
 import Link from 'next/link';
 import { useEffect, useState } from 'react';
 
@@ -13,34 +18,10 @@ export default function SyllabusHomePage() {
 	const [isMounted, setIsMounted] = useState(false);
 	const [isLoading, setIsLoading] = useState<boolean>(true);
 
-	const [currentStudySession, setCurrentStudySession] = useState({
-		isStudySessionActive: false,
-		subjectDetails: {
-			_id: '',
-			subjectName: 'No Study Session',
-		},
-		sessionStartTime: 0,
-	});
-
 	// ! SIDE EFFECTS
 	useEffect(() => {
 		setIsMounted(true);
 		setIsLoading(false);
-
-		const initialStateOfStudySession = {
-			isStudySessionActive: false,
-			subjectDetails: {
-				_id: '',
-				subjectName: 'No Study Session',
-			},
-			sessionStartTime: 0,
-		};
-		const StudySessionLocalStorage = JSON.parse(
-			localStorage.getItem(STORAGE_KEYS.STUDY_SESSION) ||
-				JSON.stringify(initialStateOfStudySession),
-		);
-
-		setCurrentStudySession(StudySessionLocalStorage);
 	}, []);
 
 	// ! HYDRATION FALLBACK
@@ -67,8 +48,8 @@ export default function SyllabusHomePage() {
 						<div className='h-8 w-8 animate-spin rounded-full border-b-2 border-primary' />
 					</div>
 				) : (
-					<div className='w-full h-full'>
-						<header className='flex justify-between px-4 py-2 w-full'>
+					<section className='w-full h-full'>
+						<header className='flex justify-between w-full px-4 py-2'>
 							<Breadcrumb className='w-full'>
 								<BreadcrumbList>
 									<BreadcrumbItem>
@@ -78,23 +59,40 @@ export default function SyllabusHomePage() {
 									</BreadcrumbItem>
 									<BreadcrumbSeparator />
 									<BreadcrumbItem>
-										<BreadcrumbPage>Syllabus</BreadcrumbPage>
+										<BreadcrumbLink asChild>
+											<Link href={'/syllabus'}>Syllabus</Link>
+										</BreadcrumbLink>
+									</BreadcrumbItem>
+									<BreadcrumbSeparator />
+									<BreadcrumbLink asChild>
+										<Link href={'/syllabus/chapter'}>Chapter</Link>
+									</BreadcrumbLink>
+									<BreadcrumbSeparator />
+									<BreadcrumbItem>
+										<BreadcrumbPage>Add</BreadcrumbPage>
 									</BreadcrumbItem>
 								</BreadcrumbList>
 							</Breadcrumb>
-							<Badge
-								variant={
-									currentStudySession.isStudySessionActive
-										? 'default'
-										: 'destructive'
-								}
-								className={`text-lg px-7 py-4 my-5 mx-2 font-mono`}>
-								Current Study Session:
-								{''}
-								{currentStudySession.subjectDetails.subjectName}{' '}
-							</Badge>
 						</header>
-					</div>
+						<section className='flex flex-1'>
+							<div className='flex h-full w-full flex-1 flex-col gap-2 rounded-tl-2xl border border-neutral-200 bg-white p-2 md:p-10 dark:border-neutral-700 dark:bg-neutral-900'>
+								<div className='flex gap-2'>
+									{[...new Array(4)].map((i, idx) => (
+										<div
+											key={'first-array-demo-1' + idx}
+											className='h-20 w-full animate-pulse rounded-lg bg-gray-100 dark:bg-neutral-800'></div>
+									))}
+								</div>
+								<div className='flex flex-1 gap-2'>
+									{[...new Array(2)].map((i, idx) => (
+										<div
+											key={'second-array-demo-1' + idx}
+											className='h-full w-full animate-pulse rounded-lg bg-gray-100 dark:bg-neutral-800'></div>
+									))}
+								</div>
+							</div>
+						</section>
+					</section>
 				)}
 			</section>
 		</main>

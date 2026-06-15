@@ -2,7 +2,6 @@ import type { Metadata } from 'next';
 import {
 	Geist,
 	Geist_Mono,
-	Roboto,
 	Roboto_Slab,
 	Inter,
 } from 'next/font/google';

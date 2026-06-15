@@ -19,7 +19,6 @@ import { getSubjectStreakTodayResponse } from '@/types/res/subjectStreak.types';
 import { useAppDispatch, useAppSelector } from '@/hooks/actions';
 import { IconTimeDuration10, IconTimeDurationOff } from '@tabler/icons-react';
 import { endStudySession, startStudySession } from '@/reducers/streak.slice';
-import { cn } from '@/lib/utils';
 import { STORAGE_KEYS } from '@/config/constants';
 
 // * Standardized structural definitions describing expected paginated envelopes
@@ -32,7 +31,6 @@ interface PaginatedAPIResponseEnvelope<T> {
 		hasMore: boolean;
 	};
 }
-
 
 // * ==========================================================================
 // * Main Component: Tracker Dashboard
@@ -345,12 +343,6 @@ export default function Tracker() {
 
 			{/* * Content Section */}
 			<section className='relative z-10 mx-auto max-w-7xl h-[80vh] flex flex-col justify-center'>
-				<h1
-					className={`text-4xl ${currentStudySession.isStudySessionActive ? 'bg-primary' : 'bg-destructive/10 text-destructive '} rounded-full px-7 py-4 my-5 mx-2 font-mono`}>
-					Current Study Session:
-					{''}
-					{currentStudySession.subjectDetails.subjectName}{' '}
-				</h1>
 				{isLoading ? (
 					// * Loading State
 					<div className='flex h-64 items-center justify-center'>
@@ -359,6 +351,12 @@ export default function Tracker() {
 				) : (
 					// ! Added TooltipProvider here to ensure tooltips portal correctly and don't get clipped by overflow-hidden
 					<TooltipProvider delayDuration={200}>
+						<h1
+							className={`text-4xl ${currentStudySession.isStudySessionActive ? 'bg-primary' : 'bg-destructive/10 text-destructive '} rounded-full px-7 py-4 my-5 mx-2 font-mono`}>
+							Current Study Session:
+							{''}
+							{currentStudySession.subjectDetails.subjectName}{' '}
+						</h1>
 						<div className='grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3'>
 							{subjectStreaks.map((item) => (
 								<Card

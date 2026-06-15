@@ -1,7 +1,7 @@
 import dbConn from "@/lib/dbConn";
 import ChapterModel, { ChapterModelInterface } from "@/model/chapters.model";
 import SubjectModel from "@/model/subject.model";
-import { chapterValidationPUTSchema, chapterValidationSchema } from "@/schema/chapter.schema";
+import { chapterValidationPUTSchemaBackend,  chapterValidationSchemaBackend } from "@/schema/chapter.schema";
 import { getChapterResponse, getSubjectWiseChapterResponse } from "@/types/res/chapterResponse.types";
 import { NextResponse } from "next/server";
 
@@ -16,23 +16,29 @@ import { NextResponse } from "next/server";
 export async function POST(request: Request) {
     await dbConn();
 
+    
     const requestBody = await request.json();
-
+    
     // * Validate request body using Zod
     const validationResult =
-        chapterValidationSchema.safeParse(requestBody);
-    if (!validationResult.success) {
+        chapterValidationSchemaBackend.safeParse(requestBody);
+        if (!validationResult.success) {
         // ! If validation fails, return detailed error response
         return NextResponse.json(
-            { errors: validationResult.error.format() },
+            validationResult.error.message ,
             { status: 400 },
         );
     }
-
+    
+try{
     // * Insert chapter into MongoDB
-    const newChapter = await ChapterModel.create(requestBody);
-
+    const newChapter = await ChapterModel.create(validationResult.data);
     return NextResponse.json<ChapterModelInterface>(newChapter, { status: 201 });
+}
+catch (error){
+    const errorMessage = error instanceof Error ? error.message : 'An unexpected error occurred';
+    return NextResponse.json(errorMessage , { status: 400 });
+}
 }
 
 
@@ -160,7 +166,7 @@ export async function PUT(request: Request) {
 
     // * Validate request body using Zod
     const validationResult =
-        chapterValidationPUTSchema.safeParse(requestBody);
+        chapterValidationPUTSchemaBackend.safeParse(requestBody);
     if (!validationResult.success) {
         // ! If validation fails, return detailed error response
         return NextResponse.json(

@@ -9,6 +9,14 @@ import {
 	BreadcrumbPage,
 	BreadcrumbSeparator,
 } from '@/components/ui/breadcrumb';
+import {
+	DropdownMenu,
+	DropdownMenuContent,
+	DropdownMenuGroup,
+	DropdownMenuItem,
+	DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu';
+import { ChevronDownIcon, DotIcon } from 'lucide-react';
 import Link from 'next/link';
 import { useEffect, useState } from 'react';
 
@@ -17,7 +25,6 @@ export default function SyllabusHomePage() {
 	// * Use a single 'mounted' state to prevent React hydration mismatch errors on time-based UI
 	const [isMounted, setIsMounted] = useState(false);
 	const [isLoading, setIsLoading] = useState<boolean>(true);
-
 
 	// ! SIDE EFFECTS
 	useEffect(() => {
@@ -58,13 +65,39 @@ export default function SyllabusHomePage() {
 											<Link href={'/'}>Home</Link>
 										</BreadcrumbLink>
 									</BreadcrumbItem>
-									<BreadcrumbSeparator />
+									<BreadcrumbSeparator>
+										<DotIcon />
+									</BreadcrumbSeparator>
 									<BreadcrumbItem>
-										<BreadcrumbLink asChild>
-											<Link href={'/syllabus'}>Syllabus</Link>
-										</BreadcrumbLink>
+										<DropdownMenu>
+											<DropdownMenuTrigger asChild>
+												<button className='flex items-center gap-1'>
+													Syllabus
+													<ChevronDownIcon className='size-3.5' />
+												</button>
+											</DropdownMenuTrigger>
+											<DropdownMenuContent align='start'>
+												<DropdownMenuGroup>
+													<DropdownMenuItem>
+														<BreadcrumbLink className='w-full h-full' asChild>
+															<Link href={'/syllabus/'}>...</Link>
+														</BreadcrumbLink>
+													</DropdownMenuItem>
+													<DropdownMenuItem>
+														<BreadcrumbPage>Chapter</BreadcrumbPage>
+													</DropdownMenuItem>
+													<DropdownMenuItem>
+														<BreadcrumbLink className='w-full h-full' asChild>
+															<Link href={'#'}>Topics</Link>
+														</BreadcrumbLink>
+													</DropdownMenuItem>
+												</DropdownMenuGroup>
+											</DropdownMenuContent>
+										</DropdownMenu>
 									</BreadcrumbItem>
-									<BreadcrumbSeparator />
+									<BreadcrumbSeparator>
+										<DotIcon />
+									</BreadcrumbSeparator>
 									<BreadcrumbItem>
 										<BreadcrumbPage>Chapter</BreadcrumbPage>
 									</BreadcrumbItem>

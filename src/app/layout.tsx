@@ -1,22 +1,18 @@
 import type { Metadata } from 'next';
-import {
-	Geist,
-	Geist_Mono,
-	Roboto_Slab,
-	Inter,
-} from 'next/font/google';
+import { Geist, Geist_Mono, Roboto_Slab, Inter } from 'next/font/google';
 import './globals.css';
 import { cn } from '@/lib/utils';
 import { ThemeProvider } from '@/components/theme-provider';
 import Header from '@/components/Header';
 import StoreProvider from '@/store/StoreProvider';
+import { Slide, ToastContainer } from 'react-toastify';
 
 const robotoSlabHeading = Roboto_Slab({
 	subsets: ['latin'],
 	variable: '--font-heading',
 });
 
-const inter = Inter({ subsets: ['latin'], variable: '--font-sans' });
+const inter = Inter({subsets:['latin'],variable:'--font-sans'});
 
 const geistSans = Geist({
 	variable: '--font-geist-sans',
@@ -43,17 +39,16 @@ export default function RootLayout({
 			suppressHydrationWarning
 			lang='en'
 			className={cn(
-				'h-full',
-				'scroll-smooth',
-				'antialiased',
-				geistSans.variable,
-				geistMono.variable,
-				'font-sans',
-				robotoSlabHeading.variable,
-				'font-sans',
-				'font-sans',
-				inter.variable,
-			)}>
+        				'h-full',
+        				'scroll-smooth',
+        				'antialiased',
+        				geistSans.variable,
+        				geistMono.variable,
+        				'font-sans',
+        				robotoSlabHeading.variable,
+        				'font-sans',
+        				'font-sans',
+        			 "font-sans", inter.variable)}>
 			<body
 				className={`
 					min-h-screen
@@ -81,6 +76,19 @@ export default function RootLayout({
 							<main className='flex-1 h-[79%] overflow-hidden'>
 								{' '}
 								{children}
+								<ToastContainer
+									position='bottom-right'
+									autoClose={1500}
+									hideProgressBar={false}
+									newestOnTop={false}
+									closeOnClick={true}
+									rtl={false}
+									pauseOnFocusLoss
+									draggable
+									pauseOnHover={false}
+									theme='colored'
+									transition={Slide}
+								/>
 							</main>
 							{/* TODO: Add footer component if needed */}
 							{/* <Footer className="shrink-0" /> */}

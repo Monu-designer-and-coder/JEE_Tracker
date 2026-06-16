@@ -20,6 +20,10 @@ import { useAppDispatch, useAppSelector } from '@/hooks/actions';
 import { IconTimeDuration10, IconTimeDurationOff } from '@tabler/icons-react';
 import { endStudySession, startStudySession } from '@/reducers/streak.slice';
 import { STORAGE_KEYS } from '@/config/constants';
+import { cn } from '@/lib/utils';
+import { Label } from '@/components/ui/label';
+import { Input } from '@/components/ui/input';
+import { toast } from 'react-toastify';
 
 // * Standardized structural definitions describing expected paginated envelopes
 interface PaginatedAPIResponseEnvelope<T> {
@@ -30,6 +34,11 @@ interface PaginatedAPIResponseEnvelope<T> {
 		totalItems: number;
 		hasMore: boolean;
 	};
+}
+
+interface frontendGetSubjectStreakTodayResponse extends getSubjectStreakTodayResponse {
+	hours?: string;
+	minutes?: string;
 }
 
 // * ==========================================================================
@@ -50,7 +59,7 @@ export default function Tracker() {
 
 	// * State Management
 	const [subjectStreaks, setSubjectStreaks] = useState<
-		getSubjectStreakTodayResponse[]
+		frontendGetSubjectStreakTodayResponse[]
 	>([]);
 	const [isLoading, setIsLoading] = useState<boolean>(true);
 
@@ -123,9 +132,13 @@ export default function Tracker() {
 
 			// * Standardize duplicate values out by mapping entries to a unique tracking table map
 			const normalizedMap = new Map(
-				dynamicCompositeData.map((item) => [item._id, item]),
+				dynamicCompositeData.map((item) => [
+					item._id,
+					{ ...item, hours: '0', minutes: '0' },
+				]),
 			);
-			const consolidatedFinalArray = Array.from(normalizedMap.values());
+			const consolidatedFinalArray: frontendGetSubjectStreakTodayResponse[] =
+				Array.from(normalizedMap.values());
 
 			setSubjectStreaks(consolidatedFinalArray);
 
@@ -231,17 +244,8 @@ export default function Tracker() {
 			);
 		} else {
 			const currentTime = Date.now();
-			const currentStudySessionStartTime: number =
+			const currentStudySessionTime: number =
 				currentTime - currentStudySession.sessionStartTime;
-
-			// * Optimistically update the UI before the API responds for instant feedback
-			setSubjectStreaks((prev) =>
-				prev.map((item) =>
-					item._id === streakId
-						? { ...item, questionsDone: item.questionsDone + 1 }
-						: item,
-				),
-			);
 
 			try {
 				// * Execute the background API call
@@ -253,7 +257,7 @@ export default function Tracker() {
 						{
 							_id: streakId,
 							type: 'addTimeStudied',
-							timeStudied: currentStudySessionStartTime,
+							timeStudied: currentStudySessionTime,
 						},
 					),
 				);
@@ -279,6 +283,7 @@ export default function Tracker() {
 				}
 			} catch (error) {
 				// ! Rollback on failure
+				toast.error('Failed to update streak, rolling back...');
 				console.error('Failed to update streak, rolling back...', error);
 				fetchTodayStreaks();
 			}
@@ -297,6 +302,88 @@ export default function Tracker() {
 				}),
 			);
 		}
+	};
+
+	//* Handle Time adding Button
+	const handleAddTime = async (index: number) => {
+		const submittedDocument = subjectStreaks[index];
+		const submittedDocumentHours: number =
+			Number(submittedDocument?.hours) || 0;
+		const submittedDocumentMinutes: number =
+			Number(submittedDocument?.minutes) || 0;
+		const TotalMilliseconds: number =
+			submittedDocumentHours * 3600000 + submittedDocumentMinutes * 60000;
+		if (TotalMilliseconds <= 0) {
+			toast.error('Enter Some valid Values');
+		} else {
+			try {
+				// * Execute the background API call
+				const putResponse = await axios.request(
+					axiosConfig(
+						'subjectStreak',
+						'put',
+						{ 'Content-Type': 'application/json' },
+						{
+							_id: submittedDocument._id,
+							type: 'addTimeStudied',
+							timeStudied: TotalMilliseconds,
+						},
+					),
+				);
+
+				console.log(putResponse);
+				// * Optionally re-sync with server to ensure data consistency
+				const response: AxiosResponse<
+					PaginatedAPIResponseEnvelope<getSubjectStreakTodayResponse>
+				> = await axios.request(
+					axiosConfig(
+						`subjectStreak?type=today&subjectId=${submittedDocument.subject._id}`,
+						'get',
+					),
+				);
+
+				console.log(response);
+				const serverResponsePayload = response.data.data || response.data;
+				const updatedItem = Array.isArray(serverResponsePayload)
+					? serverResponsePayload[0]
+					: null;
+
+				if (updatedItem) {
+					setSubjectStreaks((prev) =>
+						prev.map((item) =>
+							item._id === updatedItem._id
+								? { ...item, ...updatedItem, hours: '0', minutes: '0' }
+								: item,
+						),
+					);
+				}
+			} catch (error) {
+				// ! Rollback on failure
+				toast.error('Failed to update streak, rolling back...');
+				console.error('Failed to update streak, rolling back...', error);
+				fetchTodayStreaks();
+			}
+		}
+	};
+
+	//* Shared onChange handler using row index and field name
+	const handleTimeChange = (
+		index: number,
+		field: 'hours' | 'minutes',
+		value: string,
+	) => {
+		setSubjectStreaks((prevSubjects) =>
+			prevSubjects.map((item, idx) => {
+				// Only modify the item at the matching index
+				if (idx === index) {
+					return {
+						...item,
+						[field]: value, // Dynamically updates hours or minutes
+					};
+				}
+				return item; // Leave other items unchanged
+			}),
+		);
 	};
 
 	// * ==========================================================================
@@ -358,10 +445,10 @@ export default function Tracker() {
 							{currentStudySession.subjectDetails.subjectName}{' '}
 						</h1>
 						<div className='grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3'>
-							{subjectStreaks.map((item) => (
-								<Card
+							{subjectStreaks.map((item, index) => (
+								<EnhancedCard
 									key={item._id}
-									size='sm'
+									sizeProp='sm'
 									// * Applied glassmorphism, depth, and consistent border radius
 									className='group/card relative overflow-hidden rounded-[1.5rem] border border-white/10 bg-white/5 shadow-2xl backdrop-blur-xl transition-all duration-500 hover:shadow-primary/5 dark:bg-black/40 h-full'>
 									{/* * Micro-interaction gradient overlay */}
@@ -440,6 +527,45 @@ export default function Tracker() {
 														? 'Current Study Session'
 														: 'Hours Studied Today'}
 												</span>
+												<EnhancedInputContainer>
+													<Label className='text-sm font-semibold text-primary'>
+														Time
+													</Label>
+													<div className='flex gap-2'>
+														<Input
+															type='number'
+															placeholder='Enter Hours'
+															className='glass-input'
+															value={item.hours}
+															onChange={(e) => {
+																handleTimeChange(
+																	index,
+																	'hours',
+																	e.target.value,
+																);
+															}}
+														/>
+														<Input
+															type='number'
+															placeholder='Enter Minutes'
+															className='glass-input'
+															value={item.minutes}
+															onChange={(e) => {
+																handleTimeChange(
+																	index,
+																	'minutes',
+																	e.target.value,
+																);
+															}}
+														/>
+													</div>
+													<Button
+														onClick={() => {
+															handleAddTime(index);
+														}}>
+														Add This Time
+													</Button>
+												</EnhancedInputContainer>
 											</div>
 										</div>
 
@@ -479,7 +605,7 @@ export default function Tracker() {
 											)}
 										</Button>
 									</CardContent>
-								</Card>
+								</EnhancedCard>
 							))}
 						</div>
 					</TooltipProvider>
@@ -488,6 +614,53 @@ export default function Tracker() {
 		</main>
 	);
 }
+
+// * Enhanced Input Container Component with Glass Morphism
+const EnhancedInputContainer = ({
+	children,
+	className,
+}: {
+	children: React.ReactNode;
+	className?: string;
+}) => {
+	return (
+		<div
+			className={cn(
+				'flex w-full flex-col space-y-3 group',
+				'transition-all duration-300',
+				className,
+			)}>
+			{children}
+		</div>
+	);
+};
+
+// * Enhanced Card Component with Modern Glass Effects
+const EnhancedCard = ({
+	children,
+	className,
+	sizeProp,
+}: {
+	children: React.ReactNode;
+	className?: string;
+	sizeProp?: 'default' | 'sm' | undefined;
+}) => {
+	return (
+		<Card
+			size={sizeProp}
+			className={cn(
+				'backdrop-blur-md bg-white/40 dark:bg-black/20',
+				'border border-white/30 dark:border-white/10',
+				'shadow-2xl shadow-primary/10 dark:shadow-primary/20',
+				'rounded-4xl overflow-hidden',
+				'transition-all duration hover:shadow-3xl hover:shadow-primary/20',
+				'hover:bg-white/50 dark:hover:bg-black/30',
+				className,
+			)}>
+			{children}
+		</Card>
+	);
+};
 
 // ! IMPROVEMENTS IMPLEMENTED:
 // * 1. Implemented a data stream synchronization loop (`fetchTodayStreaksIncremental`) providing backend pagination compatibility without changing the UI/UX.

@@ -528,43 +528,49 @@ export default function Tracker() {
 														: 'Hours Studied Today'}
 												</span>
 												<EnhancedInputContainer>
-													<Label className='text-sm font-semibold text-primary'>
-														Time
-													</Label>
-													<div className='flex gap-2'>
-														<Input
-															type='number'
-															placeholder='Enter Hours'
-															className='glass-input'
-															value={item.hours}
-															onChange={(e) => {
-																handleTimeChange(
-																	index,
-																	'hours',
-																	e.target.value,
-																);
+													<CardHeader>
+														<Label className='text-sm font-semibold text-primary'>
+															Add Time Hrs:Min:Sec
+														</Label>
+													</CardHeader>
+													<CardContent className='w-full h-full'>
+														<div className='flex gap-2'>
+															<Input
+																type='number'
+																placeholder='Enter Hours'
+																className='glass-input'
+																value={item.hours}
+																onChange={(e) => {
+																	handleTimeChange(
+																		index,
+																		'hours',
+																		e.target.value,
+																	);
+																}}
+															/>
+															<Input
+																type='number'
+																placeholder='Enter Minutes'
+																className='glass-input'
+																value={item.minutes}
+																onChange={(e) => {
+																	handleTimeChange(
+																		index,
+																		'minutes',
+																		e.target.value,
+																	);
+																}}
+															/>
+														</div>
+														<Button
+															onClick={() => {
+																handleAddTime(index);
 															}}
-														/>
-														<Input
-															type='number'
-															placeholder='Enter Minutes'
-															className='glass-input'
-															value={item.minutes}
-															onChange={(e) => {
-																handleTimeChange(
-																	index,
-																	'minutes',
-																	e.target.value,
-																);
-															}}
-														/>
-													</div>
-													<Button
-														onClick={() => {
-															handleAddTime(index);
-														}}>
-														Add This Time
-													</Button>
+																className='w-full my-1'
+															>
+															Add This Time
+														</Button>
+													</CardContent>
 												</EnhancedInputContainer>
 											</div>
 										</div>

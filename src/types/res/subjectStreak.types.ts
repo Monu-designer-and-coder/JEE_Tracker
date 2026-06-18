@@ -3,15 +3,15 @@ import { GetSubjectResponse } from "./GetResponse.types";
 export interface getSubjectStreakResponse {
     date: Date;
     subject: string;
-    questionDone: number;
+    questionsDone: number;
     timeStudied: number;
 }
 export interface getSubjectStreakByDateResponse {
-    _id: Date;
+    _id: Date | string;
     details: {
         _id: string;
         subject: GetSubjectResponse;
-        questionDone: number;
+        questionsDone: number;
         timeStudied: number;
         date: Date;
     }[]
@@ -21,7 +21,7 @@ export interface getSubjectStreakBySubjectResponse {
     details: {
         _id: string;
         subject: GetSubjectResponse;
-        questionDone: number;
+        questionsDone: number;
         timeStudied: number;
         date: Date;
     }[]

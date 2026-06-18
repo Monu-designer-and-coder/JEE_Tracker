@@ -24,6 +24,7 @@ import { cn } from '@/lib/utils';
 import { Label } from '@/components/ui/label';
 import { Input } from '@/components/ui/input';
 import { toast } from 'react-toastify';
+import Link from 'next/link';
 
 // * Standardized structural definitions describing expected paginated envelopes
 interface PaginatedAPIResponseEnvelope<T> {
@@ -566,8 +567,7 @@ export default function Tracker() {
 															onClick={() => {
 																handleAddTime(index);
 															}}
-																className='w-full my-1'
-															>
+															className='w-full my-1'>
 															Add This Time
 														</Button>
 													</CardContent>
@@ -616,6 +616,9 @@ export default function Tracker() {
 						</div>
 					</TooltipProvider>
 				)}
+				<Button className='w-full my-5' variant={'secondary'} asChild>
+					<Link href='/tracker/data'>Daily Data</Link>
+				</Button>
 			</section>
 		</main>
 	);

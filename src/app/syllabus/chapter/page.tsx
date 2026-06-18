@@ -207,7 +207,9 @@ export default function SyllabusHomePage() {
 															<TableHead className='capitalize text-xs'>
 																Chapter Name
 															</TableHead>
-															<TableHead className='capitalize text-xs'>done</TableHead>
+															<TableHead className='capitalize text-xs'>
+																done
+															</TableHead>
 															<TableHead className='capitalize text-xs'>
 																theory
 															</TableHead>
@@ -217,8 +219,12 @@ export default function SyllabusHomePage() {
 															<TableHead className='capitalize text-xs'>
 																mindMap
 															</TableHead>
-															<TableHead className='capitalize text-xs'>DPP1</TableHead>
-															<TableHead className='capitalize text-xs'>DPP2</TableHead>
+															<TableHead className='capitalize text-xs'>
+																DPP1
+															</TableHead>
+															<TableHead className='capitalize text-xs'>
+																DPP2
+															</TableHead>
 															<TableHead className='capitalize text-xs'>
 																Module
 															</TableHead>
@@ -228,7 +234,9 @@ export default function SyllabusHomePage() {
 															<TableHead className='capitalize text-xs'>
 																PYQ_Advanced
 															</TableHead>
-															<TableHead className='capitalize text-xs'>Book</TableHead>
+															<TableHead className='capitalize text-xs'>
+																Book
+															</TableHead>
 														</TableRow>
 													</TableHeader>
 													<TableBody>
@@ -240,61 +248,71 @@ export default function SyllabusHomePage() {
 																	{chapter.name}
 																</TableCell>
 																<TableCell
-																	className={cn( 
+																	className={cn(
+																		'border',
 																		chapter.done
 																			? 'bg-green-600'
 																			: 'bg-red-600',
 																	)}></TableCell>
 																<TableCell
-																	className={cn( 
+																	className={cn(
+																		'border',
 																		chapter.theory
 																			? 'bg-green-600'
 																			: 'bg-red-600',
 																	)}></TableCell>
 																<TableCell
-																	className={cn( 
+																	className={cn(
+																		'border',
 																		chapter.shortNotes
 																			? 'bg-green-600'
 																			: 'bg-red-600',
 																	)}></TableCell>
 																<TableCell
-																	className={cn( 
+																	className={cn(
+																		'border',
 																		chapter.mindMap
 																			? 'bg-green-600'
 																			: 'bg-red-600',
 																	)}></TableCell>
 																<TableCell
-																	className={cn( 
+																	className={cn(
+																		'border',
 																		chapter.DPP1
 																			? 'bg-green-600'
 																			: 'bg-red-600',
 																	)}></TableCell>
 																<TableCell
-																	className={cn( 
+																	className={cn(
+																		'border',
 																		chapter.DPP2
 																			? 'bg-green-600'
 																			: 'bg-red-600',
 																	)}></TableCell>
 																<TableCell
-																	className={cn( 
+																	className={cn(
+																		'border',
 																		chapter.Module
 																			? 'bg-green-600'
 																			: 'bg-red-600',
 																	)}></TableCell>
 																<TableCell
-																	className={cn( 
+																	className={cn(
+																		'border',
 																		chapter.PYQ_Mains
 																			? 'bg-green-600'
 																			: 'bg-red-600',
 																	)}></TableCell>
 																<TableCell
-																	className={cn( 
+																	className={cn(
+																		'border',
 																		chapter.PYQ_Advanced
 																			? 'bg-green-600'
 																			: 'bg-red-600',
 																	)}></TableCell>
 																<TableCell
-																	className={cn( 
+																	className={cn(
+																		'border',
 																		chapter.Book
 																			? 'bg-green-600'
 																			: 'bg-red-600',

@@ -1,6 +1,7 @@
 import { GetSubjectResponse } from "./GetResponse.types";
 
 export interface getChapterResponse {
+    _id: string;
     seqNumber: number;
     name: string;
     subject: getChapterResponse;
@@ -18,6 +19,7 @@ export interface getChapterResponse {
 
 export interface getSubjectWiseChapterResponse extends GetSubjectResponse {
     chapterList: {
+        _id: string;
         seqNumber: number;
         name: string;
         done: boolean;

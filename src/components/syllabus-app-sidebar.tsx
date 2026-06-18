@@ -11,7 +11,7 @@ export function SyllabusAppSidebar() {
 	const [open, setOpen] = useState(false);
 	return (
 		<Sidebar open={open} setOpen={setOpen}>
-			<SidebarBody className='w-full h-full p-4 flex flex-col justify-center items-start'>
+			<SidebarBody className='w-full h-full p-4 flex flex-col justify-center items-start '>
 				<SidebarLink
 					link={{
 						label: 'Syllabus',

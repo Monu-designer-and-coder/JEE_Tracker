@@ -4,7 +4,7 @@ export interface getChapterResponse {
     _id: string;
     seqNumber: number;
     name: string;
-    subject: getChapterResponse;
+    subject: GetSubjectResponse;
     done: boolean;
     theory: boolean;
     shortNotes: boolean;

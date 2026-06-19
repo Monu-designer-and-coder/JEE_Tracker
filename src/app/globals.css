@@ -131,17 +131,17 @@
 
 /* Glass Input Styling */
 .glass-input {
-	@apply bg-white/50 dark:bg-black/30 backdrop-blur-sm border border-white/30 dark:border-white/10 rounded-xl shadow-lg transition-all duration-300;
+	@apply bg-white/50 dark:bg-black/30 backdrop-blur-sm border border-white/30 dark:border-white/10 rounded-full shadow-lg transition-all duration-300;
 	@apply focus:bg-white/70 dark:focus:bg-black/50 focus:border-primary/50 focus:shadow-xl focus:shadow-chart-1/20;
 }
 
 .glass-select {
-	@apply bg-white/50 dark:bg-black/30 backdrop-blur-sm border border-white/30 dark:border-white/10 rounded-xl shadow-lg transition-all duration-300;
+	@apply bg-white/50 dark:bg-black/30 backdrop-blur-sm border border-white/30 dark:border-white/10 rounded-full shadow-lg transition-all duration-300;
 	@apply focus:bg-white/70 dark:focus:bg-black/50 focus:border-primary/50 focus:shadow-xl focus:shadow-chart-1/20;
 }
 
 .glass-content {
-	@apply bg-white/90 dark:bg-black/80 backdrop-blur-xl border border-white/30 dark:border-white/10 shadow-2xl rounded-xl;
+	@apply bg-white/90 dark:bg-black/80 backdrop-blur-xl border border-white/30 dark:border-white/10 shadow-2xl rounded-4xl;
 }
 
 /* Enhanced Checkbox Animation */

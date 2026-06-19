@@ -7,7 +7,20 @@ export const TopicValidationSchema = z.object({
         .min(3, 'The subject Length must be of al least 3 character!'),
 
     chapter: z.string().min(1, 'Chapter is mandatory'),
-    seqNumber: z.string().transform(Number),
+    seqNumber: z.string(),
+    done: z.boolean().optional(),
+    theory: z.boolean().optional(),
+    inTextQuestions: z.boolean().optional(),
+    inClassQuestions: z.boolean().optional(),
+});
+export const TopicBackendValidationSchema = z.object({
+    name: z
+        .string()
+        .trim()
+        .min(3, 'The subject Length must be of al least 3 character!'),
+
+    chapter: z.string().min(1, 'Chapter is mandatory'),
+    seqNumber: z.coerce.number().int().min(0, 'Sequence number cannot be negative.'),
     done: z.boolean().optional().default(false),
     theory: z.boolean().optional().default(false),
     inTextQuestions: z.boolean().optional().default(false),

@@ -139,7 +139,7 @@ export default function SyllabusHomePage() {
 													</DropdownMenuItem>
 													<DropdownMenuItem>
 														<BreadcrumbLink className='w-full h-full' asChild>
-															<Link href={'#'}>Topics</Link>
+															<Link href={'/syllabus/topics'}>Topics</Link>
 														</BreadcrumbLink>
 													</DropdownMenuItem>
 												</DropdownMenuGroup>

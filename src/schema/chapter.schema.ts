@@ -25,7 +25,7 @@ export const chapterValidationPUTSchema = z.object({
             .string()
             .trim()
             .min(3, 'The subject Length must be of al least 3 character!').optional(),
-        subject: z.string().min(1, 'Standard is mandatory').optional(),
+        subject: z.string().min(1, 'Subject is mandatory').optional(),
         seqNumber: z.string().optional(),
         done: z.boolean().optional(),
         theory: z.boolean().optional(),

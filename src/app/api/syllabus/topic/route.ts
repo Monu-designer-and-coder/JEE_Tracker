@@ -1,8 +1,10 @@
 
 import { NextResponse } from 'next/server';
 import dbConn from '@/lib/dbConn';
-import { TopicValidationPUTSchema, TopicValidationSchema } from '@/schema/topic.schema';
+import { TopicValidationPUTSchema, TopicBackendValidationSchema } from '@/schema/topic.schema';
 import TopicModel, { TopicModelInterface } from '@/model/topics.model';
+import ChapterModel from '@/model/chapters.model';
+import { getOrganizedTopicResponse } from '@/types/res/topicsOrganized.types';
 
 /**
  * ! Create a new topic
@@ -15,7 +17,7 @@ export async function POST(request: Request) {
     const requestBody = await request.json();
 
     // * Validate using Zod
-    const validationResult = TopicValidationSchema.safeParse(requestBody);
+    const validationResult = TopicBackendValidationSchema.safeParse(requestBody);
     if (!validationResult.success) {
         // ! Return formatted validation errors
         return NextResponse.json(
@@ -46,9 +48,86 @@ export async function GET(request: Request) {
 
     // * CASE 1: Get all topics
     if (!topicId) {
-        const topicsList: TopicModelInterface[] = await TopicModel.find().sort({
-            seqNumber: 1,
-        });
+        const topicsList: getOrganizedTopicResponse[] = await ChapterModel.aggregate([
+            {
+                $lookup: {
+                    from: "subjects",
+                    localField: "subject",
+                    foreignField: "_id",
+                    as: "subjectDetails",
+                    pipeline: [
+                        {
+                            $project: {
+                                _id: 1,
+                                name: 1
+                            }
+                        }
+                    ]
+                }
+            },
+            {
+                $addFields: {
+                    subjectDetails: {
+                        $first: "$subjectDetails"
+                    }
+                }
+            },
+            { $sort: { subject: 1, seqNumber: 1 } },
+            {
+                $lookup: {
+                    from: "topics",
+                    localField: "_id",
+                    foreignField: "chapter",
+                    as: "topicsList",
+                    pipeline: [
+                        {
+                            $project: {
+                                _id: 1,
+                                name: 1,
+                                seqNumber: 1,
+                                done: 1,
+                                theory: 1,
+                                inTextQuestions: 1,
+                                inClassQuestions: 1
+                            }
+                        },
+                        { $sort: { chapter: 1, seqNumber: 1 } }
+                    ]
+                }
+            },
+            {
+                $group: {
+                    _id: "$subject",
+                    name: { $first: "$subjectDetails.name" },
+                    chapterList: {
+                        $push: {
+                            _id: "$_id",
+                            seqNumber: "$seqNumber",
+                            name: "$name",
+                            // done: "$done",
+                            // theory: "$theory",
+                            // shortNotes: "$shortNotes",
+                            // mindMap: "$mindMap",
+                            // DPP1: "$DPP1",
+                            // DPP2: "$DPP2",
+                            // Module: "$Module",
+                            // PYQ_Mains: "$PYQ_Mains",
+                            // PYQ_Advanced: "$PYQ_Advanced",
+                            // Book: "$Book",
+                            // subjectDetails: "$subjectDetails",
+                            topicsList: "$topicsList"
+                        }
+                    }
+                }
+            },
+            {
+                $project: {
+                    _id: 1,
+                    name: 1,
+                    chapterList: 1
+                }
+            }
+        ])
         return NextResponse.json(topicsList);
     }
 

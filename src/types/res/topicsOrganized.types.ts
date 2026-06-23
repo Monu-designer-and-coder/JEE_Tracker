@@ -10,11 +10,13 @@ export interface getTopicResponse {
     inClassQuestions: boolean;
 }
 
+export interface getOrganizedChapterResponse {
+    _id: string;
+    seqNumber: number;
+    name: string;
+    topicsList: getTopicResponse[];
+}
+
 export interface getOrganizedTopicResponse extends GetSubjectResponse {
-    chapterList: {
-        _id: string;
-        seqNumber: number;
-        name: string;
-        topicsList: getTopicResponse[];
-    }[];
+    chapterList: getOrganizedChapterResponse[];
 }

@@ -35,10 +35,40 @@ export const TopicValidationPUTSchema = z.object({
             .trim()
             .min(3, 'The subject Length must be of al least 3 character!').optional(),
         chapter: z.string().min(1, 'chapter is mandatory').optional(),
-        seqNumber: z.string().transform(Number).optional(),
-        done: z.boolean().optional().default(false),
-        theory: z.boolean().optional().default(false),
-        inTextQuestions: z.boolean().optional().default(false),
-        inClassQuestions: z.boolean().optional().default(false),
+        seqNumber: z.string().optional(),
+        done: z.boolean().optional(),
+        theory: z.boolean().optional(),
+        inTextQuestions: z.boolean().optional(),
+        inClassQuestions: z.boolean().optional(),
+    })
+});
+
+// * Reusable check for a valid MongoDB ObjectId string (24 hex characters).
+// * Kept dependency-light (no `mongoose` import) since this file may run in
+// * contexts where pulling in the full driver isn't desirable.
+const objectIdSchema = z.string().regex(/^[a-f\d]{24}$/i, 'Must be a valid Mongo ObjectId.');
+
+/**
+ * ! PUT /api/topics request body schema
+ * @desc Validates a partial chapter update — `_id` identifies the target
+ * document, and `data` carries only the fields the client wants to change.
+ */
+
+export const TopicValidationPUTSchemaBackend = z.object({
+    _id: z.string(),
+    data: z.object({
+        name: z
+            .string()
+            .trim()
+            .min(3, 'Chapter name must be at least 3 characters long.')
+            .optional(),
+        // * Foreign-key reference to a Subject document — validated as a real ObjectId
+        chapter: objectIdSchema.optional(),
+        // * Accepts either a numeric or numeric-string input and coerces to a number
+        seqNumber: z.coerce.number().int().min(0, 'Sequence number cannot be negative.').optional(),
+        done: z.boolean().optional(),
+        theory: z.boolean().optional(),
+        inTextQuestions: z.boolean().optional(),
+        inClassQuestions: z.boolean().optional(),
     })
 });

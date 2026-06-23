@@ -31,16 +31,6 @@ import {
 	DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
 import { Item, ItemDescription, ItemMedia, ItemTitle } from '@/components/ui/item';
-import { Separator } from '@/components/ui/separator';
-import {
-	Table,
-	TableBody,
-	TableCaption,
-	TableCell,
-	TableHead,
-	TableHeader,
-	TableRow,
-} from '@/components/ui/table';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { axiosConfig } from '@/config/axios.config';
 import { cn } from '@/lib/utils';
@@ -222,13 +212,13 @@ export default function SyllabusHomePage() {
 																		</ItemMedia>
 																		<ItemTitle>{topic.name}</ItemTitle>
 																		<ItemDescription className='text-blue-600 dark:text-sky-500'>
-																			<span className={cn((topic.inTextQuestions? "text-green-600": "text-red-600"), "underline")}>Done</span>
+																			<span className={cn((topic.done? "text-green-600": "text-red-600"), "underline")}>Done</span>
 																			{' | '}
-																			<span className={cn((topic.inTextQuestions? "text-green-600": "text-red-600"), "underline")}>Theory</span>
+																			<span className={cn((topic.theory? "text-green-600": "text-red-600"), "underline")}>Theory</span>
 																			{' | '}
 																			<span className={cn((topic.inTextQuestions? "text-green-600": "text-red-600"), "underline")}>In Text Question</span>
 																			{' | '}
-																			<span className={cn((topic.inTextQuestions? "text-green-600": "text-red-600"), "underline")}>In Class Question</span>
+																			<span className={cn((topic.inClassQuestions? "text-green-600": "text-red-600"), "underline")}>In Class Question</span>
 																			{' | '}
 																		</ItemDescription>
 																	</Item>

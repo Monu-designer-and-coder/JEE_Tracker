@@ -65,7 +65,7 @@ export function SyllabusAppSidebar() {
 				/>
 				<SidebarLink
 					link={{
-						label: 'Add Chapters',
+						label: 'Add  Topic',
 						href: '/syllabus/topics/add',
 						icon: (
 							<FcPlus className='h-5 w-5 shrink-0 text-neutral-700 dark:text-neutral-200' />
@@ -73,16 +73,16 @@ export function SyllabusAppSidebar() {
 					}}
 					className='mx-1.5'
 				/>
-				{/* <SidebarLink
+				<SidebarLink
 					link={{
-						label: 'Update Chapter',
+						label: 'Update Topic',
 						href: '/syllabus/topics/edit',
 						icon: (
 							<FcEditImage className='h-5 w-5 shrink-0 text-neutral-700 dark:text-neutral-200' />
 						),
 					}}
 					className='mx-1.5'
-				/> */}
+				/>
 			</SidebarBody>
 		</Sidebar>
 	);

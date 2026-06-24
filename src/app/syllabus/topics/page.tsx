@@ -7,6 +7,7 @@ import {
 	AccordionItem,
 	AccordionTrigger,
 } from '@/components/ui/accordion';
+import { Badge } from '@/components/ui/badge';
 import {
 	Breadcrumb,
 	BreadcrumbItem,
@@ -30,7 +31,12 @@ import {
 	DropdownMenuItem,
 	DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
-import { Item, ItemDescription, ItemMedia, ItemTitle } from '@/components/ui/item';
+import {
+	Item,
+	ItemDescription,
+	ItemMedia,
+	ItemTitle,
+} from '@/components/ui/item';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { axiosConfig } from '@/config/axios.config';
 import { cn } from '@/lib/utils';
@@ -199,26 +205,73 @@ export default function SyllabusHomePage() {
 															value={chapter._id}>
 															<AccordionTrigger>
 																{chapter.seqNumber}. {chapter.name}
+																<Badge
+																	variant={
+																		chapter.topicsList.length === 0
+																			? 'ghost'
+																			: chapter.topicsList.filter(
+																						(topic) => topic.done,
+																				  ).length === chapter.topicsList.length
+																				? 'default'
+																				: 'destructive'
+																	}>
+																	{
+																		chapter.topicsList.filter(
+																			(topic) => topic.done,
+																		).length
+																	}
+																	/{chapter.topicsList.length}
+																</Badge>
 															</AccordionTrigger>
-															<AccordionContent className='grid grid-cols-2 gap-3 p-2'>
+															<AccordionContent className='grid grid-cols-2 gap-3 p-2 grid-flow-row my-4'>
 																{chapter.topicsList.map((topic) => (
 																	<Item
 																		key={topic._id}
 																		variant={'outline'}
 																		size={'xs'}
 																		className='h-fit'>
-																		<ItemMedia>
-																			{topic.seqNumber}
-																		</ItemMedia>
+																		<ItemMedia>{topic.seqNumber}</ItemMedia>
 																		<ItemTitle>{topic.name}</ItemTitle>
 																		<ItemDescription className='text-blue-600 dark:text-sky-500'>
-																			<span className={cn((topic.done? "text-green-600": "text-red-600"), "underline")}>Done</span>
+																			<span
+																				className={cn(
+																					topic.done
+																						? 'text-green-600'
+																						: 'text-red-600',
+																					'underline',
+																				)}>
+																				Done
+																			</span>
 																			{' | '}
-																			<span className={cn((topic.theory? "text-green-600": "text-red-600"), "underline")}>Theory</span>
+																			<span
+																				className={cn(
+																					topic.theory
+																						? 'text-green-600'
+																						: 'text-red-600',
+																					'underline',
+																				)}>
+																				Theory
+																			</span>
 																			{' | '}
-																			<span className={cn((topic.inTextQuestions? "text-green-600": "text-red-600"), "underline")}>In Text Question</span>
+																			<span
+																				className={cn(
+																					topic.inTextQuestions
+																						? 'text-green-600'
+																						: 'text-red-600',
+																					'underline',
+																				)}>
+																				In Text Question
+																			</span>
 																			{' | '}
-																			<span className={cn((topic.inClassQuestions? "text-green-600": "text-red-600"), "underline")}>In Class Question</span>
+																			<span
+																				className={cn(
+																					topic.inClassQuestions
+																						? 'text-green-600'
+																						: 'text-red-600',
+																					'underline',
+																				)}>
+																				In Class Question
+																			</span>
 																			{' | '}
 																		</ItemDescription>
 																	</Item>

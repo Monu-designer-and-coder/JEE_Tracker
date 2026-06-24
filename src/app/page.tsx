@@ -6,7 +6,7 @@ import { useState, useEffect, useMemo } from 'react';
 import { Clock, CalendarDays, Timer } from 'lucide-react';
 
 // * 2. Local UI Components
-import { Card, CardContent } from '@/components/ui/card';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Progress } from '@/components/ui/progress';
 import { Badge } from '@/components/ui/badge';
 import { cn } from '@/lib/utils';
@@ -18,6 +18,11 @@ import {
 	homePageConfig,
 } from '@/config/frontend/homePage.config';
 import { STORAGE_KEYS } from '@/config/constants';
+import { getPendingChapter } from '@/types/res/SystemResponse.types';
+import axios, { AxiosResponse } from 'axios';
+import { axiosConfig } from '@/config/axios.config';
+import { Button } from '@/components/ui/button';
+import Link from 'next/link';
 
 export default function Home() {
 	// ! HYDRATION & STATE MANAGEMENT
@@ -37,6 +42,24 @@ export default function Home() {
 		},
 		sessionStartTime: 0,
 	});
+
+	const [todaysProgressData, setTodaysProgressData] = useState<{
+		totalQuestionsDone: number;
+		totalTimeStudiedMs: number;
+	}>({
+		totalQuestionsDone: 0,
+		totalTimeStudiedMs: 0,
+	});
+
+	const [InProgressChaptersList, setInProgressChaptersList] = useState<
+		getPendingChapter[]
+	>([
+		{
+			_id: '_id',
+			seqNumber: 0,
+			name: 'loading',
+		},
+	]);
 
 	// ! SIDE EFFECTS
 	useEffect(() => {
@@ -60,11 +83,35 @@ export default function Home() {
 			localStorage.getItem(STORAGE_KEYS.STUDY_SESSION) ||
 				JSON.stringify(initialStateOfStudySession),
 		);
+		setTodaysProgressData(
+			JSON.parse(
+				localStorage.getItem(STORAGE_KEYS.TODAYS_PROGRESS) ||
+					JSON.stringify({ totalQuestionsDone: 0, totalTimeStudiedMs: 0 }),
+			),
+		);
 
 		setCurrentStudySession(StudySessionLocalStorage);
 
+		axios
+			.request(axiosConfig('system', 'get'))
+			.then((response: AxiosResponse<getPendingChapter[]>) => {
+				setInProgressChaptersList(response.data);
+			});
+
 		return () => clearInterval(timerInterval);
 	}, []);
+
+	function formatMilliseconds(ms: number): string {
+		const totalSeconds = Math.floor(ms / 1000);
+		const seconds = totalSeconds % 60;
+		const totalMinutes = Math.floor(totalSeconds / 60);
+		const minutes = totalMinutes % 60;
+		const hours = Math.floor(totalMinutes / 60);
+
+		const pad = (num: number) => String(num).padStart(2, '0');
+
+		return `${pad(hours)}.${pad(minutes)}.${pad(seconds)}`;
+	}
 
 	// ! DERIVED STATE CALCULATIONS (Memoized for performance)
 	const {
@@ -116,9 +163,9 @@ export default function Home() {
 	return (
 		// ! MAIN CONTAINER
 		// * Utilizes responsive max-width and center alignment for larger screens
-		<div className='mx-auto w-full max-w-5xl px-4 py-8 animate-in fade-in slide-in-from-bottom-4 duration-700 ease-in-out'>
+		<div className='mx-auto w-full px-4 py-8 animate-in fade-in slide-in-from-bottom-4 duration-700 ease-in-out gap-4 grid grid-cols-6 grid-flow-row'>
 			{/* ! GLASSMORPHIC CARD WRAPPER */}
-			<Card className='relative overflow-hidden border border-border/40 bg-background/60 backdrop-blur-xl shadow-2xl rounded-[2rem] transition-all duration-500 hover:shadow-primary/5 my-2'>
+			<EnhancedCard className='relative overflow-hidden border border-border/40 bg-background/60 backdrop-blur-xl shadow-2xl rounded-[2rem] transition-all duration-500 hover:shadow-primary/5 my-2 col-span-4'>
 				{/* ? Ambient Inner Glow */}
 				<div className='absolute -top-40 -right-40 -z-10 h-96 w-96 rounded-full bg-primary/10 blur-[100px]' />
 
@@ -219,8 +266,8 @@ export default function Home() {
 						</div>
 					</div>
 				</CardContent>
-			</Card>
-			<Card className='relative overflow-hidden border border-border/40 bg-background/60 backdrop-blur-xl shadow-2xl rounded-[2rem] transition-all duration-500 hover:shadow-primary/5 my-1'>
+			</EnhancedCard>
+			<EnhancedCard className='relative overflow-hidden border border-border/40 bg-background/60 backdrop-blur-xl shadow-2xl rounded-[2rem] transition-all duration-500 hover:shadow-primary/5 my-1 col-span-4'>
 				{/* ? Ambient Inner Glow */}
 				<div className='absolute -top-40 -right-40 -z-10 h-96 w-96 rounded-full bg-primary/10 blur-[100px]' />
 
@@ -232,7 +279,11 @@ export default function Home() {
 								<div className='flex h-10 w-10 items-center justify-center rounded-xl bg-primary/10 text-primary'>
 									<Clock className='h-5 w-5' />
 								</div>
-								Current Study Session
+								<Button variant={'ghost'} className='text-base' asChild>
+									<Link href={'/tracker'} className='text-base'>
+										Current Study Session
+									</Link>
+								</Button>
 							</h2>
 							<p className='text-sm text-muted-foreground ml-13'>
 								Tracking progress towards your current goal.
@@ -240,16 +291,15 @@ export default function Home() {
 						</div>
 					</div>
 
-					{/* ? COUNTDOWN GRID */}
-					<div className='flex items-center justify-center'>
+					<div className='flex items-center justify-center my-4'>
 						{/* * Reusable structural pattern mapped for readability */}
 						{[
 							{
 								label: 'Starts At:',
 								value: currentStudySession.subjectDetails.subjectName,
-								subtext: new Date(
-									currentStudySession.sessionStartTime,
-								).toLocaleString(),
+								subtext: currentStudySession.isStudySessionActive ? (new Date(
+									currentStudySession.sessionStartTime)
+								).toLocaleString(): (new Date().toLocaleString()),
 								animate: currentStudySession.isStudySessionActive,
 							},
 						].map((block, idx) => (
@@ -282,11 +332,136 @@ export default function Home() {
 							</div>
 						))}
 					</div>
+					<div className='flex items-center justify-center my-4'>
+						{/* * Reusable structural pattern mapped for readability */}
+						{[
+							{
+								label: 'Total Questions Done',
+								value: todaysProgressData.totalQuestionsDone,
+								subtext: '',
+								animate: currentStudySession.isStudySessionActive,
+							},
+							{
+								label: 'Total Time Studied',
+								value: formatMilliseconds(
+									todaysProgressData.totalTimeStudiedMs,
+								),
+								subtext: '',
+								animate: true,
+							},
+						].map((block, idx) => (
+							<div
+								key={`current-study-Session-${idx}`}
+								className={cn(
+									'group relative isolate flex flex-col items-center justify-center overflow-hidden rounded-4xl border border-border/30 bg-background/40 p-6 text-center backdrop-blur-md transition-all duration-500',
+									'hover:-translate-y-1 hover:border-primary/30 hover:bg-accent/20 hover:shadow-lg hover:shadow-primary/10 w-full',
+								)}>
+								{/* * Micro-interaction gradient sweep on hover */}
+								<div className='absolute inset-0 -z-10 bg-linear-to-br from-primary/10 via-transparent to-transparent opacity-0 transition-opacity duration-500 group-hover:opacity-100' />
+
+								<div className='relative flex flex-col items-center'>
+									<span
+										className={cn(
+											'text-4xl font-extrabold tracking-tighter text-foreground md:text-5xl lg:text-6xl transition-transform duration-300 group-hover:scale-105',
+											block.animate && 'text-primary drop-shadow-sm capitalize',
+										)}>
+										{block.value}
+									</span>
+									<span className='mt-2 text-sm font-semibold tracking-wider text-muted-foreground uppercase'>
+										{block.label}
+									</span>
+									{block.subtext && (
+										<span className='mt-1 font-medium text-foreground/70'>
+											{block.subtext}
+										</span>
+									)}
+								</div>
+							</div>
+						))}
+					</div>
 				</CardContent>
-			</Card>
+			</EnhancedCard>
+			<EnhancedCard className='relative overflow-hidden border border-border/40 bg-background/60 backdrop-blur-xl shadow-2xl rounded-[2rem] transition-all duration-500 hover:shadow-primary/5 my-1 col-span-2 row-span-2 col-start-5 row-start-1'>
+				{/* ? Ambient Inner Glow */}
+				<div className='absolute -top-40 -right-40 -z-10 h-96 w-96 rounded-full bg-primary/10 blur-[100px]' />
+				<CardHeader>
+					<div className='mb-10 flex flex-col items-start justify-between gap-4 sm:flex-row sm:items-center'>
+						<div className='space-y-1'>
+							<h2 className='flex items-center gap-3 text-2xl font-bold tracking-tight text-foreground'>
+								<div className='flex h-10 w-10 items-center justify-center rounded-xl bg-primary/10 text-primary'>
+									<Clock className='h-5 w-5' />
+								</div>
+								<Button variant={'ghost'} className='text-base' asChild>
+									<Link href={'/system'} className='text-base'>
+										Current Chapters To Study
+									</Link>
+								</Button>
+							</h2>
+							<p className='text-sm text-muted-foreground ml-13'>
+								Tracking progress towards your current goal.
+							</p>
+						</div>
+					</div>
+				</CardHeader>
+				<CardContent className='flex flex-col gap-4 item-center justify-center'>
+					{InProgressChaptersList.map((chapter, index) => (
+						<EnhancedCard key={chapter._id}>
+							<CardHeader>
+								<CardTitle
+									className={cn(
+										'text-2xl font-bold bg-linear-to-r from-chart-1 to-primary bg-clip-text text-transparent capitalize',
+										'scroll-m-20 text-center text-4xl font-extrabold tracking-tight text-balance',
+										'capitalize text-base/8',
+									)}>
+									{index + 1}. {chapter.name}
+								</CardTitle>
+							</CardHeader>
+							<CardContent>
+								<div className='w-full'>
+									<Badge
+										variant={
+											chapter.totalTopics === 0
+												? 'ghost'
+												: chapter.totalTopicsCompleted === chapter.totalTopics
+													? 'default'
+													: 'destructive'
+										}
+										className='text-base/9 mx-3 w-full'>
+										{chapter.totalTopicsCompleted}/{chapter.totalTopics}
+									</Badge>
+								</div>
+							</CardContent>
+						</EnhancedCard>
+					))}
+				</CardContent>
+			</EnhancedCard>
 		</div>
 	);
 }
+
+// * Enhanced Card Component with Modern Glass Effects
+const EnhancedCard = ({
+	children,
+	className,
+}: {
+	children: React.ReactNode;
+	className?: string;
+}) => {
+	return (
+		<Card
+			className={cn(
+				'backdrop-blur-md bg-white/40 dark:bg-black/20',
+				'border border-white/30 dark:border-white/10',
+				'shadow-2xl shadow-primary/10 dark:shadow-primary/20',
+				'rounded-2xl overflow-hidden',
+				'transition-all duration-500 hover:shadow-3xl hover:shadow-primary/20',
+				'hover:bg-white/50 dark:hover:bg-black/30',
+				className,
+			)}>
+			{children}
+		</Card>
+	);
+};
 
 // ! UI/UX IMPROVEMENTS IMPLEMENTED:
 // * 1. Modern minimalistic backgrounds: Added ambient radial gradients (`bg-primary/10 blur-[100px]`) within the card.

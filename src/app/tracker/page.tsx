@@ -102,6 +102,25 @@ export default function Tracker() {
 		return () => clearInterval(interval); // cleans up when session ends or component unmounts
 	}, [currentStudySession.isStudySessionActive]);
 
+	useEffect(() => {
+		const totals = subjectStreaks.reduce(
+			(acc, current) => {
+				acc.totalQuestionsDone += current.questionsDone;
+				acc.totalTimeStudiedMs += current.timeStudied;
+				return acc;
+			},
+			{ totalQuestionsDone: 0, totalTimeStudiedMs: 0 },
+		);
+
+		localStorage.setItem(
+			STORAGE_KEYS.TODAYS_PROGRESS,
+			JSON.stringify({
+				totalQuestionsDone: totals.totalQuestionsDone,
+				totalTimeStudiedMs: totals.totalTimeStudiedMs,
+			}),
+		);
+	}, [subjectStreaks]);
+
 	// * ==========================================================================
 	// * API Methods
 	// * ==========================================================================
@@ -604,9 +623,7 @@ export default function Tracker() {
 												</>
 											) : (
 												<>
-													<IconTimeDurationOff /> &apos;End Study Session{' '}
-													{String(currentStudySession.isStudySessionActive)}{' '}
-													&apos;
+													<IconTimeDurationOff /> &apos;End Study Session &apos;
 												</>
 											)}
 										</Button>

@@ -5,6 +5,15 @@ import mongoose, { Schema, Document, Types } from 'mongoose';
  * ! Chapter Model Interface
  * Represents a curriculum chapter linked to a subject.
  */
+
+export enum currentChapterStatus {
+    Pending = 'pending', //? first stage
+    UpNext = 'upNext', //? second stage
+    InProgress = 'inProgress', //? third stage
+    UnFinished = 'unFinished', //? fourth stage
+    Done = 'done', //? fifth stage
+}
+
 export interface ChapterModelInterface extends Document {
     name: string;
     subject: Types.ObjectId;
@@ -19,7 +28,9 @@ export interface ChapterModelInterface extends Document {
     PYQ_Mains: boolean;
     PYQ_Advanced: boolean;
     Book: boolean;
+    currentChapterStatus: currentChapterStatus;
 }
+
 
 // * SHARED CONSTANTS: Defined once and reused by both the document-level and
 // * query-level validation hooks so the "done" business rule can never drift
@@ -73,6 +84,11 @@ const ChapterSchema = new Schema<ChapterModelInterface>(
         PYQ_Mains: { type: Boolean, default: false },
         PYQ_Advanced: { type: Boolean, default: false },
         Book: { type: Boolean, default: false },
+        currentChapterStatus: {
+            type: String,
+            enum: Object.values(currentChapterStatus),
+            default: currentChapterStatus.Pending
+        }
     },
     { timestamps: true },
 );

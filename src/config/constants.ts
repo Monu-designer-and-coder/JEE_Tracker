@@ -9,6 +9,7 @@
  */
 export const STORAGE_KEYS = {
 	STUDY_SESSION: 'studySession',
+    TODAYS_PROGRESS: 'todaysProgress'
 } as const;
 
 /**

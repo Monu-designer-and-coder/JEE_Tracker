@@ -137,7 +137,8 @@ export async function GET() {
                         Book: "$Book",
                         totalTopics: "$totalTopics",
                         subjectDetails: "$subjectDetails",
-                        topicsList: "$topicsList"
+                        topicsList: "$topicsList",
+                        currentChapterStatus: "$currentChapterStatus"
                     }
                 }
             }
@@ -188,7 +189,6 @@ export async function GET() {
         return finalItem;
 
     })
-    console.log(ReturnData)
 
     return NextResponse.json(ReturnData);
 

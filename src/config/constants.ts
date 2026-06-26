@@ -21,9 +21,11 @@ export const CHAPTER_COMPLETION_SEQUENCE = [
     'shortNotes',
     'PYQ_Mains',
     'PYQ_Advanced',
+    //?-------------------------------
     'DPP1',
     'mindMap',
     'Module',
+    //?-------------------------------
     'DPP2',
     'Book',
 ] as const;

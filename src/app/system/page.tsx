@@ -13,6 +13,7 @@ import {
 } from '@/components/ui/card';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Field, FieldDescription, FieldLabel } from '@/components/ui/field';
+import { Item } from '@/components/ui/item';
 import {
 	Select,
 	SelectContent,
@@ -23,10 +24,19 @@ import {
 	SelectTrigger,
 	SelectValue,
 } from '@/components/ui/select';
+import {
+	Sheet,
+	SheetContent,
+	SheetDescription,
+	SheetHeader,
+	SheetTitle,
+	SheetTrigger,
+} from '@/components/ui/sheet';
 import { axiosConfig } from '@/config/axios.config';
 import { CHAPTER_COMPLETION_SEQUENCE, STORAGE_KEYS } from '@/config/constants';
 import { cn } from '@/lib/utils';
 import { addChapterToSystem } from '@/schema/system.schema';
+import { finalResultData } from '@/types/res/syllabusDataResponse.types';
 import {
 	getPendingChapter,
 	getPendingChapterSubjectWiseList,
@@ -43,6 +53,7 @@ export default function SyllabusHomePage() {
 	// * Use a single 'mounted' state to prevent React hydration mismatch errors on time-based UI
 	const [isMounted, setIsMounted] = useState(false);
 	const [isLoading, setIsLoading] = useState<boolean>(true);
+	const [syllabusData, setSyllabusData] = useState<finalResultData[]>([]);
 
 	const [currentStudySession, setCurrentStudySession] = useState({
 		isStudySessionActive: false,
@@ -202,6 +213,9 @@ export default function SyllabusHomePage() {
 			.then((response: AxiosResponse<getPendingChapter[]>) => {
 				setInProgressChaptersList(response.data);
 			});
+		axios.get('/api/syllabus').then((res: AxiosResponse<finalResultData[]>) => {
+			setSyllabusData(res.data);
+		});
 	}, []);
 
 	// ! HYDRATION FALLBACK
@@ -243,6 +257,107 @@ export default function SyllabusHomePage() {
 								{currentStudySession.subjectDetails.subjectName}{' '}
 							</Badge>
 						</header>
+						<Sheet>
+							<SheetTrigger asChild>
+								<Button className='w-full'>Open Tasks InProgress</Button>
+							</SheetTrigger>
+							<SheetContent side='bottom' className='overflow-auto '>
+								<SheetHeader>
+									<SheetTitle>List of Tasks</SheetTitle>
+									<SheetDescription>
+										List of tasks to do for the inProgress Chapters.
+									</SheetDescription>
+								</SheetHeader>
+								<div className='grid grid-flow-col w-full h-[70vh]'>
+									{syllabusData.map((subject) => (
+										<div key={subject._id} className='p-4 '>
+											<h3 className='capitalize text-lg underline text-center'>
+												{subject.name}:
+											</h3>
+											<div className='w-full grid grid-flow-col gap-2 py-2'>
+												{subject.chapterList
+													.filter((chapter) => {
+														return InProgressChaptersList.some(
+															(inProgressChapter) =>
+																inProgressChapter._id === chapter._id,
+														);
+													})
+													.map((filteredChapter) => (
+														<div key={filteredChapter._id} className={`w-full`}>
+															<Badge className={`text-base py-4 w-full`}>
+																{filteredChapter.name}
+															</Badge>
+															{filteredChapter[
+																CHAPTER_COMPLETION_SEQUENCE[0]
+															] ? (
+																<></>
+															) : (
+																<Badge
+																	variant='destructive'
+																	className='w-full my-2 capitalize'>
+																	{CHAPTER_COMPLETION_SEQUENCE[0]}
+																</Badge>
+															)}
+															{filteredChapter[
+																CHAPTER_COMPLETION_SEQUENCE[1]
+															] ? (
+																<></>
+															) : (
+																<Badge
+																	variant='destructive'
+																	className='w-full my-2 capitalize'>
+																	{CHAPTER_COMPLETION_SEQUENCE[1]}
+																</Badge>
+															)}
+															{filteredChapter[
+																CHAPTER_COMPLETION_SEQUENCE[2]
+															] ? (
+																<></>
+															) : (
+																<Badge
+																	variant='destructive'
+																	className='w-full my-2 capitalize'>
+																	{CHAPTER_COMPLETION_SEQUENCE[2]}
+																</Badge>
+															)}
+															{filteredChapter[
+																CHAPTER_COMPLETION_SEQUENCE[3]
+															] ? (
+																<></>
+															) : (
+																<Badge
+																	variant='destructive'
+																	className='w-full my-2 capitalize'>
+																	{CHAPTER_COMPLETION_SEQUENCE[3]}
+																</Badge>
+															)}
+
+															{filteredChapter.topicsList.length -
+																filteredChapter.totalTopicsCompleted ===
+															0 ? (
+																<></>
+															) : (
+																<Badge
+																	variant='outline'
+																	className='w-full my-2 capitalize'>
+																	Topics To Complete:{' '}
+																	{filteredChapter.topicsList.length -
+																		filteredChapter.totalTopicsCompleted}
+																</Badge>
+															)}
+															{filteredChapter.topicsList
+																.filter((topicToFilter) => !topicToFilter.done)
+																.map((topic) => (
+																	<Item key={topic._id}>{topic.name}</Item>
+																))}
+														</div>
+													))}
+											</div>
+										</div>
+									))}
+								</div>
+							</SheetContent>
+						</Sheet>
 						<section className='grid grid-cols-2 gap-3'>
 							<div>
 								<EnhancedCard className='w-full my-5 mx-2'>
@@ -280,9 +395,7 @@ export default function SyllabusHomePage() {
 																			? 'default'
 																			: 'destructive'
 																}
-																
-																className='text-base/9 mx-3'
-																>
+																className='text-base/9 mx-3'>
 																{chapter.totalTopicsCompleted}/
 																{chapter.totalTopics}
 															</Badge>

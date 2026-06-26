@@ -84,7 +84,6 @@ export default function SyllabusHomePage() {
 						syllabusProgressCalculation.totalChapters,
 				),
 			);
-			console.log(res.data);
 		});
 
 		const initialStateOfStudySession = {

@@ -590,17 +590,21 @@ export default function Tracker() {
 															allTimePeak.peakQuestionsDoneDay[0]
 																?.totalQuestions || 0,
 														subtext: formatDate(
-															String(allTimePeak.peakQuestionsDoneDay[0]?.date),
+															String(
+																allTimePeak.peakQuestionsDoneDay[0]?.date || '',
+															),
 														),
 														animate: false,
 													},
 													{
 														label: 'Peak Time Studied',
 														value: formatMilliseconds(
-															allTimePeak.peakTimeStudiedDay[0]?.totalTime,
+															allTimePeak.peakTimeStudiedDay[0]?.totalTime || 0,
 														),
 														subtext: formatDate(
-															String(allTimePeak.peakTimeStudiedDay[0]?.date),
+															String(
+																allTimePeak.peakTimeStudiedDay[0]?.date || '',
+															),
 														),
 														animate: true,
 													},
@@ -648,7 +652,7 @@ export default function Tracker() {
 													{
 														label: 'Overall Best Day',
 														value: formatMilliseconds(
-															allTimePeak.bestOverallDay[0]?.totalTime,
+															allTimePeak.bestOverallDay[0]?.totalTime || 0,
 														),
 														subtext: 'Time Studied',
 														animate: false,
@@ -656,10 +660,10 @@ export default function Tracker() {
 													{
 														label: "Overall Best Day's Score",
 														value: Math.round(
-															allTimePeak.bestOverallDay[0]?.averageScore,
+															allTimePeak.bestOverallDay[0]?.averageScore || 0,
 														),
 														subtext: formatDate(
-															String(allTimePeak.bestOverallDay[0]?.date),
+															String(allTimePeak.bestOverallDay[0]?.date || ''),
 														),
 														animate: true,
 													},
@@ -695,61 +699,65 @@ export default function Tracker() {
 												))}
 											</div>
 											<div className='grid grid-rows-2 grid-cols-3'>
-												{allTimePeak.subjectWisePeaks.map((subject) => (
-													<div
-														key={subject._id}
-														className=' border border-primary rounded-2xl gap-4'>
-														{[
-															{
-																label: 'Total Questions Done',
-																value: subject.peakQuestions,
-																subtext: `${subject.subjectName}'s Peak`,
-																animate: false,
-															},
-															{
-																label: 'Total Time Studied',
-																value: formatMilliseconds(subject.peakTime),
-																subtext: `${subject.subjectName}'s Peak`,
-																animate: false,
-															},
-															{
-																label: 'Score:',
-																value: Math.round(subject.peakAverageScore),
-																subtext: `${subject.subjectName}'s Peak`,
-																animate: true,
-															},
-														].map((block, idx) => (
-															<div
-																key={`current-study-Session-${idx}`}
-																className={cn(
-																	'group relative isolate flex flex-col items-center justify-center overflow-hidden rounded-4xl border border-border/30 bg-background/40 p-6 text-center backdrop-blur-md transition-all duration-500',
-																	'hover:-translate-y-1 hover:border-primary/30 hover:bg-accent/20 hover:shadow-lg hover:shadow-primary/10 w-full',
-																)}>
-																{/* * Micro-interaction gradient sweep on hover */}
-																<div className='absolute inset-0 -z-10 bg-linear-to-br from-primary/10 via-transparent to-transparent opacity-0 transition-opacity duration-500 group-hover:opacity-100' />
+												{allTimePeak.subjectWisePeaks.length ? (
+													allTimePeak?.subjectWisePeaks?.map((subject) => (
+														<div
+															key={subject._id}
+															className=' border border-primary rounded-2xl gap-4'>
+															{[
+																{
+																	label: 'Total Questions Done',
+																	value: subject.peakQuestions,
+																	subtext: `${subject.subjectName}'s Peak`,
+																	animate: false,
+																},
+																{
+																	label: 'Total Time Studied',
+																	value: formatMilliseconds(subject.peakTime),
+																	subtext: `${subject.subjectName}'s Peak`,
+																	animate: false,
+																},
+																{
+																	label: 'Score:',
+																	value: Math.round(subject.peakAverageScore),
+																	subtext: `${subject.subjectName}'s Peak`,
+																	animate: true,
+																},
+															].map((block, idx) => (
+																<div
+																	key={`current-study-Session-${idx}`}
+																	className={cn(
+																		'group relative isolate flex flex-col items-center justify-center overflow-hidden rounded-4xl border border-border/30 bg-background/40 p-6 text-center backdrop-blur-md transition-all duration-500',
+																		'hover:-translate-y-1 hover:border-primary/30 hover:bg-accent/20 hover:shadow-lg hover:shadow-primary/10 w-full',
+																	)}>
+																	{/* * Micro-interaction gradient sweep on hover */}
+																	<div className='absolute inset-0 -z-10 bg-linear-to-br from-primary/10 via-transparent to-transparent opacity-0 transition-opacity duration-500 group-hover:opacity-100' />
 
-																<div className='relative flex flex-col items-center'>
-																	<span
-																		className={cn(
-																			'text-xl font-extrabold tracking-tighter text-foreground md:text-2xl lg:text-3xl transition-transform duration-300 group-hover:scale-105',
-																			block.animate &&
-																				'text-primary drop-shadow-sm capitalize',
-																		)}>
-																		{block.value}
-																	</span>
-																	<span className='mt-2 text-sm font-semibold tracking-wider text-muted-foreground uppercase'>
-																		{block.label}
-																	</span>
-																	{block.subtext && (
-																		<span className='mt-1 font-medium text-foreground/70 capitalize'>
-																			{block.subtext}
+																	<div className='relative flex flex-col items-center'>
+																		<span
+																			className={cn(
+																				'text-xl font-extrabold tracking-tighter text-foreground md:text-2xl lg:text-3xl transition-transform duration-300 group-hover:scale-105',
+																				block.animate &&
+																					'text-primary drop-shadow-sm capitalize',
+																			)}>
+																			{block.value}
 																		</span>
-																	)}
+																		<span className='mt-2 text-sm font-semibold tracking-wider text-muted-foreground uppercase'>
+																			{block.label}
+																		</span>
+																		{block.subtext && (
+																			<span className='mt-1 font-medium text-foreground/70 capitalize'>
+																				{block.subtext}
+																			</span>
+																		)}
+																	</div>
 																</div>
-															</div>
-														))}
-													</div>
-												))}
+															))}
+														</div>
+													))
+												) : (
+													<></>
+												)}
 											</div>
 										</CardContent>
 									</EnhancedCard>

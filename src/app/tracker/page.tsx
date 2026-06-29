@@ -7,7 +7,7 @@
 import { useEffect, useState } from 'react';
 import axios, { AxiosResponse } from 'axios';
 import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardHeader } from '@/components/ui/card';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import {
 	Tooltip,
 	TooltipContent,
@@ -25,6 +25,15 @@ import { Label } from '@/components/ui/label';
 import { Input } from '@/components/ui/input';
 import { toast } from 'react-toastify';
 import Link from 'next/link';
+import {
+	Sheet,
+	SheetContent,
+	SheetDescription,
+	SheetHeader,
+	SheetTitle,
+	SheetTrigger,
+} from '@/components/ui/sheet';
+import { Badge } from '@/components/ui/badge';
 
 // * Standardized structural definitions describing expected paginated envelopes
 interface PaginatedAPIResponseEnvelope<T> {
@@ -69,6 +78,70 @@ export default function Tracker() {
 	// ! Hydration Safety Pattern: Prevents mismatches between SSR and Client rendering
 	const [isMounted, setIsMounted] = useState<boolean>(false);
 
+	const [todaysProgressData, setTodaysProgressData] = useState<{
+		totalQuestionsDone: number;
+		totalTimeStudiedMs: number;
+		physics: {
+			totalQuestionsDone: number;
+			totalTimeStudiedMs: number;
+		};
+		chemistry: {
+			totalQuestionsDone: number;
+			totalTimeStudiedMs: number;
+		};
+		mathematics: {
+			totalQuestionsDone: number;
+			totalTimeStudiedMs: number;
+		};
+	}>({
+		totalQuestionsDone: 0,
+		totalTimeStudiedMs: 0,
+		physics: {
+			totalQuestionsDone: 0,
+			totalTimeStudiedMs: 0,
+		},
+		chemistry: {
+			totalQuestionsDone: 0,
+			totalTimeStudiedMs: 0,
+		},
+		mathematics: {
+			totalQuestionsDone: 0,
+			totalTimeStudiedMs: 0,
+		},
+	});
+
+	const [allTimePeak, setAllTimePeak] = useState<{
+		peakTimeStudiedDay: {
+			totalQuestions: number;
+			totalTime: number;
+			date: Date | string;
+		}[];
+		peakQuestionsDoneDay: {
+			totalQuestions: number;
+			totalTime: number;
+			date: Date | string;
+		}[];
+		bestOverallDay: {
+			totalQuestions: number;
+			totalTime: number;
+			averageScore: number;
+			date: Date | string;
+		}[];
+		subjectWisePeaks: {
+			_id: string;
+			bestDate: Date | string;
+			peakQuestions: number;
+			peakTime: number;
+			peakAverageScore: number;
+			subjectName: string;
+		}[];
+	}>({
+		peakTimeStudiedDay: [],
+		peakQuestionsDoneDay: [],
+		bestOverallDay: [],
+		subjectWisePeaks: [],
+	});
+
 	// * Lifecycle Hooks
 	useEffect(() => {
 		setIsMounted(true);
@@ -90,6 +163,9 @@ export default function Tracker() {
 		} else {
 			dispatch(endStudySession(StudySessionLocalStorage));
 		}
+		axios
+			.request(axiosConfig('subjectStreak/data?type=peak', 'get'))
+			.then((res) => setAllTimePeak(res.data));
 	}, []);
 
 	useEffect(() => {
@@ -119,6 +195,31 @@ export default function Tracker() {
 				totalTimeStudiedMs: totals.totalTimeStudiedMs,
 			}),
 		);
+		const physicsTodaysStreakDetails = subjectStreaks.filter(
+			(subject) => subject.subject.name === 'physics',
+		)[0];
+		const chemistryTodaysStreakDetails = subjectStreaks.filter(
+			(subject) => subject.subject.name === 'chemistry',
+		)[0];
+		const mathematicsTodaysStreakDetails = subjectStreaks.filter(
+			(subject) => subject.subject.name === 'mathematics',
+		)[0];
+		setTodaysProgressData({
+			totalQuestionsDone: totals.totalQuestionsDone,
+			totalTimeStudiedMs: totals.totalTimeStudiedMs,
+			physics: {
+				totalQuestionsDone: physicsTodaysStreakDetails?.questionsDone || 0,
+				totalTimeStudiedMs: physicsTodaysStreakDetails?.timeStudied || 0,
+			},
+			chemistry: {
+				totalQuestionsDone: chemistryTodaysStreakDetails?.questionsDone || 0,
+				totalTimeStudiedMs: chemistryTodaysStreakDetails?.timeStudied || 0,
+			},
+			mathematics: {
+				totalQuestionsDone: mathematicsTodaysStreakDetails?.questionsDone || 0,
+				totalTimeStudiedMs: mathematicsTodaysStreakDetails?.timeStudied || 0,
+			},
+		});
 	}, [subjectStreaks]);
 
 	// * ==========================================================================
@@ -464,6 +565,401 @@ export default function Tracker() {
 							{''}
 							{currentStudySession.subjectDetails.subjectName}{' '}
 						</h1>
+						<Sheet>
+							<SheetTrigger asChild>
+								<Button className='w-full'>Open Details</Button>
+							</SheetTrigger>
+							<SheetContent side='bottom' className='overflow-auto '>
+								<SheetHeader>
+									<SheetTitle>Your Peak v/s Today</SheetTitle>
+									<SheetDescription>
+										This is your Peak, Recall Who you are!
+									</SheetDescription>
+								</SheetHeader>
+								<div className='grid grid-cols-2 grid-rows-1 w-full h-[70vh] gap-2 p-3'>
+									<EnhancedCard className='h-full w-full rounded'>
+										<CardHeader>
+											<CardTitle>Your Peak</CardTitle>
+										</CardHeader>
+										<CardContent className='overflow-auto'>
+											<div className='grid grid-cols-2'>
+												{[
+													{
+														label: 'Peak Questions Done',
+														value:
+															allTimePeak.peakQuestionsDoneDay[0]
+																?.totalQuestions || 0,
+														subtext: formatDate(
+															String(allTimePeak.peakQuestionsDoneDay[0]?.date),
+														),
+														animate: false,
+													},
+													{
+														label: 'Peak Time Studied',
+														value: formatMilliseconds(
+															allTimePeak.peakTimeStudiedDay[0]?.totalTime,
+														),
+														subtext: formatDate(
+															String(allTimePeak.peakTimeStudiedDay[0]?.date),
+														),
+														animate: true,
+													},
+												].map((block, idx) => (
+													<div
+														key={`current-study-Session-${idx}`}
+														className={cn(
+															'group relative isolate flex flex-col items-center justify-center overflow-hidden rounded-4xl border border-border/30 bg-background/40 p-6 text-center backdrop-blur-md transition-all duration-500',
+															'hover:-translate-y-1 hover:border-primary/30 hover:bg-accent/20 hover:shadow-lg hover:shadow-primary/10 w-full',
+														)}>
+														{/* * Micro-interaction gradient sweep on hover */}
+														<div className='absolute inset-0 -z-10 bg-linear-to-br from-primary/10 via-transparent to-transparent opacity-0 transition-opacity duration-500 group-hover:opacity-100' />
+
+														<div className='relative flex flex-col items-center'>
+															<span
+																className={cn(
+																	'text-xl font-extrabold tracking-tighter text-foreground md:text-2xl lg:text-3xl transition-transform duration-300 group-hover:scale-105',
+																	block.animate &&
+																		'text-primary drop-shadow-sm capitalize',
+																)}>
+																{block.value}
+															</span>
+															<span className='mt-2 text-sm font-semibold tracking-wider text-muted-foreground uppercase'>
+																{block.label}
+															</span>
+															{block.subtext && (
+																<span className='mt-1 font-medium text-foreground/70'>
+																	{block.subtext}
+																</span>
+															)}
+														</div>
+													</div>
+												))}
+											</div>
+											<div className='grid grid-cols-3 border rounded-4xl'>
+												{[
+													{
+														label: 'Overall Best Day',
+														value:
+															allTimePeak.bestOverallDay[0]?.totalQuestions ||
+															0,
+														subtext: 'Question Done',
+														animate: false,
+													},
+													{
+														label: 'Overall Best Day',
+														value: formatMilliseconds(
+															allTimePeak.bestOverallDay[0]?.totalTime,
+														),
+														subtext: 'Time Studied',
+														animate: false,
+													},
+													{
+														label: "Overall Best Day's Score",
+														value: Math.round(
+															allTimePeak.bestOverallDay[0]?.averageScore,
+														),
+														subtext: formatDate(
+															String(allTimePeak.bestOverallDay[0]?.date),
+														),
+														animate: true,
+													},
+												].map((block, idx) => (
+													<div
+														key={`current-study-Session-${idx}`}
+														className={cn(
+															'group relative isolate flex flex-col items-center justify-center overflow-hidden rounded-4xl border border-border/30 bg-background/40 p-6 text-center backdrop-blur-md transition-all duration-500',
+															'hover:-translate-y-1 hover:border-primary/30 hover:bg-accent/20 hover:shadow-lg hover:shadow-primary/10 w-full',
+														)}>
+														{/* * Micro-interaction gradient sweep on hover */}
+														<div className='absolute inset-0 -z-10 bg-linear-to-br from-primary/10 via-transparent to-transparent opacity-0 transition-opacity duration-500 group-hover:opacity-100' />
+
+														<div className='relative flex flex-col items-center'>
+															<span
+																className={cn(
+																	'text-xl font-extrabold tracking-tighter text-foreground md:text-2xl lg:text-3xl transition-transform duration-300 group-hover:scale-105',
+																	block.animate &&
+																		'text-primary drop-shadow-sm capitalize',
+																)}>
+																{block.value}
+															</span>
+															<span className='mt-2 text-sm font-semibold tracking-wider text-muted-foreground uppercase'>
+																{block.label}
+															</span>
+															{block.subtext && (
+																<span className='mt-1 font-medium text-foreground/70'>
+																	{block.subtext}
+																</span>
+															)}
+														</div>
+													</div>
+												))}
+											</div>
+											<div className='grid grid-rows-2 grid-cols-3'>
+												{allTimePeak.subjectWisePeaks.map((subject) => (
+													<div
+														key={subject._id}
+														className=' border border-primary rounded-2xl gap-4'>
+														{[
+															{
+																label: 'Total Questions Done',
+																value: subject.peakQuestions,
+																subtext: `${subject.subjectName}'s Peak`,
+																animate: false,
+															},
+															{
+																label: 'Total Time Studied',
+																value: formatMilliseconds(subject.peakTime),
+																subtext: `${subject.subjectName}'s Peak`,
+																animate: false,
+															},
+															{
+																label: 'Score:',
+																value: Math.round(subject.peakAverageScore),
+																subtext: `${subject.subjectName}'s Peak`,
+																animate: true,
+															},
+														].map((block, idx) => (
+															<div
+																key={`current-study-Session-${idx}`}
+																className={cn(
+																	'group relative isolate flex flex-col items-center justify-center overflow-hidden rounded-4xl border border-border/30 bg-background/40 p-6 text-center backdrop-blur-md transition-all duration-500',
+																	'hover:-translate-y-1 hover:border-primary/30 hover:bg-accent/20 hover:shadow-lg hover:shadow-primary/10 w-full',
+																)}>
+																{/* * Micro-interaction gradient sweep on hover */}
+																<div className='absolute inset-0 -z-10 bg-linear-to-br from-primary/10 via-transparent to-transparent opacity-0 transition-opacity duration-500 group-hover:opacity-100' />
+
+																<div className='relative flex flex-col items-center'>
+																	<span
+																		className={cn(
+																			'text-xl font-extrabold tracking-tighter text-foreground md:text-2xl lg:text-3xl transition-transform duration-300 group-hover:scale-105',
+																			block.animate &&
+																				'text-primary drop-shadow-sm capitalize',
+																		)}>
+																		{block.value}
+																	</span>
+																	<span className='mt-2 text-sm font-semibold tracking-wider text-muted-foreground uppercase'>
+																		{block.label}
+																	</span>
+																	{block.subtext && (
+																		<span className='mt-1 font-medium text-foreground/70 capitalize'>
+																			{block.subtext}
+																		</span>
+																	)}
+																</div>
+															</div>
+														))}
+													</div>
+												))}
+											</div>
+										</CardContent>
+									</EnhancedCard>
+									<EnhancedCard className='h-full w-full rounded'>
+										<CardHeader>
+											<CardTitle>
+												<Badge className='w-full text-lg' variant={'ghost'}>
+													Your Today
+												</Badge>
+											</CardTitle>
+										</CardHeader>
+										<CardContent>
+											{[
+												{
+													label: 'Total Questions Done',
+													value: todaysProgressData.totalQuestionsDone,
+													subtext: '',
+													animate: currentStudySession.isStudySessionActive,
+												},
+												{
+													label: 'Total Time Studied',
+													value: formatMilliseconds(
+														todaysProgressData.totalTimeStudiedMs,
+													),
+													subtext: '',
+													animate: true,
+												},
+											].map((block, idx) => (
+												<div
+													key={`current-study-Session-${idx}`}
+													className={cn(
+														'group relative isolate flex flex-col items-center justify-center overflow-hidden rounded-4xl border border-border/30 bg-background/40 p-6 text-center backdrop-blur-md transition-all duration-500',
+														'hover:-translate-y-1 hover:border-primary/30 hover:bg-accent/20 hover:shadow-lg hover:shadow-primary/10 w-full',
+													)}>
+													{/* * Micro-interaction gradient sweep on hover */}
+													<div className='absolute inset-0 -z-10 bg-linear-to-br from-primary/10 via-transparent to-transparent opacity-0 transition-opacity duration-500 group-hover:opacity-100' />
+
+													<div className='relative flex flex-col items-center'>
+														<span
+															className={cn(
+																'text-xl font-extrabold tracking-tighter text-foreground md:text-2xl lg:text-3xl transition-transform duration-300 group-hover:scale-105',
+																block.animate &&
+																	'text-primary drop-shadow-sm capitalize',
+															)}>
+															{block.value}
+														</span>
+														<span className='mt-2 text-sm font-semibold tracking-wider text-muted-foreground uppercase'>
+															{block.label}
+														</span>
+														{block.subtext && (
+															<span className='mt-1 font-medium text-foreground/70'>
+																{block.subtext}
+															</span>
+														)}
+													</div>
+												</div>
+											))}
+											<div className='grid grid-cols-3 grid-rows-2'>
+												<div>
+													{[
+														{
+															label: 'Total Questions Done',
+															value:
+																todaysProgressData.physics.totalQuestionsDone,
+															subtext: 'Physics',
+															animate: currentStudySession.isStudySessionActive,
+														},
+														{
+															label: 'Total Time Studied',
+															value: formatMilliseconds(
+																todaysProgressData.physics.totalTimeStudiedMs,
+															),
+															subtext: 'Physics',
+															animate: true,
+														},
+													].map((block, idx) => (
+														<div
+															key={`current-study-Session-${idx}`}
+															className={cn(
+																'group relative isolate flex flex-col items-center justify-center overflow-hidden rounded-4xl border border-border/30 bg-background/40 p-6 text-center backdrop-blur-md transition-all duration-500',
+																'hover:-translate-y-1 hover:border-primary/30 hover:bg-accent/20 hover:shadow-lg hover:shadow-primary/10 w-full',
+															)}>
+															{/* * Micro-interaction gradient sweep on hover */}
+															<div className='absolute inset-0 -z-10 bg-linear-to-br from-primary/10 via-transparent to-transparent opacity-0 transition-opacity duration-500 group-hover:opacity-100' />
+
+															<div className='relative flex flex-col items-center'>
+																<span
+																	className={cn(
+																		'text-xl font-extrabold tracking-tighter text-foreground md:text-2xl lg:text-3xl transition-transform duration-300 group-hover:scale-105',
+																		block.animate &&
+																			'text-primary drop-shadow-sm capitalize',
+																	)}>
+																	{block.value}
+																</span>
+																<span className='mt-2 text-sm font-semibold tracking-wider text-muted-foreground uppercase'>
+																	{block.label}
+																</span>
+																{block.subtext && (
+																	<span className='mt-1 font-medium text-foreground/70'>
+																		{block.subtext}
+																	</span>
+																)}
+															</div>
+														</div>
+													))}
+												</div>
+												<div>
+													{[
+														{
+															label: 'Total Questions Done',
+															value:
+																todaysProgressData.chemistry.totalQuestionsDone,
+															subtext: 'Chemistry',
+															animate: currentStudySession.isStudySessionActive,
+														},
+														{
+															label: 'Total Time Studied',
+															value: formatMilliseconds(
+																todaysProgressData.chemistry.totalTimeStudiedMs,
+															),
+															subtext: 'Chemistry',
+															animate: true,
+														},
+													].map((block, idx) => (
+														<div
+															key={`current-study-Session-${idx}`}
+															className={cn(
+																'group relative isolate flex flex-col items-center justify-center overflow-hidden rounded-4xl border border-border/30 bg-background/40 p-6 text-center backdrop-blur-md transition-all duration-500',
+																'hover:-translate-y-1 hover:border-primary/30 hover:bg-accent/20 hover:shadow-lg hover:shadow-primary/10 w-full',
+															)}>
+															{/* * Micro-interaction gradient sweep on hover */}
+															<div className='absolute inset-0 -z-10 bg-linear-to-br from-primary/10 via-transparent to-transparent opacity-0 transition-opacity duration-500 group-hover:opacity-100' />
+
+															<div className='relative flex flex-col items-center'>
+																<span
+																	className={cn(
+																		'text-xl font-extrabold tracking-tighter text-foreground md:text-2xl lg:text-3xl transition-transform duration-300 group-hover:scale-105',
+																		block.animate &&
+																			'text-primary drop-shadow-sm capitalize',
+																	)}>
+																	{block.value}
+																</span>
+																<span className='mt-2 text-sm font-semibold tracking-wider text-muted-foreground uppercase'>
+																	{block.label}
+																</span>
+																{block.subtext && (
+																	<span className='mt-1 font-medium text-foreground/70'>
+																		{block.subtext}
+																	</span>
+																)}
+															</div>
+														</div>
+													))}
+												</div>
+												<div>
+													{[
+														{
+															label: 'Total Questions Done',
+															value:
+																todaysProgressData.mathematics
+																	.totalQuestionsDone,
+															subtext: 'Mathematics',
+															animate: currentStudySession.isStudySessionActive,
+														},
+														{
+															label: 'Total Time Studied',
+															value: formatMilliseconds(
+																todaysProgressData.mathematics
+																	.totalTimeStudiedMs,
+															),
+															subtext: 'Mathematics',
+															animate: true,
+														},
+													].map((block, idx) => (
+														<div
+															key={`current-study-Session-${idx}`}
+															className={cn(
+																'group relative isolate flex flex-col items-center justify-center overflow-hidden rounded-4xl border border-border/30 bg-background/40 p-6 text-center backdrop-blur-md transition-all duration-500',
+																'hover:-translate-y-1 hover:border-primary/30 hover:bg-accent/20 hover:shadow-lg hover:shadow-primary/10 w-full',
+															)}>
+															{/* * Micro-interaction gradient sweep on hover */}
+															<div className='absolute inset-0 -z-10 bg-linear-to-br from-primary/10 via-transparent to-transparent opacity-0 transition-opacity duration-500 group-hover:opacity-100' />
+
+															<div className='relative flex flex-col items-center'>
+																<span
+																	className={cn(
+																		'text-xl font-extrabold tracking-tighter text-foreground md:text-2xl lg:text-3xl transition-transform duration-300 group-hover:scale-105',
+																		block.animate &&
+																			'text-primary drop-shadow-sm capitalize',
+																	)}>
+																	{block.value}
+																</span>
+																<span className='mt-2 text-sm font-semibold tracking-wider text-muted-foreground uppercase'>
+																	{block.label}
+																</span>
+																{block.subtext && (
+																	<span className='mt-1 font-medium text-foreground/70'>
+																		{block.subtext}
+																	</span>
+																)}
+															</div>
+														</div>
+													))}
+												</div>
+											</div>
+										</CardContent>
+									</EnhancedCard>
+								</div>
+							</SheetContent>
+						</Sheet>
 						<div className='grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3'>
 							{subjectStreaks.map((item, index) => (
 								<EnhancedCard

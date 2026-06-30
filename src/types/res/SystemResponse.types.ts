@@ -1,3 +1,5 @@
+import { currentChapterStatus } from "@/model/chapters.model";
+import { getTopicResponse } from "./topicsOrganized.types";
 
 export interface getPendingChapter {
     _id: string;
@@ -21,4 +23,24 @@ export interface getPendingChapterSubjectWiseList {
     _id: string;
     name: string;
     chapterList: getPendingChapter[]
+}
+
+export interface detailedListOfChaptersInSystem extends getPendingChapter {
+    topicsList: getTopicResponse[];
+    topicsLeft: number;
+    topicsCompletedPercent: number;
+    topicsLeftPercent: number;
+    currentChapterStatus: currentChapterStatus;
+}
+
+//tasks
+
+export interface inProgressChaptersTaskList {
+    chapter: string;
+    topicsToComplete: string[];
+    tagsToComplete: string[];
+}
+export interface inProgressChaptersCurrentTaskList {
+    chapter: string;
+    task: string;
 }

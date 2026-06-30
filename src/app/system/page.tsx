@@ -43,6 +43,7 @@ import {
 } from '@/types/res/SystemResponse.types';
 import { zodResolver } from '@hookform/resolvers/zod';
 import axios, { AxiosResponse } from 'axios';
+import Link from 'next/link';
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { Controller, useForm } from 'react-hook-form';
 import { toast } from 'react-toastify';
@@ -257,6 +258,9 @@ export default function SyllabusHomePage() {
 								{currentStudySession.subjectDetails.subjectName}{' '}
 							</Badge>
 						</header>
+						<Button className='w-full' asChild variant='outline'>
+							<Link href='/system/task'> Open Tasks Page</Link>
+						</Button>
 						<Sheet>
 							<SheetTrigger asChild>
 								<Button className='w-full'>Open Tasks InProgress</Button>

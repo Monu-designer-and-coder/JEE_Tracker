@@ -23,6 +23,7 @@ import axios, { AxiosResponse } from 'axios';
 import { axiosConfig } from '@/config/axios.config';
 import { Button } from '@/components/ui/button';
 import Link from 'next/link';
+import { GrTask } from 'react-icons/gr';
 
 export default function Home() {
 	// ! HYDRATION & STATE MANAGEMENT
@@ -33,6 +34,18 @@ export default function Home() {
 	// * All other time values are cleanly derived from this single source of truth during render.
 	const d = new Date();
 	const [currentTimeMs, setCurrentTimeMs] = useState<number>(Number(d));
+
+	const [currentTask, setCurrentTask] = useState<{
+		_id: string;
+		task: string;
+		seqNumber: number;
+		assignDate: Date;
+	}>({
+		_id: "loading",
+		task: "loading",
+		seqNumber: 0,
+		assignDate: new Date()
+	})
 
 	const [currentStudySession, setCurrentStudySession] = useState({
 		isStudySessionActive: false,
@@ -81,12 +94,12 @@ export default function Home() {
 		};
 		const StudySessionLocalStorage = JSON.parse(
 			localStorage.getItem(STORAGE_KEYS.STUDY_SESSION) ||
-				JSON.stringify(initialStateOfStudySession),
+			JSON.stringify(initialStateOfStudySession),
 		);
 		setTodaysProgressData(
 			JSON.parse(
 				localStorage.getItem(STORAGE_KEYS.TODAYS_PROGRESS) ||
-					JSON.stringify({ totalQuestionsDone: 0, totalTimeStudiedMs: 0 }),
+				JSON.stringify({ totalQuestionsDone: 0, totalTimeStudiedMs: 0 }),
 			),
 		);
 
@@ -97,6 +110,22 @@ export default function Home() {
 			.then((response: AxiosResponse<getPendingChapter[]>) => {
 				setInProgressChaptersList(response.data);
 			});
+
+		axios.request(axiosConfig('system/task/', 'get')).then(
+			(
+				response: AxiosResponse<{
+					_id: string;
+					task: string;
+					seqNumber: number;
+					assignDate: Date;
+				}>,
+			) => {
+				const responseData = response.data
+				setCurrentTask(
+					responseData
+				);
+			},
+		);
 
 		return () => clearInterval(timerInterval);
 	}, []);
@@ -165,6 +194,129 @@ export default function Home() {
 		// * Utilizes responsive max-width and center alignment for larger screens
 		<div className='mx-auto w-full px-4 py-8 animate-in fade-in slide-in-from-bottom-4 duration-700 ease-in-out gap-4 grid grid-cols-6 grid-flow-row'>
 			{/* ! GLASSMORPHIC CARD WRAPPER */}
+
+			<EnhancedCard className='relative overflow-hidden border border-border/40 bg-background/60 backdrop-blur-xl shadow-2xl rounded-[2rem] transition-all duration-500 hover:shadow-primary/5 my-1 col-span-6 row-start-1'>
+				{/* ? Ambient Inner Glow */}
+				<div className='absolute -top-40 -right-40 -z-10 h-96 w-96 rounded-full bg-primary/10 blur-[100px]' />
+
+				<CardContent className='p-6 md:p-10'>
+					{/* ? HEADER SECTION */}
+					<div className='mb-10 flex flex-col items-start justify-between gap-4 sm:flex-row sm:items-center'>
+						<div className='space-y-1'>
+							<h2 className='flex items-center gap-3 text-2xl font-bold tracking-tight text-foreground'>
+								<div className='flex h-10 w-10 items-center justify-center rounded-xl bg-primary/10 text-primary'>
+									<GrTask className='h-5 w-5' />
+								</div>
+								<Button variant={'ghost'} className='text-base' asChild>
+									<Link href={'/system/task'} className='text-base'>
+										To Do:
+									</Link>
+								</Button>
+							</h2>
+							<p className='text-sm text-muted-foreground ml-13'>
+								To this Task Now!
+							</p>
+						</div>
+					</div>
+
+					<div className='flex items-center justify-center my-4'>
+						{/* * Reusable structural pattern mapped for readability */}
+						{[
+							{
+								label: 'Do this Current Task',
+								value: currentTask.task,
+								subtext: "",
+								animate: true,
+							},
+						].map((block, idx) => (
+							<div
+								key={`current-study-Session-${idx}`}
+								className={cn(
+									'group relative isolate flex flex-col items-center justify-center overflow-hidden rounded-4xl border border-border/30 bg-background/40 p-6 text-center backdrop-blur-md transition-all duration-500',
+									'hover:-translate-y-1 hover:border-primary/30 hover:bg-accent/20 hover:shadow-lg hover:shadow-primary/10 w-full',
+								)}>
+								{/* * Micro-interaction gradient sweep on hover */}
+								<div className='absolute inset-0 -z-10 bg-linear-to-br from-primary/10 via-transparent to-transparent opacity-0 transition-opacity duration-500 group-hover:opacity-100' />
+
+								<div className='relative flex flex-col items-center'>
+									<span
+										className={cn(
+											'text-4xl font-extrabold tracking-tighter text-foreground md:text-5xl lg:text-6xl transition-transform duration-300 group-hover:scale-105',
+											block.animate && 'text-primary drop-shadow-sm capitalize',
+										)}>
+										{block.value}
+									</span>
+									<span className='mt-2 text-sm font-semibold tracking-wider text-muted-foreground uppercase'>
+										{block.label}
+									</span>
+									{block.subtext && (
+										<span className='mt-1 font-medium text-foreground/70'>
+											{block.subtext}
+										</span>
+									)}
+								</div>
+							</div>
+						))}
+					</div>
+					<div className='flex items-center justify-center my-4'>
+						{/* * Reusable structural pattern mapped for readability */}
+						{[
+							{
+								label: 'Sequence Number of the Task:',
+								value: currentTask.seqNumber,
+								subtext: '',
+								animate: false,
+							},
+							{
+								label: 'Time Assigned',
+								value: new Intl.DateTimeFormat('en-IN', {
+									weekday: 'short',
+									day: '2-digit',
+									month: '2-digit',
+									year: '2-digit',
+									hourCycle: "h24",
+								}).format(new Date(currentTask.assignDate)),
+								subtext: new Intl.DateTimeFormat('en-IN', {
+									hour: '2-digit',
+									minute: '2-digit',
+									second: '2-digit',
+									hourCycle: "h24",
+								}).format(new Date(currentTask.assignDate)),
+								animate: false,
+							},
+						].map((block, idx) => (
+							<div
+								key={`current-study-Session-${idx}`}
+								className={cn(
+									'group relative isolate flex flex-col items-center justify-center overflow-hidden rounded-4xl border border-border/30 bg-background/40 p-6 text-center backdrop-blur-md transition-all duration-500',
+									'hover:-translate-y-1 hover:border-primary/30 hover:bg-accent/20 hover:shadow-lg hover:shadow-primary/10 w-full',
+								)}>
+								{/* * Micro-interaction gradient sweep on hover */}
+								<div className='absolute inset-0 -z-10 bg-linear-to-br from-primary/10 via-transparent to-transparent opacity-0 transition-opacity duration-500 group-hover:opacity-100' />
+
+								<div className='relative flex flex-col items-center'>
+									<span
+										className={cn(
+											'text-4xl font-extrabold tracking-tighter text-foreground md:text-5xl lg:text-6xl transition-transform duration-300 group-hover:scale-105',
+											block.animate && 'text-primary drop-shadow-sm capitalize',
+										)}>
+										{block.value}
+									</span>
+									<span className='mt-2 text-sm font-semibold tracking-wider text-muted-foreground uppercase'>
+										{block.label}
+									</span>
+									{block.subtext && (
+										<span className='mt-1 font-medium text-foreground/70'>
+											{block.subtext}
+										</span>
+									)}
+								</div>
+							</div>
+						))}
+					</div>
+				</CardContent>
+			</EnhancedCard>
+
 			<EnhancedCard className='relative overflow-hidden border border-border/40 bg-background/60 backdrop-blur-xl shadow-2xl rounded-[2rem] transition-all duration-500 hover:shadow-primary/5 my-2 col-span-4'>
 				{/* ? Ambient Inner Glow */}
 				<div className='absolute -top-40 -right-40 -z-10 h-96 w-96 rounded-full bg-primary/10 blur-[100px]' />
@@ -297,9 +449,11 @@ export default function Home() {
 							{
 								label: 'Starts At:',
 								value: currentStudySession.subjectDetails.subjectName,
-								subtext: currentStudySession.isStudySessionActive ? (new Date(
-									currentStudySession.sessionStartTime)
-								).toLocaleString(): (new Date().toLocaleString()),
+								subtext: currentStudySession.isStudySessionActive
+									? new Date(
+										currentStudySession.sessionStartTime,
+									).toLocaleString()
+									: new Date().toLocaleString(),
 								animate: currentStudySession.isStudySessionActive,
 							},
 						].map((block, idx) => (
@@ -381,7 +535,7 @@ export default function Home() {
 					</div>
 				</CardContent>
 			</EnhancedCard>
-			<EnhancedCard className='relative overflow-hidden border border-border/40 bg-background/60 backdrop-blur-xl shadow-2xl rounded-[2rem] transition-all duration-500 hover:shadow-primary/5 my-1 col-span-2 row-span-2 col-start-5 row-start-1'>
+			<EnhancedCard className='relative overflow-hidden border border-border/40 bg-background/60 backdrop-blur-xl shadow-2xl rounded-[2rem] transition-all duration-500 hover:shadow-primary/5 my-1 col-span-2 row-span-2 col-start-5 row-start-2'>
 				{/* ? Ambient Inner Glow */}
 				<div className='absolute -top-40 -right-40 -z-10 h-96 w-96 rounded-full bg-primary/10 blur-[100px]' />
 				<CardHeader>

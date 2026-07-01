@@ -314,6 +314,54 @@ export default function Home() {
 							</div>
 						))}
 					</div>
+					<div className='flex items-center justify-center my-4'>
+						{/* * Reusable structural pattern mapped for readability */}
+						{[
+							{
+								label: 'Time',
+								value: new Intl.DateTimeFormat('en-IN', {
+									hour: '2-digit',
+									minute: '2-digit',
+									second: '2-digit',
+									weekday: 'long',
+									day: '2-digit',
+									month: 'long',
+									year: 'numeric',
+									hourCycle: "h23",
+								}).format(new Date()),
+								subtext: '',
+								animate: true,
+							},
+						].map((block, idx) => (
+							<div
+								key={`current-study-Session-${idx}`}
+								className={cn(
+									'group relative isolate flex flex-col items-center justify-center overflow-hidden rounded-4xl border border-border/30 bg-background/40 p-6 text-center backdrop-blur-md transition-all duration-500',
+									'hover:-translate-y-1 hover:border-primary/30 hover:bg-accent/20 hover:shadow-lg hover:shadow-primary/10 w-full',
+								)}>
+								{/* * Micro-interaction gradient sweep on hover */}
+								<div className='absolute inset-0 -z-10 bg-linear-to-br from-primary/10 via-transparent to-transparent opacity-0 transition-opacity duration-500 group-hover:opacity-100' />
+
+								<div className='relative flex flex-col items-center'>
+									<span
+										className={cn(
+											'text-4xl font-extrabold tracking-tighter text-foreground md:text-5xl lg:text-6xl transition-transform duration-300 group-hover:scale-105',
+											block.animate && 'text-primary drop-shadow-sm capitalize',
+										)}>
+										{block.value}
+									</span>
+									<span className='mt-2 text-sm font-semibold tracking-wider text-muted-foreground uppercase'>
+										{block.label}
+									</span>
+									{block.subtext && (
+										<span className='mt-1 font-medium text-foreground/70'>
+											{block.subtext}
+										</span>
+									)}
+								</div>
+							</div>
+						))}
+					</div>
 				</CardContent>
 			</EnhancedCard>
 
@@ -419,7 +467,7 @@ export default function Home() {
 					</div>
 				</CardContent>
 			</EnhancedCard>
-			<EnhancedCard className='relative overflow-hidden border border-border/40 bg-background/60 backdrop-blur-xl shadow-2xl rounded-[2rem] transition-all duration-500 hover:shadow-primary/5 my-1 col-span-4'>
+			<EnhancedCard className='relative overflow-hidden border border-border/40 bg-background/60 backdrop-blur-xl shadow-2xl rounded-[2rem] transition-all duration-500 hover:shadow-primary/5 my-1 col-span-2'>
 				{/* ? Ambient Inner Glow */}
 				<div className='absolute -top-40 -right-40 -z-10 h-96 w-96 rounded-full bg-primary/10 blur-[100px]' />
 
@@ -535,7 +583,7 @@ export default function Home() {
 					</div>
 				</CardContent>
 			</EnhancedCard>
-			<EnhancedCard className='relative overflow-hidden border border-border/40 bg-background/60 backdrop-blur-xl shadow-2xl rounded-[2rem] transition-all duration-500 hover:shadow-primary/5 my-1 col-span-2 row-span-2 col-start-5 row-start-2'>
+			<EnhancedCard className='relative overflow-hidden border border-border/40 bg-background/60 backdrop-blur-xl shadow-2xl rounded-[2rem] transition-all duration-500 hover:shadow-primary/5 my-1 col-span-6 row-span-1 col-start-1 row-start-3'>
 				{/* ? Ambient Inner Glow */}
 				<div className='absolute -top-40 -right-40 -z-10 h-96 w-96 rounded-full bg-primary/10 blur-[100px]' />
 				<CardHeader>

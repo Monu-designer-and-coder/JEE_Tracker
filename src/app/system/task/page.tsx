@@ -102,6 +102,7 @@ export default function SyllabusHomePage() {
 				console.log(error)
 			}
 		}
+		fetchTaskLists();
 	}
 
 
@@ -156,7 +157,7 @@ export default function SyllabusHomePage() {
 												<h3 className='w-full text-center text-xl'>
 													{item.task}
 												</h3>
-												<Button onClick={() => handleTaskButton(item.task)} className='w-full py-3 px-4' disabled={((Boolean(currentTask._id) || (currentTask._id != "loading")) && (currentTask.task != item.task))}>
+												<Button onClick={() => handleTaskButton(item.task)} className='w-full py-3 px-4' disabled={((Boolean(currentTask._id) && (currentTask._id != "loading")) && (currentTask.task != item.task))}>
 													{(currentTask.task == item.task) ? "Mark as Done" : "Make this Current Task"}
 												</Button>
 											</div>

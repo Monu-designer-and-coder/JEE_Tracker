@@ -1045,7 +1045,12 @@ export default function Tracker() {
 										<CardHeader>
 											<CardTitle>
 												<Badge className='w-full text-lg' variant={'ghost'}>
-													Your Today
+													Your Score Today: <Badge className={cn(
+														'text-xl p-5 py-4 font-extrabold tracking-tighter text-foreground transition-transform duration-300 group-hover:scale-105',
+														'text-primary drop-shadow-sm capitalize',
+													)} variant="ghost">
+														{Math.round(((todaysProgressData.totalQuestionsDone * 1000000) + todaysProgressData.totalTimeStudiedMs) / 200000)}
+													</Badge>
 												</Badge>
 											</CardTitle>
 										</CardHeader>

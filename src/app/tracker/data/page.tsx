@@ -186,9 +186,6 @@ export default function Tracker() {
 					// * Loading State
 					<div
 						className={cn(
-							'bg-blue-500',
-							'bg-blue-600',
-							'bg-blue-700',
 							'flex h-64 items-center justify-center',
 						)}>
 						<div className='h-8 w-8 animate-spin rounded-full border-b-2 border-primary' />
@@ -213,7 +210,9 @@ export default function Tracker() {
 												year: '2-digit',
 												month: 'short',
 												day: '2-digit',
-											})}
+											})}; <span className = "text-4xl font-black"> Score : {Math.round(((calculateDailyTotals(streak.details)
+												.totalQuestionsDone * 1000000) + calculateDailyTotals(streak.details)
+													.totalTimeStudiedMs) / 200000)}</span>
 										</CardTitle>
 										<CardDescription className='text-secondary-foreground'>
 											Your Work on{' '}
@@ -240,12 +239,11 @@ export default function Tracker() {
 												</TableRow>
 											</TableHeader>
 											<TableBody>
-												{streak.details.map((detail, detailIndex) => (
+												{streak.details.map((detail) => (
 													<TableRow
 														key={String(detail._id)}
 														className={cn(
-															`bg-blue-${(detailIndex + 5) * 100}`,
-															'hover:bg-primary',
+															'hover:bg-primary/10',
 														)}>
 														<TableCell className={cn('capitalize')}>
 															{String(detail.subject.name)}
@@ -256,7 +254,9 @@ export default function Tracker() {
 														</TableCell>
 													</TableRow>
 												))}
-												<TableRow>
+												<TableRow className={cn(
+															'hover:bg-primary/10',
+														)}>
 													<TableCell>Total:</TableCell>
 													<TableCell>
 														{

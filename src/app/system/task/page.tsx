@@ -89,6 +89,22 @@ export default function SyllabusHomePage() {
 			await axios.request(axiosConfig('system/task', "post", { "Content-Type": "application/json" }, {
 				task,
 			}))
+			axios.request(axiosConfig('system/task/', 'get')).then(
+				(
+					response: AxiosResponse<{
+						_id: string;
+						task: string;
+						seqNumber: number;
+						assignDate: Date;
+					}>,
+				) => {
+					const responseData = response.data
+					setCurrentTask(
+						responseData
+					);
+				},
+			);
+			fetchTaskLists();
 		}
 		if (task === currentTask.task) {
 			try {
@@ -96,13 +112,29 @@ export default function SyllabusHomePage() {
 					taskId: currentTask._id,
 					type: "markTaskAsFinished"
 				}))
-
 			}
 			catch (error) {
 				console.log(error)
 			}
+			finally {
+				axios.request(axiosConfig('system/task/', 'get')).then(
+					(
+						response: AxiosResponse<{
+							_id: string;
+							task: string;
+							seqNumber: number;
+							assignDate: Date;
+						}>,
+					) => {
+						const responseData = response.data
+						setCurrentTask(
+							responseData
+						);
+					},
+				);
+				fetchTaskLists();
+			}
 		}
-		fetchTaskLists();
 	}
 
 

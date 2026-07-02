@@ -34,6 +34,9 @@ import {
 	SheetTrigger,
 } from '@/components/ui/sheet';
 import { Badge } from '@/components/ui/badge';
+import { getPendingChapter } from '@/types/res/SystemResponse.types';
+import { FcPlanner } from 'react-icons/fc';
+import { ImTarget } from "react-icons/im";
 
 // * Standardized structural definitions describing expected paginated envelopes
 interface PaginatedAPIResponseEnvelope<T> {
@@ -78,6 +81,16 @@ export default function Tracker() {
 	// ! Hydration Safety Pattern: Prevents mismatches between SSR and Client rendering
 	const [isMounted, setIsMounted] = useState<boolean>(false);
 
+	const [InProgressChaptersList, setInProgressChaptersList] = useState<
+		getPendingChapter[]
+	>([
+		{
+			_id: '_id',
+			seqNumber: 0,
+			name: 'loading',
+		},
+	]);
+
 	const [todaysProgressData, setTodaysProgressData] = useState<{
 		totalQuestionsDone: number;
 		totalTimeStudiedMs: number;
@@ -109,6 +122,7 @@ export default function Tracker() {
 			totalTimeStudiedMs: 0,
 		},
 	});
+
 
 	const [allTimePeak, setAllTimePeak] = useState<{
 		peakTimeStudiedDay: {
@@ -156,7 +170,7 @@ export default function Tracker() {
 		};
 		const StudySessionLocalStorage = JSON.parse(
 			localStorage.getItem(STORAGE_KEYS.STUDY_SESSION) ||
-				JSON.stringify(initialStateOfStudySession),
+			JSON.stringify(initialStateOfStudySession),
 		);
 		if (StudySessionLocalStorage.isStudySessionActive) {
 			dispatch(startStudySession(StudySessionLocalStorage));
@@ -166,6 +180,29 @@ export default function Tracker() {
 		axios
 			.request(axiosConfig('subjectStreak/data?type=peak', 'get'))
 			.then((res) => setAllTimePeak(res.data));
+
+		axios.request(axiosConfig('system/task/', 'get')).then(
+			(
+				response: AxiosResponse<{
+					_id: string;
+					task: string;
+					seqNumber: number;
+					assignDate: Date;
+				}>,
+			) => {
+				const responseData = response.data
+				setCurrentTask(
+					responseData
+				);
+			},
+		);
+
+		axios
+			.request(axiosConfig('system', 'get'))
+			.then((response: AxiosResponse<getPendingChapter[]>) => {
+				setInProgressChaptersList(response.data);
+			});
+
 	}, []);
 
 	useEffect(() => {
@@ -523,6 +560,18 @@ export default function Tracker() {
 		}).format(date);
 	};
 
+	const [currentTask, setCurrentTask] = useState<{
+		_id: string;
+		task: string;
+		seqNumber: number;
+		assignDate: Date;
+	}>({
+		_id: "loading",
+		task: "loading",
+		seqNumber: 0,
+		assignDate: new Date()
+	})
+
 	function formatMilliseconds(ms: number): string {
 		const totalSeconds = Math.floor(ms / 1000);
 		const seconds = totalSeconds % 60;
@@ -564,6 +613,12 @@ export default function Tracker() {
 							Current Study Session:
 							{''}
 							{currentStudySession.subjectDetails.subjectName}{' '}
+						</h1>
+						<h1
+							className={`text-4xl ${currentStudySession.isStudySessionActive ? 'bg-primary' : 'bg-destructive/10 text-destructive '} rounded-full px-7 py-4 my-5 mx-2 font-mono capitalize`}>
+							Current Task:
+							{' '}
+							{currentTask.task}{' '}
 						</h1>
 						<Sheet>
 							<SheetTrigger asChild>
@@ -623,7 +678,7 @@ export default function Tracker() {
 																className={cn(
 																	'text-xl font-extrabold tracking-tighter text-foreground md:text-2xl lg:text-3xl transition-transform duration-300 group-hover:scale-105',
 																	block.animate &&
-																		'text-primary drop-shadow-sm capitalize',
+																	'text-primary drop-shadow-sm capitalize',
 																)}>
 																{block.value}
 															</span>
@@ -682,7 +737,7 @@ export default function Tracker() {
 																className={cn(
 																	'text-xl font-extrabold tracking-tighter text-foreground md:text-2xl lg:text-3xl transition-transform duration-300 group-hover:scale-105',
 																	block.animate &&
-																		'text-primary drop-shadow-sm capitalize',
+																	'text-primary drop-shadow-sm capitalize',
 																)}>
 																{block.value}
 															</span>
@@ -720,7 +775,7 @@ export default function Tracker() {
 																{
 																	label: 'Score:',
 																	value: Math.round(subject.peakAverageScore),
-																	subtext: `${subject.subjectName}'s Peak`,
+																	subtext: `${subject.subjectName}'s Peak: ${formatDate(String(subject.bestDate))}`,
 																	animate: true,
 																},
 															].map((block, idx) => (
@@ -738,7 +793,7 @@ export default function Tracker() {
 																			className={cn(
 																				'text-xl font-extrabold tracking-tighter text-foreground md:text-2xl lg:text-3xl transition-transform duration-300 group-hover:scale-105',
 																				block.animate &&
-																					'text-primary drop-shadow-sm capitalize',
+																				'text-primary drop-shadow-sm capitalize',
 																			)}>
 																			{block.value}
 																		</span>
@@ -800,7 +855,7 @@ export default function Tracker() {
 															className={cn(
 																'text-xl font-extrabold tracking-tighter text-foreground md:text-2xl lg:text-3xl transition-transform duration-300 group-hover:scale-105',
 																block.animate &&
-																	'text-primary drop-shadow-sm capitalize',
+																'text-primary drop-shadow-sm capitalize',
 															)}>
 															{block.value}
 														</span>
@@ -848,7 +903,7 @@ export default function Tracker() {
 																	className={cn(
 																		'text-xl font-extrabold tracking-tighter text-foreground md:text-2xl lg:text-3xl transition-transform duration-300 group-hover:scale-105',
 																		block.animate &&
-																			'text-primary drop-shadow-sm capitalize',
+																		'text-primary drop-shadow-sm capitalize',
 																	)}>
 																	{block.value}
 																</span>
@@ -896,7 +951,7 @@ export default function Tracker() {
 																	className={cn(
 																		'text-xl font-extrabold tracking-tighter text-foreground md:text-2xl lg:text-3xl transition-transform duration-300 group-hover:scale-105',
 																		block.animate &&
-																			'text-primary drop-shadow-sm capitalize',
+																		'text-primary drop-shadow-sm capitalize',
 																	)}>
 																	{block.value}
 																</span>
@@ -946,7 +1001,7 @@ export default function Tracker() {
 																	className={cn(
 																		'text-xl font-extrabold tracking-tighter text-foreground md:text-2xl lg:text-3xl transition-transform duration-300 group-hover:scale-105',
 																		block.animate &&
-																			'text-primary drop-shadow-sm capitalize',
+																		'text-primary drop-shadow-sm capitalize',
 																	)}>
 																	{block.value}
 																</span>
@@ -1028,25 +1083,24 @@ export default function Tracker() {
 											<div className='relative z-10 flex flex-col items-center'>
 												<span
 													className={`text-4xl font-extrabold tracking-tight md:text-5xl text-foreground/80
-														${
-															currentStudySession.isStudySessionActive &&
+														${currentStudySession.isStudySessionActive &&
 															currentStudySession.subjectDetails._id ===
-																item.subject._id
-																? 'text-primary'
-																: 'text-foreground/80'
+															item.subject._id
+															? 'text-primary'
+															: 'text-foreground/80'
 														}
 															`}>
 													{formatMilliseconds(
 														currentStudySession.isStudySessionActive &&
 															currentStudySession.subjectDetails._id ===
-																item.subject._id
+															item.subject._id
 															? liveTimestamp
 															: item.timeStudied,
 													)}
 												</span>
 												<span className='mt-2 text-xs font-medium uppercase tracking-wider text-muted-foreground opacity-90'>
 													{currentStudySession.isStudySessionActive &&
-													currentStudySession.subjectDetails._id ===
+														currentStudySession.subjectDetails._id ===
 														item.subject._id
 														? 'Current Study Session'
 														: 'Hours Studied Today'}
@@ -1116,7 +1170,7 @@ export default function Tracker() {
 											disabled={
 												currentStudySession.isStudySessionActive &&
 												currentStudySession.subjectDetails._id !=
-													item.subject._id
+												item.subject._id
 											}
 											className='cursor-pointer'>
 											{' '}
@@ -1140,7 +1194,75 @@ export default function Tracker() {
 				<Button className='w-full my-5' variant={'secondary'} asChild>
 					<Link href='/tracker/data'>Daily Data</Link>
 				</Button>
+				<Sheet>
+					<SheetTrigger asChild>
+						<Button className='w-full'> <ImTarget />Open TARGETED CHAPTERS</Button>
+					</SheetTrigger>
+					<SheetContent side='bottom' className='overflow-auto '>
+						<SheetHeader>
+							<SheetTitle> Chapters in System</SheetTitle>
+							<SheetDescription>
+								These are your target
+							</SheetDescription>
+						</SheetHeader>
+						<EnhancedCard className='relative overflow-hidden border border-border/40 bg-background/60 backdrop-blur-xl shadow-2xl rounded-[2rem] transition-all duration-500 hover:shadow-primary/5 my-1'>
+							{/* ? Ambient Inner Glow */}
+							<div className='absolute -top-40 -right-40 -z-10 h-96 w-96 rounded-full bg-primary/10 blur-[100px]' />
+							<CardHeader>
+								<div className='mb-10 flex flex-col items-start justify-between gap-4 sm:flex-row sm:items-center'>
+									<div className='space-y-1'>
+										<h2 className='flex items-center gap-3 text-2xl font-bold tracking-tight text-foreground'>
+											<div className='flex h-10 w-10 items-center justify-center rounded-xl bg-primary/10 text-primary'>
+												<FcPlanner className='h-5 w-5' />
+											</div>
+											<Button variant={'ghost'} className='text-base' asChild>
+												<Link href={'/system'} className='text-base'>
+													Current Chapters To Study
+												</Link>
+											</Button>
+										</h2>
+										<p className='text-sm text-muted-foreground ml-13'>
+											Tracking progress towards your current goal.
+										</p>
+									</div>
+								</div>
+							</CardHeader>
+							<CardContent className='flex flex-col gap-4 item-center justify-center'>
+								{InProgressChaptersList.map((chapter, index) => (
+									<EnhancedCard key={chapter._id}>
+										<CardHeader>
+											<CardTitle
+												className={cn(
+													'text-2xl font-bold bg-linear-to-r from-chart-1 to-primary bg-clip-text text-transparent capitalize',
+													'scroll-m-20 text-center text-4xl font-extrabold tracking-tight text-balance',
+													'capitalize text-base/8',
+												)}>
+												{index + 1}. {chapter.name}
+											</CardTitle>
+										</CardHeader>
+										<CardContent>
+											<div className='w-full'>
+												<Badge
+													variant={
+														chapter.totalTopics === 0
+															? 'ghost'
+															: chapter.totalTopicsCompleted === chapter.totalTopics
+																? 'default'
+																: 'destructive'
+													}
+													className='text-base/9 mx-3 w-full'>
+													{chapter.totalTopicsCompleted}/{chapter.totalTopics}
+												</Badge>
+											</div>
+										</CardContent>
+									</EnhancedCard>
+								))}
+							</CardContent>
+						</EnhancedCard>
+					</SheetContent>
+				</Sheet>
 			</section>
+
 		</main>
 	);
 }

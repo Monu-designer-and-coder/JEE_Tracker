@@ -79,7 +79,7 @@ export async function GET(request: Request) {
               {
                 $addFields: {
                   // Calculates (Questions + Time) / 2
-                  averageScore: { $divide: [{ $add: ["$totalQuestions", "$totalTime"] }, 200000] }
+                  averageScore: { $divide: [{ $add: [{ $multiply: ["$totalQuestions", 1000000] }, "$totalTime"] }, 200000] }
                 }
               },
               { $sort: { averageScore: -1 } },
@@ -100,7 +100,7 @@ export async function GET(request: Request) {
               {
                 // Step B: Calculate the productive average for that specific subject's day
                 $addFields: {
-                  averageScore: { $divide: [{ $add: ["$dailyQuestions", "$dailyTime"] }, 200000] }
+                  averageScore: { $divide: [{ $add: [{ $multiply: ["$dailyQuestions", 1000000] }, "$dailyTime"] }, 200000] }
                 }
               },
               // Step C: Sort descending so the "best" days bubble to the top

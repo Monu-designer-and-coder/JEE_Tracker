@@ -136,7 +136,7 @@ export async function GET() {
     })
     const allListOfCurrentTasksChapterInProgress: inProgressChaptersCurrentTaskList[] = inProgressChapterList.map((chapter) => {
 
-      const topicsToComplete = chapter.topicsList.filter(topic => (!topic.done)).map(topic => (`Topic To Do: ${topic.name}`))
+      const topicsToComplete = chapter.topicsList.filter(topic => (!topic.done)).map(topic => (`Topic: ${topic.name}`))
 
       if (topicsToComplete.length) {
         return { chapter: chapter.name, task: topicsToComplete[0] }

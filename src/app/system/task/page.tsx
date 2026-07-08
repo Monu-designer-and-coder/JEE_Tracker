@@ -168,7 +168,7 @@ export default function SyllabusHomePage() {
 							<Badge
 								className={`text-xl px-7 py-4 my-5 mx-2 font-mono`}
 							>
-								{currentTask.seqNumber}. Task: {currentTask?.task}
+								{currentTask.seqNumber}. GOAL: {currentTask?.task}
 							</Badge>
 						</header>
 						<EnhancedCard className='w-full h-11/12'>
@@ -177,7 +177,7 @@ export default function SyllabusHomePage() {
 									<CardHeader>
 										<CardTitle>
 											<h2 className='w-full text-center text-2xl capitalize'>
-												Chose Current Task From List
+												Chose Current GOAL From List
 											</h2>
 										</CardTitle>
 									</CardHeader>
@@ -227,12 +227,12 @@ export default function SyllabusHomePage() {
 												})
 													.map((item, index) => (
 														item.map(task => (
-															<CarouselItem key={index + task[index].chapter + task[index].heading}>
+															<CarouselItem key={index + (task[index]?.chapter || "chapter-none") + (task[index]?.heading || "heading None")}>
 																<EnhancedCard>
 																	<CardHeader>
 																		<CardTitle>
 																			<h3 className='w-full text-center text-2xl/5 font-black capitalize'>
-																				{task[index].heading}</h3>
+																				{task[index]?.heading || "Completed: Nothing to do, "}</h3>
 																		</CardTitle>
 																	</CardHeader>
 																	<CardContent className="flex aspect-square items-center justify-center p-6 flex-col gap-3 px-7">

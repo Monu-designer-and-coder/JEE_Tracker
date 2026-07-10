@@ -53,8 +53,6 @@ const Header: React.FC<HeaderProps> = ({ className = '' }) => {
 					<NavbarLogo />
 					<NavItems items={navItems} />
 					<div className='flex items-center gap-4'>
-						<NavbarButton variant='secondary'>Login</NavbarButton>
-						<NavbarButton variant='primary'>Button</NavbarButton>
 						<NavbarButton variant='secondary'>
 							<ModeToggle />
 						</NavbarButton>
@@ -83,18 +81,10 @@ const Header: React.FC<HeaderProps> = ({ className = '' }) => {
 								key={`mobile-link-${idx}`}
 								href={item.link}
 								onClick={() => setIsMobileMenuOpen(false)}
-								className='relative text-neutral-600 dark:text-neutral-300'>
+								className='relative text-neutral-600 dark:text-neutral-300 font-navigation'>
 								<span className='block'>{item.name}</span>
 							</Link>
 						))}
-						<div className='flex w-full flex-col items-center gap-4'>
-							<NavbarButton
-								onClick={() => setIsMobileMenuOpen(false)}
-								variant='primary'
-								className='w-full'>
-								Login
-							</NavbarButton>
-						</div>
 					</MobileNavMenu>
 				</MobileNav>
 			</Navbar>

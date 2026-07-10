@@ -1,5 +1,5 @@
 import type { Metadata } from 'next';
-import { Geist, Geist_Mono, Roboto_Slab, Inter } from 'next/font/google';
+import { Geist, Geist_Mono, Roboto_Slab, Inter, Roboto_Mono, Plus_Jakarta_Sans, Fredoka, Sniglet, Urbanist, DM_Sans, JetBrains_Mono, Share_Tech_Mono } from 'next/font/google';
 import './globals.css';
 import { cn } from '@/lib/utils';
 import { ThemeProvider } from '@/components/theme-provider';
@@ -7,21 +7,65 @@ import Header from '@/components/Header';
 import StoreProvider from '@/store/StoreProvider';
 import { Slide, ToastContainer } from 'react-toastify';
 
-const robotoSlabHeading = Roboto_Slab({
+
+// Initialize fonts and assign them CSS variables
+const inter = Inter({
+	subsets: ['latin'],
+	display: 'swap',
+	variable: '--font-inter',
+}); const robotoMono = Roboto_Mono({
+	subsets: ['latin'],
+	display: 'swap',
+	variable: '--font-roboto-mono',
+}); const robotoSlabHeading = Roboto_Slab({
 	subsets: ['latin'],
 	variable: '--font-heading',
-});
-
-const inter = Inter({subsets:['latin'],variable:'--font-sans'});
-
-const geistSans = Geist({
+}); const geistSans = Geist({
 	variable: '--font-geist-sans',
 	subsets: ['latin'],
-});
-
-const geistMono = Geist_Mono({
+}); const geistMono = Geist_Mono({
 	variable: '--font-geist-mono',
 	subsets: ['latin'],
+});
+
+//! Fonts
+//? 🎮 Gamified & Rounded (Headers & Badges)
+const fredoka = Fredoka({
+	subsets: ["latin"],
+	weight: ["300", "400", "500", "600", "700"],
+	variable: "--font-badges",
+});
+const sniglet = Sniglet({
+	subsets: ["latin"],
+	weight: ["400", "800"],
+	variable: "--font-heading",
+});
+//? 📱 Modern & Minimalist UI (Syllabus & Navigation)
+const plusJakartaSans = Plus_Jakarta_Sans({
+	subsets: ["latin"],
+	weight: ["400", "500", "700", "200", "300", "600", "800"],
+	variable: "--font-content-primary",
+});
+const urbanist = Urbanist({
+	subsets: ["latin"],
+	weight: ["100", "200", "300", "400", "500", "600", "700", "800", "900"],
+	variable: "--font-content-secondary",
+});
+const DMSans = DM_Sans({
+	subsets: ["latin"],
+	weight: ["400", "500", "700", "200", "300", "600", "800", "100", "900"],
+	variable: "--font-navigation",
+});
+//? ⏱️ Monospaced (Pomodoro Timer & Clock)
+const jetBrainsMono = JetBrains_Mono({
+	subsets: ["latin"],
+	weight: ["400", "500", "700", "200", "300", "600", "800", "100"],
+	variable: "--font-pomodoro",
+});
+const shareTechMono = Share_Tech_Mono({
+	subsets: ["latin"],
+	weight: ["400"],
+	variable: "--font-clock",
 });
 
 export const metadata: Metadata = {
@@ -39,25 +83,34 @@ export default function RootLayout({
 			suppressHydrationWarning
 			lang='en'
 			className={cn(
-        				'h-full',
-        				'scroll-smooth',
-        				'antialiased',
-        				geistSans.variable,
-        				geistMono.variable,
-        				'font-sans',
-        				robotoSlabHeading.variable,
-        				'font-sans',
-        				'font-sans',
-        			 "font-sans", inter.variable)}>
+				'h-full w-full',
+				'scroll-smooth',
+				'antialiased',
+				"[&::-webkit-scrollbar]:w-1 [&::-webkit-scrollbar-thumb]:bg-slate-300",
+				geistSans.variable,
+				geistMono.variable,
+				robotoSlabHeading.variable,
+				robotoMono.variable,
+				inter.variable,
+				plusJakartaSans.variable,
+				fredoka.variable,
+				sniglet.variable,
+				urbanist.variable,
+				DMSans.variable,
+				jetBrainsMono.variable,
+				shareTechMono.variable
+			)}>
 			<body
-				className={`
+				className={cn(`
 					min-h-screen
 					antialiased 
-					font-sans
-					bg-background 
+					bg-background
 					text-foreground
 					selection:bg-primary/20
-        	`}>
+        	`,
+					"font-content-primary",
+					"[&::-webkit-scrollbar]:w-1 [&::-webkit-scrollbar-thumb]:bg-slate-300",
+				)}>
 				{' '}
 				<StoreProvider>
 					<ThemeProvider
@@ -67,32 +120,29 @@ export default function RootLayout({
 						disableTransitionOnChange // * Prevents flash during theme changes
 						storageKey='app-theme' // * Custom storage key for theme persistence
 					>
-						{/* ! APP STRUCTURE */}
-						<div className='flex min-h-screen flex-col'>
-							{/* ? Header with consistent height */}
-							<Header className='h-[20%] shrink-0' />{' '}
-							{/* * Changed from vh to fixed height for consistency */}
-							{/* ? Main content area with proper spacing */}
-							<main className='flex-1 h-[79%] overflow-hidden'>
-								{' '}
-								{children}
-								<ToastContainer
-									position='bottom-right'
-									autoClose={1500}
-									hideProgressBar={false}
-									newestOnTop={false}
-									closeOnClick={true}
-									rtl={false}
-									pauseOnFocusLoss
-									draggable
-									pauseOnHover={false}
-									theme='dark'
-									transition={Slide}
-								/>
-							</main>
-							{/* TODO: Add footer component if needed */}
-							{/* <Footer className="shrink-0" /> */}
-						</div>
+						{/* ? Header with consistent height */}
+						<Header className='h-[20%] shrink-0' />{' '}
+						{/* * Changed from vh to fixed height for consistency */}
+						{/* ? Main content area with proper spacing */}
+						<main className='h-[79%] overflow-hidden'>
+							{' '}
+							{children}
+							<ToastContainer
+								position='bottom-right'
+								autoClose={1500}
+								hideProgressBar={false}
+								newestOnTop={false}
+								closeOnClick={true}
+								rtl={false}
+								pauseOnFocusLoss
+								draggable
+								pauseOnHover={false}
+								theme='dark'
+								transition={Slide}
+							/>
+						</main>
+						{/* TODO: Add footer component if needed */}
+						{/* <Footer className="shrink-0" /> */}
 					</ThemeProvider>
 				</StoreProvider>
 			</body>

@@ -4,7 +4,7 @@
 // * ==========================================================================
 // * Imports
 // * ==========================================================================
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useState } from 'react';
 import axios, { AxiosResponse } from 'axios';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -35,11 +35,11 @@ import {
 } from '@/components/ui/sheet';
 import { Badge } from '@/components/ui/badge';
 import { getPendingChapter } from '@/types/res/SystemResponse.types';
-import { FcPlanner } from 'react-icons/fc';
 import { ImTarget } from "react-icons/im";
-import { CalendarDays, Clock, Timer } from 'lucide-react';
-import { Progress } from '@/components/ui/progress';
-import { homePageConfig, START_DATE, TARGET_DATE } from '@/config/frontend/homePage.config';
+import { CardBlockUI } from '@/components/module/card-block.module';
+import { cardBlockUIOrientation } from '@/components/module/card-block.module';
+import { CurrentTaskCard } from '@/components/module/current-task.module';
+import { MissionCountdownCard } from '@/components/module/mission-countdown.module';
 
 // * Standardized structural definitions describing expected paginated envelopes
 interface PaginatedAPIResponseEnvelope<T> {
@@ -73,18 +73,6 @@ export default function Tracker() {
 	// * Redux State
 	const currentStudySession = useAppSelector((state) => state.studySession);
 
-	const [currentTime, setCurrentTime] = useState(
-		new Intl.DateTimeFormat('en-IN', {
-			hour: '2-digit',
-			minute: '2-digit',
-			second: '2-digit',
-			weekday: 'long',
-			day: '2-digit',
-			month: 'long',
-			year: 'numeric',
-			hourCycle: "h23",
-		}).format(new Date())
-	)
 
 	// * State Management
 	const [subjectStreaks, setSubjectStreaks] = useState<
@@ -173,29 +161,13 @@ export default function Tracker() {
 	});
 
 
-	const d = new Date();
-	const [currentTimeMs, setCurrentTimeMs] = useState<number>(Number(d));
-
 
 	// * Lifecycle Hooks
 	useEffect(() => {
 
 		// * Optimized interval: Changed from 100ms to 1000ms.
-		// * React renders 10x less frequently while maintaining visually perfect second-by-second accuracy.
+		// * React renders 10x less frequently while maintaining visually
 
-		const timerInterval = setInterval(() => {
-			setCurrentTime(new Intl.DateTimeFormat('en-IN', {
-				hour: '2-digit',
-				minute: '2-digit',
-				second: '2-digit',
-				weekday: 'long',
-				day: '2-digit',
-				month: 'long',
-				year: 'numeric',
-				hourCycle: "h23",
-			}).format(new Date()));
-			setCurrentTimeMs(Date.now());
-		}, 1000);
 
 		setIsMounted(true);
 		fetchTodayStreaksIncremental(1, []);
@@ -220,30 +192,11 @@ export default function Tracker() {
 			.request(axiosConfig('subjectStreak/data?type=peak', 'get'))
 			.then((res) => setAllTimePeak(res.data));
 
-		axios.request(axiosConfig('system/task/', 'get')).then(
-			(
-				response: AxiosResponse<{
-					_id: string;
-					task: string;
-					seqNumber: number;
-					assignDate: Date;
-				}>,
-			) => {
-				const responseData = response.data
-				setCurrentTask(
-					responseData
-				);
-			},
-		);
-
 		axios
 			.request(axiosConfig('system', 'get'))
 			.then((response: AxiosResponse<getPendingChapter[]>) => {
 				setInProgressChaptersList(response.data);
 			});
-
-
-		return () => clearInterval(timerInterval);
 
 	}, []);
 
@@ -301,45 +254,6 @@ export default function Tracker() {
 		});
 	}, [subjectStreaks]);
 
-
-	// ! DERIVED STATE CALCULATIONS (Memoized for performance)
-	const {
-		days,
-		hours,
-		minutes,
-		seconds,
-		percentageElapsed,
-		totalDaysRemaining,
-	} = useMemo(() => {
-		// * Calculate exact bounds
-		const totalTimeSpanMs = Math.max(
-			1,
-			TARGET_DATE.getTime() - START_DATE.getTime(),
-		);
-		const timeLeftMs = Math.max(0, TARGET_DATE.getTime() - currentTimeMs);
-
-		// * Time breakdown math
-		const d = Math.floor(timeLeftMs / (1000 * 60 * 60 * 24));
-		const h = Math.floor(
-			(timeLeftMs % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60),
-		);
-		const m = Math.floor((timeLeftMs % (1000 * 60 * 60)) / (1000 * 60));
-		const s = Math.floor((timeLeftMs % (1000 * 60)) / 1000);
-
-		// * Progress calculations
-		const percentageRemaining = (timeLeftMs / totalTimeSpanMs) * 100;
-		// ? Bounded between 0 and 100 to prevent layout shifts or bar overflow
-		const pElapsed = Math.min(100, Math.max(0, 100 - percentageRemaining));
-
-		return {
-			days: d,
-			hours: h,
-			minutes: m,
-			seconds: s,
-			percentageElapsed: pElapsed,
-			totalDaysRemaining: d * 24 + h, // * Original metric calculation preserved
-		};
-	}, [currentTimeMs]);
 
 
 	// * ==========================================================================
@@ -643,17 +557,6 @@ export default function Tracker() {
 		}).format(date);
 	};
 
-	const [currentTask, setCurrentTask] = useState<{
-		_id: string;
-		task: string;
-		seqNumber: number;
-		assignDate: Date;
-	}>({
-		_id: "loading",
-		task: "loading",
-		seqNumber: 0,
-		assignDate: new Date()
-	})
 
 	function formatMilliseconds(ms: number): string {
 		const totalSeconds = Math.floor(ms / 1000);
@@ -674,15 +577,10 @@ export default function Tracker() {
 	// * Render
 	// * ==========================================================================
 	return (
-		<main className='relative min-h-[80vh] w-full overflow-auto bg-background px-4 py-8 md:px-8'>
-			{/* * Ambient Background Effects (Aceternity / Minimalist styling) */}
-			<div className='pointer-events-none absolute inset-0 z-0 overflow-hidden'>
-				<div className='absolute -left-[10%] top-[20%] h-125 w-125 rounded-full bg-primary/10 blur-[120px] mix-blend-screen' />
-				<div className='absolute right-[5%] top-[10%] h-100 w-100 rounded-full bg-blue-500/10 blur-[100px] mix-blend-screen' />
-			</div>
+		<main className='relative w-full overflow-auto bg-background px-4 py-8 md:px-8'>
 
 			{/* * Content Section */}
-			<section className='relative z-10 mx-auto max-w-9/10 h-[90vh] flex flex-col justify-center'>
+			<section className='relative z-10 mx-auto w-11/12 flex flex-col justify-center'>
 				{isLoading ? (
 					// * Loading State
 					<div className='flex h-64 items-center justify-center'>
@@ -691,965 +589,407 @@ export default function Tracker() {
 				) : (
 					// ! Added TooltipProvider here to ensure tooltips portal correctly and don't get clipped by overflow-hidden
 					<TooltipProvider delayDuration={200} >
-						<h1
-							className={`text-4xl ${currentStudySession.isStudySessionActive ? 'bg-primary' : 'bg-destructive/10 text-destructive '} rounded-full px-7 py-4 my-5 mx-2 font-mono`}>
-							Current Study Session:
-							{''}
-							{currentStudySession.subjectDetails.subjectName}{' '}
-						</h1>
-						<div >
-							<Sheet >
-								<SheetTrigger asChild className="my-3 py-3">
-									<Button className='w-full text-6xl py-4' variant="ghost">GOAL: {currentTask.task}</Button>
-								</SheetTrigger>
-								<SheetContent side='bottom' className='overflow-auto '>
-									<SheetHeader>
-										<SheetTitle>GOAL:</SheetTitle>
-									</SheetHeader>
-									<EnhancedCard className='relative overflow-auto border border-border/40 bg-background/60 backdrop-blur-xl shadow-2xl rounded-[2rem] transition-all duration-500 hover:shadow-primary/5 my-1 col-span-6 row-start-1'>
-										{/* ? Ambient Inner Glow */}
-										<div className='absolute -top-40 -right-40 -z-10 h-96 w-96 rounded-full bg-primary/10 blur-[100px]' />
+						<Sheet>
+							<SheetTrigger asChild>
+								<Button className='w-full'>Open Details</Button>
+							</SheetTrigger>
+							<SheetContent side='bottom' className='overflow-auto py-8 bg-primary/10 px-5'>
+								<SheetHeader>
+									<SheetTitle>Your Peak v/s Today</SheetTitle>
+									<SheetDescription>
+										This is your Peak, Recall Who you are!
+									</SheetDescription>
+								</SheetHeader>
+								<div className='grid grid-cols-2 grid-rows-1 w-full h-[80vh] gap-2 p-3 py-8 bg-primary/10 px-5'>
+									<Card className='h-full w-full rounded-4xl py-8 bg-primary/10 px-5'>
+										<CardHeader>
+											<CardTitle>Your Peak</CardTitle>
+										</CardHeader>
+										<CardContent className='overflow-auto flex flex-col gap-3 h-full'>
+											<CardBlockUI cardBlockUIContentList={[
+												{
+													label: 'Peak Questions Done',
+													value:
+														String(allTimePeak.peakQuestionsDoneDay[0]
+															?.totalQuestions || 0),
+													subtext: formatDate(
+														String(
+															allTimePeak.peakQuestionsDoneDay[0]?.date || '',
+														),
+													),
+													animate: false,
+												},
+												{
+													label: 'Peak Time Studied',
+													value: formatMilliseconds(
+														allTimePeak.peakTimeStudiedDay[0]?.totalTime || 0,
+													),
+													subtext: formatDate(
+														String(
+															allTimePeak.peakTimeStudiedDay[0]?.date || '',
+														),
+													),
+													animate: true,
+												},
+											]} />
+											<CardBlockUI cardBlockUIContentList={[
+												{
+													label: 'Overall Best Day',
+													value:
+														String(allTimePeak.bestOverallDay[0]?.totalQuestions ||
+															0),
+													subtext: 'Question Done',
+													animate: false,
+												},
+												{
+													label: 'Overall Best Day',
+													value: formatMilliseconds(
+														allTimePeak.bestOverallDay[0]?.totalTime || 0,
+													),
+													subtext: 'Time Studied',
+													animate: false,
+												},
+												{
+													label: "Overall Best Day's Score",
+													value: String(Math.round(
+														allTimePeak.bestOverallDay[0]?.averageScore || 0,
+													)),
+													subtext: formatDate(
+														String(allTimePeak.bestOverallDay[0]?.date || ''),
+													),
+													animate: true,
+												},
+											]} />
 
-										<CardContent className='p-10'>
-											{/* ? HEADER SECTION */}
-											<div className='mb-10 flex flex-col items-start justify-between gap-4 sm:flex-row sm:items-center'>
-												<div className='space-y-1'>
-													<h2 className='flex items-center gap-3 text-2xl font-bold tracking-tight text-foreground'>
-														<div className='flex h-10 w-10 items-center justify-center rounded-xl bg-primary/10 text-primary'>
-															<Clock className='h-5 w-5' />
+											<div className='grid grid-cols-3 gap-4 '>
+												{allTimePeak.subjectWisePeaks.length ? (
+													allTimePeak?.subjectWisePeaks?.map((subject) => (
+														<div
+															key={subject._id}
+															className='my-5 gap-4'>
+															<CardBlockUI cardBlockUIContentList={[
+																{
+																	label: 'Total Questions Done',
+																	value: String(subject.peakQuestions),
+																	subtext: `${subject.subjectName}'s Peak`,
+																	animate: false,
+																},
+																{
+																	label: 'Total Time Studied',
+																	value: formatMilliseconds(subject.peakTime),
+																	subtext: `${subject.subjectName}'s Peak`,
+																	animate: false,
+																},
+																{
+																	label: 'Score:',
+																	value: String(Math.round(subject.peakAverageScore)),
+																	subtext: `${subject.subjectName}'s Peak: ${formatDate(String(subject.bestDate))}`,
+																	animate: true,
+																},
+															]} orientation={cardBlockUIOrientation.Vertical} />
 														</div>
-														<Button variant={'ghost'} className='text-base' asChild>
-															<Link href={'/system/task'} className='text-base'>
-																To Do:
-															</Link>
-														</Button>
-													</h2>
-													<p className='text-sm text-muted-foreground ml-13'>
-														To this Task Now!
-													</p>
-												</div>
-											</div>
-
-											<div className='flex items-center justify-center my-4'>
-												{/* * Reusable structural pattern mapped for readability */}
-												{[
-													{
-														label: 'Do this Current Task',
-														value: currentTask.task,
-														subtext: "",
-														animate: true,
-													},
-													{
-														label: 'Sequence Number of the Task:',
-														value: currentTask.seqNumber,
-														subtext: '',
-														animate: false,
-													},
-													{
-														label: 'Time Assigned',
-														value: new Intl.DateTimeFormat('en-IN', {
-															weekday: 'short',
-															day: '2-digit',
-															month: '2-digit',
-															year: '2-digit',
-															hourCycle: "h24",
-														}).format(new Date(currentTask.assignDate)),
-														subtext: new Intl.DateTimeFormat('en-IN', {
-															hour: '2-digit',
-															minute: '2-digit',
-															second: '2-digit',
-															hourCycle: "h24",
-														}).format(new Date(currentTask.assignDate)),
-														animate: false,
-													},
-												].map((block, idx) => (
-													<div
-														key={`current-study-Session-${idx}`}
-														className={cn(
-															'group relative isolate flex flex-col items-center justify-center overflow-hidden rounded-4xl border border-border/30 bg-background/40 p-6 text-center backdrop-blur-md transition-all duration-500',
-															'hover:-translate-y-1 hover:border-primary/30 hover:bg-accent/20 hover:shadow-lg hover:shadow-primary/10 w-full',
-														)}>
-														{/* * Micro-interaction gradient sweep on hover */}
-														<div className='absolute inset-0 -z-10 bg-linear-to-br from-primary/10 via-transparent to-transparent opacity-0 transition-opacity duration-500 group-hover:opacity-100' />
-
-														<div className='relative flex flex-col items-center'>
-															<span
-																className={cn(
-																	'text-4xl font-extrabold tracking-tighter text-foreground md:text-5xl lg:text-6xl transition-transform duration-300 group-hover:scale-105',
-																	block.animate && 'text-primary drop-shadow-sm capitalize',
-																)}>
-																{block.value}
-															</span>
-															<span className='mt-2 text-sm font-semibold tracking-wider text-muted-foreground uppercase'>
-																{block.label}
-															</span>
-															{block.subtext && (
-																<span className='mt-1 font-medium text-foreground/70'>
-																	{block.subtext}
-																</span>
-															)}
-														</div>
-													</div>
-												))}
-											</div>
-											<div className='flex items-center justify-center my-4'>
-												{/* * Reusable structural pattern mapped for readability */}
-												{[
-													{
-														label: 'Time',
-														value: currentTime,
-														subtext: '',
-														animate: true,
-													},
-												].map((block, idx) => (
-													<div
-														key={`current-study-Session-${idx}`}
-														className={cn(
-															'group relative isolate flex flex-col items-center justify-center overflow-hidden rounded-4xl border border-border/30 bg-background/40 p-6 text-center backdrop-blur-md transition-all duration-500',
-															'hover:-translate-y-1 hover:border-primary/30 hover:bg-accent/20 hover:shadow-lg hover:shadow-primary/10 w-full',
-														)}>
-														{/* * Micro-interaction gradient sweep on hover */}
-														<div className='absolute inset-0 -z-10 bg-linear-to-br from-primary/10 via-transparent to-transparent opacity-0 transition-opacity duration-500 group-hover:opacity-100' />
-
-														<div className='relative flex flex-col items-center'>
-															<span
-																className={cn(
-																	'text-4xl/5 font-extrabold tracking-tighter text-foreground md:text-5xl /5lg:text-6xl transition-transform duration-300 group-hover:scale-105',
-																	block.animate && 'text-primary drop-shadow-sm capitalize',
-																)}>
-																{block.value}
-															</span>
-															<span className='mt-2 text-sm font-semibold tracking-wider text-muted-foreground uppercase'>
-																{block.label}
-															</span>
-															{block.subtext && (
-																<span className='mt-1 font-medium text-foreground/70'>
-																	{block.subtext}
-																</span>
-															)}
-														</div>
-													</div>
-												))}
+													))
+												) : (
+													<></>
+												)}
 											</div>
 										</CardContent>
-									</EnhancedCard>
-								</SheetContent>
-							</Sheet>
-
-							<div className='grid grid-cols-2 grid-rows-1'>
-								<EnhancedCard className='relative border border-border/40 bg-background/60 backdrop-blur-xl shadow-2xl rounded-[2rem] transition-all duration-500 hover:shadow-primary/5 my-1 '>
-									{/* ? Ambient Inner Glow */}
-									<div className='absolute -top-40 -right-40 -z-10 h-96 w-96 rounded-full bg-primary/10 blur-[100px]' />
-
-									<CardContent className='p-10 h-full'>
-										{/* ? HEADER SECTION */}
-										<div className='mb-10 flex flex-col items-start justify-between gap-4 sm:flex-row sm:items-center'>
-											<div className='space-y-1'>
-												<h2 className='flex items-center gap-3 text-2xl font-bold tracking-tight text-foreground'>
-													<div className='flex h-10 w-10 items-center justify-center rounded-xl bg-primary/10 text-primary'>
-														<Clock className='h-5 w-5' />
-													</div>
-													<Button variant={'ghost'} className='text-base' asChild>
-														<Link href={'/system/task'} className='text-base'>
-															Time is:
-														</Link>
-													</Button>
-												</h2>
-											</div>
-										</div>
-
-										<div className='flex items-center justify-center my-4 w-full h-11/12'>
-											{/* * Reusable structural pattern mapped for readability */}
-											{[
+									</Card>
+									<Card className='h-full w-full rounded-4xl py-8 bg-primary/10 px-5'>
+										<CardHeader>
+											<CardTitle>
+												<Badge className='w-full text-lg' variant={'ghost'}>
+													Your Score Today: <Badge className={cn(
+														'text-xl p-5 py-4 font-normal tracking-tighter text-foreground transition-transform duration-300 group-hover:scale-105',
+														'text-primary drop-shadow-sm capitalize',
+													)} variant="ghost">
+														{Math.round(((todaysProgressData.totalQuestionsDone * 1000000) + todaysProgressData.totalTimeStudiedMs) / 200000)}
+													</Badge>
+												</Badge>
+											</CardTitle>
+										</CardHeader>
+										<CardContent>
+											<CardBlockUI cardBlockUIContentList={[
 												{
-													label: 'Time',
-													value: currentTime,
+													label: 'Total Questions Done',
+													value: String(todaysProgressData.totalQuestionsDone),
+													subtext: '',
+													animate: currentStudySession.isStudySessionActive,
+												},
+												{
+													label: 'Total Time Studied',
+													value: formatMilliseconds(
+														todaysProgressData.totalTimeStudiedMs,
+													),
 													subtext: '',
 													animate: true,
 												},
-											].map((block, idx) => (
-												<div
-													key={`current-study-Session-${idx}`}
-													className={cn(
-														'group relative isolate flex flex-col items-center justify-center overflow-hidden rounded-4xl border border-border/30 bg-background/40 p-6 text-center backdrop-blur-md transition-all duration-500',
-														'hover:-translate-y-1 hover:border-primary/30 hover:bg-accent/20 hover:shadow-lg hover:shadow-primary/10 w-full',
-													)}>
-													{/* * Micro-interaction gradient sweep on hover */}
-													<div className='absolute inset-0 -z-10 bg-linear-to-br from-primary/10 via-transparent to-transparent opacity-0 transition-opacity duration-500 group-hover:opacity-100' />
-
-													<div className='relative flex flex-col items-center'>
-														<span
-															className={cn(
-																'text-4xl/5 font-extrabold tracking-tighter text-foreground md:text-5xl /5lg:text-6xl transition-transform duration-300 group-hover:scale-105',
-																block.animate && 'text-primary drop-shadow-sm capitalize',
-															)}>
-															{block.value}
-														</span>
-														<span className='mt-2 text-sm font-semibold tracking-wider text-muted-foreground uppercase'>
-															{block.label}
-														</span>
-														{block.subtext && (
-															<span className='mt-1 font-medium text-foreground/70'>
-																{block.subtext}
-															</span>
-														)}
-													</div>
-												</div>
-											))}
-										</div>
-									</CardContent>
-								</EnhancedCard>.
-
-								<EnhancedCard className='relative overflow-hidden border border-border/40 bg-background/60 backdrop-blur-xl shadow-2xl rounded-[2rem] transition-all duration-500 hover:shadow-primary/5 my-2 col-start-2 row-start-1'>
-									{/* ? Ambient Inner Glow */}
-									<div className='absolute -top-40 -right-40 -z-10 h-96 w-96 rounded-full bg-primary/10 blur-[100px]' />
-
-									<CardContent className='p-6 md:p-10'>
-										{/* ? HEADER SECTION */}
-										<div className='mb-10 flex flex-col items-start justify-between gap-4 sm:flex-row sm:items-center'>
-											<div className='space-y-1'>
-												<h2 className='flex items-center gap-3 text-2xl font-bold tracking-tight text-foreground'>
-													<div className='flex h-10 w-10 items-center justify-center rounded-xl bg-primary/10 text-primary'>
-														<Clock className='h-5 w-5' />
-													</div>
-													Mission Countdown
-												</h2>
-												<p className='text-sm text-muted-foreground ml-13'>
-													Tracking progress towards your ultimate goal.
-												</p>
-											</div>
-
-											{/* * Status Badge */}
-											<Badge
-												variant='secondary'
-												className='bg-accent/50 px-4 py-2 text-sm backdrop-blur-md transition-colors hover:bg-accent/70 shadow-sm border border-border/50'>
-												<Timer className='mr-2 h-4 w-4' />
-												{percentageElapsed.toFixed(2)}% Elapsed
-											</Badge>
-										</div>
-
-										{/* ? COUNTDOWN GRID */}
-										<div className='grid grid-cols-2 gap-6'>
-											{/* * Reusable structural pattern mapped for readability */}
-											{[
-												{
-													label: 'Days',
-													value: days,
-													icon: CalendarDays,
-													subtext: `of ${homePageConfig.TOTAL_DAYS} total`,
-												},
-												{
-													label: 'Hours',
-													value: String(hours).padStart(2, '0'),
-													subtext: `${totalDaysRemaining} total left`,
-												},
-												{ label: 'Minutes', value: String(minutes).padStart(2, '0') },
-												{
-													label: 'Seconds',
-													value: String(seconds).padStart(2, '0'),
-													animate: true,
-												},
-											].map((block, idx) => (
-												<div
-													key={`countdown-block-${idx}`}
-													className={cn(
-														'group relative isolate flex flex-col items-center justify-center overflow-hidden rounded-4xl border border-border/30 bg-background/40 p-6 text-center backdrop-blur-md transition-all duration-500',
-														'hover:-translate-y-1 hover:border-primary/30 hover:bg-accent/20 hover:shadow-lg hover:shadow-primary/10',
-													)}>
-													{/* * Micro-interaction gradient sweep on hover */}
-													<div className='absolute inset-0 -z-10 bg-linear-to-br from-primary/10 via-transparent to-transparent opacity-0 transition-opacity duration-500 group-hover:opacity-100' />
-
-													<div className='relative flex flex-col items-center'>
-														<span
-															className={cn(
-																'text-4xl font-extrabold tracking-tighter text-foreground md:text-5xl lg:text-6xl transition-transform duration-300 group-hover:scale-105',
-																block.animate && 'text-primary drop-shadow-sm',
-															)}>
-															{block.value}
-														</span>
-														<span className='mt-2 text-sm font-semibold tracking-wider text-muted-foreground uppercase'>
-															{block.label}
-														</span>
-														{block.subtext && (
-															<span className='mt-1 text-xs font-medium text-muted-foreground/70'>
-																{block.subtext}
-															</span>
-														)}
-													</div>
-												</div>
-											))}
-										</div>
-
-										{/* ? PROGRESS BAR SECTION */}
-										<div className='mt-10 space-y-4 rounded-4xl border border-border/30 bg-background/40 p-6 backdrop-blur-sm'>
-											<div className='flex justify-between items-end text-sm font-medium'>
-												<span className='text-muted-foreground'>
-													Overall Timeline Progress
-												</span>
-												<span className='text-primary text-lg font-bold'>
-													{Math.round(percentageElapsed)}%
-												</span>
-											</div>
-
-											{/* * Shadcn Progress with customized height and inner shadow styling */}
-											<div className='relative overflow-hidden rounded-full bg-accent/50 p-1 shadow-inner'>
-												<Progress
-													value={percentageElapsed}
-													className='h-3 rounded-full bg-transparent [&>div]:bg-linear-to-r [&>div]:from-primary [&>div]:to-primary/80'
-													aria-label='Countdown Progress'
-												/>
-											</div>
-										</div>
-									</CardContent>
-								</EnhancedCard>
-							</div>
-
-							<Sheet>
-								<SheetTrigger asChild>
-									<Button className='w-full'>Open Details</Button>
-								</SheetTrigger>
-								<SheetContent side='bottom' className='overflow-auto '>
-									<SheetHeader>
-										<SheetTitle>Your Peak v/s Today</SheetTitle>
-										<SheetDescription>
-											This is your Peak, Recall Who you are!
-										</SheetDescription>
-									</SheetHeader>
-									<div className='grid grid-cols-2 grid-rows-1 w-full h-[70vh] gap-2 p-3'>
-										<EnhancedCard className='h-full w-full rounded'>
-											<CardHeader>
-												<CardTitle>Your Peak</CardTitle>
-											</CardHeader>
-											<CardContent className='overflow-auto'>
-												<div className='grid grid-cols-2'>
-													{[
-														{
-															label: 'Peak Questions Done',
-															value:
-																allTimePeak.peakQuestionsDoneDay[0]
-																	?.totalQuestions || 0,
-															subtext: formatDate(
-																String(
-																	allTimePeak.peakQuestionsDoneDay[0]?.date || '',
-																),
-															),
-															animate: false,
-														},
-														{
-															label: 'Peak Time Studied',
-															value: formatMilliseconds(
-																allTimePeak.peakTimeStudiedDay[0]?.totalTime || 0,
-															),
-															subtext: formatDate(
-																String(
-																	allTimePeak.peakTimeStudiedDay[0]?.date || '',
-																),
-															),
-															animate: true,
-														},
-													].map((block, idx) => (
-														<div
-															key={`current-study-Session-${idx}`}
-															className={cn(
-																'group relative isolate flex flex-col items-center justify-center overflow-hidden rounded-4xl border border-border/30 bg-background/40 p-6 text-center backdrop-blur-md transition-all duration-500',
-																'hover:-translate-y-1 hover:border-primary/30 hover:bg-accent/20 hover:shadow-lg hover:shadow-primary/10 w-full',
-															)}>
-															{/* * Micro-interaction gradient sweep on hover */}
-															<div className='absolute inset-0 -z-10 bg-linear-to-br from-primary/10 via-transparent to-transparent opacity-0 transition-opacity duration-500 group-hover:opacity-100' />
-
-															<div className='relative flex flex-col items-center'>
-																<span
-																	className={cn(
-																		'text-xl font-extrabold tracking-tighter text-foreground md:text-2xl lg:text-3xl transition-transform duration-300 group-hover:scale-105',
-																		block.animate &&
-																		'text-primary drop-shadow-sm capitalize',
-																	)}>
-																	{block.value}
-																</span>
-																<span className='mt-2 text-sm font-semibold tracking-wider text-muted-foreground uppercase'>
-																	{block.label}
-																</span>
-																{block.subtext && (
-																	<span className='mt-1 font-medium text-foreground/70'>
-																		{block.subtext}
-																	</span>
-																)}
-															</div>
-														</div>
-													))}
-												</div>
-												<div className='grid grid-cols-3 border rounded-4xl'>
-													{[
-														{
-															label: 'Overall Best Day',
-															value:
-																allTimePeak.bestOverallDay[0]?.totalQuestions ||
-																0,
-															subtext: 'Question Done',
-															animate: false,
-														},
-														{
-															label: 'Overall Best Day',
-															value: formatMilliseconds(
-																allTimePeak.bestOverallDay[0]?.totalTime || 0,
-															),
-															subtext: 'Time Studied',
-															animate: false,
-														},
-														{
-															label: "Overall Best Day's Score",
-															value: Math.round(
-																allTimePeak.bestOverallDay[0]?.averageScore || 0,
-															),
-															subtext: formatDate(
-																String(allTimePeak.bestOverallDay[0]?.date || ''),
-															),
-															animate: true,
-														},
-													].map((block, idx) => (
-														<div
-															key={`current-study-Session-${idx}`}
-															className={cn(
-																'group relative isolate flex flex-col items-center justify-center overflow-hidden rounded-4xl border border-border/30 bg-background/40 p-6 text-center backdrop-blur-md transition-all duration-500',
-																'hover:-translate-y-1 hover:border-primary/30 hover:bg-accent/20 hover:shadow-lg hover:shadow-primary/10 w-full',
-															)}>
-															{/* * Micro-interaction gradient sweep on hover */}
-															<div className='absolute inset-0 -z-10 bg-linear-to-br from-primary/10 via-transparent to-transparent opacity-0 transition-opacity duration-500 group-hover:opacity-100' />
-
-															<div className='relative flex flex-col items-center'>
-																<span
-																	className={cn(
-																		'text-xl font-extrabold tracking-tighter text-foreground md:text-2xl lg:text-3xl transition-transform duration-300 group-hover:scale-105',
-																		block.animate &&
-																		'text-primary drop-shadow-sm capitalize',
-																	)}>
-																	{block.value}
-																</span>
-																<span className='mt-2 text-sm font-semibold tracking-wider text-muted-foreground uppercase'>
-																	{block.label}
-																</span>
-																{block.subtext && (
-																	<span className='mt-1 font-medium text-foreground/70'>
-																		{block.subtext}
-																	</span>
-																)}
-															</div>
-														</div>
-													))}
-												</div>
-												<div className='grid grid-rows-2 grid-cols-3'>
-													{allTimePeak.subjectWisePeaks.length ? (
-														allTimePeak?.subjectWisePeaks?.map((subject) => (
-															<div
-																key={subject._id}
-																className=' border border-primary rounded-2xl gap-4'>
-																{[
-																	{
-																		label: 'Total Questions Done',
-																		value: subject.peakQuestions,
-																		subtext: `${subject.subjectName}'s Peak`,
-																		animate: false,
-																	},
-																	{
-																		label: 'Total Time Studied',
-																		value: formatMilliseconds(subject.peakTime),
-																		subtext: `${subject.subjectName}'s Peak`,
-																		animate: false,
-																	},
-																	{
-																		label: 'Score:',
-																		value: Math.round(subject.peakAverageScore),
-																		subtext: `${subject.subjectName}'s Peak: ${formatDate(String(subject.bestDate))}`,
-																		animate: true,
-																	},
-																].map((block, idx) => (
-																	<div
-																		key={`current-study-Session-${idx}`}
-																		className={cn(
-																			'group relative isolate flex flex-col items-center justify-center overflow-hidden rounded-4xl border border-border/30 bg-background/40 p-6 text-center backdrop-blur-md transition-all duration-500',
-																			'hover:-translate-y-1 hover:border-primary/30 hover:bg-accent/20 hover:shadow-lg hover:shadow-primary/10 w-full',
-																		)}>
-																		{/* * Micro-interaction gradient sweep on hover */}
-																		<div className='absolute inset-0 -z-10 bg-linear-to-br from-primary/10 via-transparent to-transparent opacity-0 transition-opacity duration-500 group-hover:opacity-100' />
-
-																		<div className='relative flex flex-col items-center'>
-																			<span
-																				className={cn(
-																					'text-xl font-extrabold tracking-tighter text-foreground md:text-2xl lg:text-3xl transition-transform duration-300 group-hover:scale-105',
-																					block.animate &&
-																					'text-primary drop-shadow-sm capitalize',
-																				)}>
-																				{block.value}
-																			</span>
-																			<span className='mt-2 text-sm font-semibold tracking-wider text-muted-foreground uppercase'>
-																				{block.label}
-																			</span>
-																			{block.subtext && (
-																				<span className='mt-1 font-medium text-foreground/70 capitalize'>
-																					{block.subtext}
-																				</span>
-																			)}
-																		</div>
-																	</div>
-																))}
-															</div>
-														))
-													) : (
-														<></>
-													)}
-												</div>
-											</CardContent>
-										</EnhancedCard>
-										<EnhancedCard className='h-full w-full rounded'>
-											<CardHeader>
-												<CardTitle>
-													<Badge className='w-full text-lg' variant={'ghost'}>
-														Your Score Today: <Badge className={cn(
-															'text-xl p-5 py-4 font-extrabold tracking-tighter text-foreground transition-transform duration-300 group-hover:scale-105',
-															'text-primary drop-shadow-sm capitalize',
-														)} variant="ghost">
-															{Math.round(((todaysProgressData.totalQuestionsDone * 1000000) + todaysProgressData.totalTimeStudiedMs) / 200000)}
-														</Badge>
-													</Badge>
-												</CardTitle>
-											</CardHeader>
-											<CardContent>
-												{[
+											]} />
+											<div className='grid grid-cols-1 grid-rows-3 my-2 p-6 px-8 gap-4'>
+												<CardBlockUI cardBlockUIContentList={[
 													{
-														label: 'Total Questions Done',
-														value: todaysProgressData.totalQuestionsDone,
-														subtext: '',
-														animate: currentStudySession.isStudySessionActive,
-													},
-													{
-														label: 'Total Time Studied',
-														value: formatMilliseconds(
-															todaysProgressData.totalTimeStudiedMs,
-														),
-														subtext: '',
 														animate: true,
+														subtext: 'Total Questions Done',
+														value:
+															String(todaysProgressData.physics.totalQuestionsDone),
+														label: 'Physics',
+
 													},
-												].map((block, idx) => (
-													<div
-														key={`current-study-Session-${idx}`}
-														className={cn(
-															'group relative isolate flex flex-col items-center justify-center overflow-hidden rounded-4xl border border-border/30 bg-background/40 p-6 text-center backdrop-blur-md transition-all duration-500',
-															'hover:-translate-y-1 hover:border-primary/30 hover:bg-accent/20 hover:shadow-lg hover:shadow-primary/10 w-full',
-														)}>
-														{/* * Micro-interaction gradient sweep on hover */}
-														<div className='absolute inset-0 -z-10 bg-linear-to-br from-primary/10 via-transparent to-transparent opacity-0 transition-opacity duration-500 group-hover:opacity-100' />
+													{
+														subtext: 'Total Time Studied',
+														value: formatMilliseconds(
+															todaysProgressData.physics.totalTimeStudiedMs,
+														),
+														label: 'Physics',
+														animate: false,
+													},
+												]} />
+												<CardBlockUI cardBlockUIContentList={[
+													{
+														animate: true,
+														subtext: 'Total Questions Done',
+														value:
+															String(todaysProgressData.chemistry.totalQuestionsDone),
+														label: 'Chemistry',
 
-														<div className='relative flex flex-col items-center'>
-															<span
-																className={cn(
-																	'text-xl font-extrabold tracking-tighter text-foreground md:text-2xl lg:text-3xl transition-transform duration-300 group-hover:scale-105',
-																	block.animate &&
-																	'text-primary drop-shadow-sm capitalize',
-																)}>
-																{block.value}
-															</span>
-															<span className='mt-2 text-sm font-semibold tracking-wider text-muted-foreground uppercase'>
-																{block.label}
-															</span>
-															{block.subtext && (
-																<span className='mt-1 font-medium text-foreground/70'>
-																	{block.subtext}
-																</span>
-															)}
-														</div>
-													</div>
-												))}
-												<div className='grid grid-cols-3 grid-rows-2'>
-													<div>
-														{[
-															{
-																label: 'Total Questions Done',
-																value:
-																	todaysProgressData.physics.totalQuestionsDone,
-																subtext: 'Physics',
-																animate: currentStudySession.isStudySessionActive,
-															},
-															{
-																label: 'Total Time Studied',
-																value: formatMilliseconds(
-																	todaysProgressData.physics.totalTimeStudiedMs,
-																),
-																subtext: 'Physics',
-																animate: true,
-															},
-														].map((block, idx) => (
-															<div
-																key={`current-study-Session-${idx}`}
-																className={cn(
-																	'group relative isolate flex flex-col items-center justify-center overflow-hidden rounded-4xl border border-border/30 bg-background/40 p-6 text-center backdrop-blur-md transition-all duration-500',
-																	'hover:-translate-y-1 hover:border-primary/30 hover:bg-accent/20 hover:shadow-lg hover:shadow-primary/10 w-full',
-																)}>
-																{/* * Micro-interaction gradient sweep on hover */}
-																<div className='absolute inset-0 -z-10 bg-linear-to-br from-primary/10 via-transparent to-transparent opacity-0 transition-opacity duration-500 group-hover:opacity-100' />
+													},
+													{
+														subtext: 'Total Time Studied',
+														value: formatMilliseconds(
+															todaysProgressData.chemistry.totalTimeStudiedMs,
+														),
+														label: 'Chemistry',
+														animate: false,
+													},
+												]} />
+												<CardBlockUI cardBlockUIContentList={[
+													{
+														animate: true,
+														subtext: 'Total Questions Done',
+														value:
+															String(todaysProgressData.mathematics
+																.totalQuestionsDone),
+														label: 'Mathematics',
 
-																<div className='relative flex flex-col items-center'>
-																	<span
-																		className={cn(
-																			'text-xl font-extrabold tracking-tighter text-foreground md:text-2xl lg:text-3xl transition-transform duration-300 group-hover:scale-105',
-																			block.animate &&
-																			'text-primary drop-shadow-sm capitalize',
-																		)}>
-																		{block.value}
-																	</span>
-																	<span className='mt-2 text-sm font-semibold tracking-wider text-muted-foreground uppercase'>
-																		{block.label}
-																	</span>
-																	{block.subtext && (
-																		<span className='mt-1 font-medium text-foreground/70'>
-																			{block.subtext}
-																		</span>
-																	)}
-																</div>
-															</div>
-														))}
-													</div>
-													<div>
-														{[
-															{
-																label: 'Total Questions Done',
-																value:
-																	todaysProgressData.chemistry.totalQuestionsDone,
-																subtext: 'Chemistry',
-																animate: currentStudySession.isStudySessionActive,
-															},
-															{
-																label: 'Total Time Studied',
-																value: formatMilliseconds(
-																	todaysProgressData.chemistry.totalTimeStudiedMs,
-																),
-																subtext: 'Chemistry',
-																animate: true,
-															},
-														].map((block, idx) => (
-															<div
-																key={`current-study-Session-${idx}`}
-																className={cn(
-																	'group relative isolate flex flex-col items-center justify-center overflow-hidden rounded-4xl border border-border/30 bg-background/40 p-6 text-center backdrop-blur-md transition-all duration-500',
-																	'hover:-translate-y-1 hover:border-primary/30 hover:bg-accent/20 hover:shadow-lg hover:shadow-primary/10 w-full',
-																)}>
-																{/* * Micro-interaction gradient sweep on hover */}
-																<div className='absolute inset-0 -z-10 bg-linear-to-br from-primary/10 via-transparent to-transparent opacity-0 transition-opacity duration-500 group-hover:opacity-100' />
-
-																<div className='relative flex flex-col items-center'>
-																	<span
-																		className={cn(
-																			'text-xl font-extrabold tracking-tighter text-foreground md:text-2xl lg:text-3xl transition-transform duration-300 group-hover:scale-105',
-																			block.animate &&
-																			'text-primary drop-shadow-sm capitalize',
-																		)}>
-																		{block.value}
-																	</span>
-																	<span className='mt-2 text-sm font-semibold tracking-wider text-muted-foreground uppercase'>
-																		{block.label}
-																	</span>
-																	{block.subtext && (
-																		<span className='mt-1 font-medium text-foreground/70'>
-																			{block.subtext}
-																		</span>
-																	)}
-																</div>
-															</div>
-														))}
-													</div>
-													<div>
-														{[
-															{
-																label: 'Total Questions Done',
-																value:
-																	todaysProgressData.mathematics
-																		.totalQuestionsDone,
-																subtext: 'Mathematics',
-																animate: currentStudySession.isStudySessionActive,
-															},
-															{
-																label: 'Total Time Studied',
-																value: formatMilliseconds(
-																	todaysProgressData.mathematics
-																		.totalTimeStudiedMs,
-																),
-																subtext: 'Mathematics',
-																animate: true,
-															},
-														].map((block, idx) => (
-															<div
-																key={`current-study-Session-${idx}`}
-																className={cn(
-																	'group relative isolate flex flex-col items-center justify-center overflow-hidden rounded-4xl border border-border/30 bg-background/40 p-6 text-center backdrop-blur-md transition-all duration-500',
-																	'hover:-translate-y-1 hover:border-primary/30 hover:bg-accent/20 hover:shadow-lg hover:shadow-primary/10 w-full',
-																)}>
-																{/* * Micro-interaction gradient sweep on hover */}
-																<div className='absolute inset-0 -z-10 bg-linear-to-br from-primary/10 via-transparent to-transparent opacity-0 transition-opacity duration-500 group-hover:opacity-100' />
-
-																<div className='relative flex flex-col items-center'>
-																	<span
-																		className={cn(
-																			'text-xl font-extrabold tracking-tighter text-foreground md:text-2xl lg:text-3xl transition-transform duration-300 group-hover:scale-105',
-																			block.animate &&
-																			'text-primary drop-shadow-sm capitalize',
-																		)}>
-																		{block.value}
-																	</span>
-																	<span className='mt-2 text-sm font-semibold tracking-wider text-muted-foreground uppercase'>
-																		{block.label}
-																	</span>
-																	{block.subtext && (
-																		<span className='mt-1 font-medium text-foreground/70'>
-																			{block.subtext}
-																		</span>
-																	)}
-																</div>
-															</div>
-														))}
-													</div>
-												</div>
-											</CardContent>
-										</EnhancedCard>
-									</div>
-								</SheetContent>
-							</Sheet>
-
-							<div className='grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3'>
-								{subjectStreaks.map((item, index) => (
-									<EnhancedCard
-										key={item._id}
-										sizeProp='sm'
-										// * Applied glassmorphism, depth, and consistent border radius
-										className='group/card relative overflow-hidden rounded-[1.5rem] border border-white/10 bg-white/5 shadow-2xl backdrop-blur-xl transition-all duration-500 hover:shadow-primary/5 dark:bg-black/40 h-full'>
-										{/* * Micro-interaction gradient overlay */}
-										<div className='pointer-events-none absolute inset-0 bg-linear-to-br from-white/10 via-transparent to-transparent opacity-0 transition-opacity duration-500 group-hover/card:opacity-100' />
-
-										<CardHeader className='relative z-10 pb-2'>
-											<Tooltip>
-												<TooltipTrigger asChild>
-													<Button
-														variant='outline'
-														size='lg'
-														className='w-full capitalize tracking-wide bg-background/50 backdrop-blur-md border-white/10 hover:bg-primary/20 hover:text-primary transition-colors text-base py-6'>
-														{item.subject?.name || 'Unknown Subject'}
-													</Button>
-												</TooltipTrigger>
-												{/* ! FIXED: Tooltip visibility, positioning, sizing, and padding issues */}
-												<TooltipContent
-													side='top'
-													sideOffset={12}
-													className='z-100 min-w-45 p-4 bg-popover/95 backdrop-blur-xl border border-white/20 shadow-[0_10px_40px_-10px_rgba(0,0,0,0.5)] rounded-xl text-center'>
-													<div className='flex flex-col gap-1.5'>
-														<p className='text-sm font-bold uppercase tracking-wider text-primary'>
-															Active Streak
-														</p>
-														<p className='text-base font-medium text-foreground'>
-															{formatDate(item.date)}
-														</p>
-													</div>
-												</TooltipContent>
-											</Tooltip>
-										</CardHeader>
-
-										<CardContent className='relative z-10 flex flex-col gap-4 pt-4'>
-											{/* * Interactive Stat Block: Questions Done */}
-											<button
-												onClick={() =>
-													incrementQuestionStreak(item._id, item.subject._id)
-												}
-												className='group/btn relative flex w-full flex-col items-center justify-center overflow-hidden rounded-[1.25rem] border border-white/5 bg-black/20 p-6 text-center backdrop-blur-md transition-all duration-300 hover:-translate-y-1 hover:bg-primary/10 hover:border-primary/30 hover:shadow-[0_0_20px_rgba(var(--primary),0.2)] focus:outline-none focus:ring-2 focus:ring-primary/50'
-												aria-label={`Increment questions done for ${item.subject?.name}`}>
-												<div className='relative z-10 flex flex-col items-center'>
-													<span className='text-4xl font-extrabold tracking-tight md:text-5xl bg-linear-to-br from-foreground to-foreground/70 bg-clip-text text-transparent transition-transform duration-300 group-hover/btn:scale-110'>
-														{item.questionsDone}
-													</span>
-													<span className='mt-2 text-xs font-medium uppercase tracking-wider text-muted-foreground opacity-90 transition-colors group-hover/btn:text-foreground'>
-														Questions Done Today
-													</span>
-												</div>
-											</button>
-
-											{/* * Static Stat Block: Hours Studied */}
-											<div className='relative flex w-full flex-col items-center justify-center overflow-hidden rounded-[1.25rem] border border-white/5 bg-black/20 p-6 text-center backdrop-blur-md transition-all duration-300 hover:bg-white/5'>
-												<div className='relative z-10 flex flex-col items-center'>
-													<span
-														className={`text-4xl font-extrabold tracking-tight md:text-5xl text-foreground/80
-														${currentStudySession.isStudySessionActive &&
-																currentStudySession.subjectDetails._id ===
-																item.subject._id
-																? 'text-primary'
-																: 'text-foreground/80'
-															}
-															`}>
-														{formatMilliseconds(
-															currentStudySession.isStudySessionActive &&
-																currentStudySession.subjectDetails._id ===
-																item.subject._id
-																? liveTimestamp
-																: item.timeStudied,
-														)}
-													</span>
-													<span className='mt-2 text-xs font-medium uppercase tracking-wider text-muted-foreground opacity-90'>
-														{currentStudySession.isStudySessionActive &&
-															currentStudySession.subjectDetails._id ===
-															item.subject._id
-															? 'Current Study Session'
-															: 'Hours Studied Today'}
-													</span>
-													<EnhancedInputContainer>
-														<CardHeader>
-															<Label className='text-sm font-semibold text-primary'>
-																Add Time Hrs:Min:Sec
-															</Label>
-														</CardHeader>
-														<CardContent className='w-full h-full'>
-															<div className='flex gap-2'>
-																<Input
-																	type='number'
-																	placeholder='Enter Hours'
-																	className='glass-input'
-																	value={item.hours}
-																	onChange={(e) => {
-																		handleTimeChange(
-																			index,
-																			'hours',
-																			e.target.value,
-																		);
-																	}}
-																/>
-																<Input
-																	type='number'
-																	placeholder='Enter Minutes'
-																	className='glass-input'
-																	value={item.minutes}
-																	onChange={(e) => {
-																		handleTimeChange(
-																			index,
-																			'minutes',
-																			e.target.value,
-																		);
-																	}}
-																/>
-															</div>
-															<Button
-																onClick={() => {
-																	handleAddTime(index);
-																}}
-																className='w-full my-1'>
-																Add This Time
-															</Button>
-														</CardContent>
-													</EnhancedInputContainer>
-												</div>
+													},
+													{
+														subtext: 'Total Time Studied',
+														value: formatMilliseconds(
+															todaysProgressData.mathematics
+																.totalTimeStudiedMs,
+														),
+														label: 'Mathematics',
+														animate: false,
+													},
+												]} />
 											</div>
-
-											{/* Study Button  */}
-											<Button
-												size={'lg'}
-												variant={
-													!currentStudySession.isStudySessionActive
-														? 'default'
-														: 'destructive'
-												}
-												onClick={() => {
-													studySessionToggle(
-														item._id,
-														item.subject._id,
-														item.subject.name,
-													);
-												}}
-												disabled={
-													currentStudySession.isStudySessionActive &&
-													currentStudySession.subjectDetails._id !=
-													item.subject._id
-												}
-												className='cursor-pointer'>
-												{' '}
-												{!currentStudySession.isStudySessionActive ? (
-													<>
-														{' '}
-														<IconTimeDuration10 /> &apos;Start Study Session&apos;
-													</>
-												) : (
-													<>
-														<IconTimeDurationOff /> &apos;End Study Session &apos;
-													</>
-												)}
-											</Button>
 										</CardContent>
-									</EnhancedCard>
-								))}
-							</div>
-							<Button className='w-full my-5' variant={'secondary'} asChild>
-								<Link href='/tracker/data'>Daily Data</Link>
-							</Button>
-							<Sheet>
-								<SheetTrigger asChild>
-									<Button className='w-full'> <ImTarget />Open TARGETED CHAPTERS</Button>
-								</SheetTrigger>
-								<SheetContent side='bottom' className='overflow-auto '>
-									<SheetHeader>
-										<SheetTitle> Chapters in System</SheetTitle>
-										<SheetDescription>
-											These are your target
-										</SheetDescription>
-									</SheetHeader>
-									<EnhancedCard className='relative overflow-hidden border border-border/40 bg-background/60 backdrop-blur-xl shadow-2xl rounded-[2rem] transition-all duration-500 hover:shadow-primary/5 my-1'>
-										{/* ? Ambient Inner Glow */}
-										<div className='absolute -top-40 -right-40 -z-10 h-96 w-96 rounded-full bg-primary/10 blur-[100px]' />
-										<CardHeader>
-											<div className='mb-10 flex flex-col items-start justify-between gap-4 sm:flex-row sm:items-center'>
-												<div className='space-y-1'>
-													<h2 className='flex items-center gap-3 text-2xl font-bold tracking-tight text-foreground'>
-														<div className='flex h-10 w-10 items-center justify-center rounded-xl bg-primary/10 text-primary'>
-															<FcPlanner className='h-5 w-5' />
-														</div>
-														<Button variant={'ghost'} className='text-base' asChild>
-															<Link href={'/system'} className='text-base'>
-																Current Chapters To Study
-															</Link>
+									</Card>
+								</div>
+							</SheetContent>
+						</Sheet>
+
+
+						<div className="grid grid-rows-flow grid-cols-1 gap-2 my-2">
+
+							<div className='gap-2 flex flex-col '>
+								<div className='grid grid-cols-3 gap-2'>
+									{subjectStreaks.map((item, index) => (
+										<Card
+											size='sm'
+											key={item._id}
+											className='group/card relative overflow-hidden rounded-4xl border h-full py-1 px-2 text-center border-primary/30 w-full'>
+											<CardHeader className='relative z-10 pb-2'>
+												<Tooltip>
+													<TooltipTrigger asChild>
+														<Button
+															variant='ghost'
+															size='lg'
+															className='w-full capitalize tracking-wide bg-primary/20 text-base/10 font-badge py-6 border border-primary'>
+															{item.subject?.name || 'Unknown Subject'}
 														</Button>
-													</h2>
-													<p className='text-sm text-muted-foreground ml-13'>
-														Tracking progress towards your current goal.
-													</p>
-												</div>
-											</div>
-										</CardHeader>
-										<CardContent className='flex flex-col gap-4 item-center justify-center'>
-											{InProgressChaptersList.map((chapter, index) => (
-												<EnhancedCard key={chapter._id}>
-													<CardHeader>
-														<CardTitle
-															className={cn(
-																'text-2xl font-bold bg-linear-to-r from-chart-1 to-primary bg-clip-text text-transparent capitalize',
-																'scroll-m-20 text-center text-4xl font-extrabold tracking-tight text-balance',
-																'capitalize text-base/8',
-															)}>
-															{index + 1}. {chapter.name}
-														</CardTitle>
-													</CardHeader>
-													<CardContent>
-														<div className='w-full'>
-															<Badge
-																variant={
-																	chapter.totalTopics === 0
-																		? 'ghost'
-																		: chapter.totalTopicsCompleted === chapter.totalTopics
-																			? 'default'
-																			: 'destructive'
-																}
-																className='text-base/9 mx-3 w-full'>
-																{chapter.totalTopicsCompleted}/{chapter.totalTopics}
-															</Badge>
+													</TooltipTrigger>
+													{/* ! FIXED: Tooltip visibility, positioning, sizing, and padding issues */}
+													<TooltipContent
+														side='top'
+														sideOffset={12}
+														className='z-100 min-w-45 p-4 bg-popover/95 backdrop-blur-xl border border-white/20 shadow-[0_10px_40px_-10px_rgba(0,0,0,0.5)] rounded-xl text-center'>
+														<div className='flex flex-col gap-1.5'>
+															<p className='text-sm font-bold uppercase tracking-wider text-primary'>
+																Active Streak
+															</p>
+															<p className='text-base font-medium text-foreground'>
+																{formatDate(item.date)}
+															</p>
 														</div>
-													</CardContent>
-												</EnhancedCard>
-											))}
-										</CardContent>
-									</EnhancedCard>
-								</SheetContent>
-							</Sheet>
+													</TooltipContent>
+												</Tooltip>
+											</CardHeader>
+
+											<CardContent className='relative z-10 flex flex-col gap-1'>
+												{/* * Interactive Stat Block: Questions Done */}
+												<button
+													onClick={() =>
+														incrementQuestionStreak(item._id, item.subject._id)
+													}
+													className='group/btn relative flex w-full flex-col items-center justify-center overflow-hidden rounded-4xl border border-primary/30 py-1 text-center  transition-all duration-300 hover:-translate-y-1 hover:bg-primary/10 hover:border-primary/10'
+													aria-label={`Increment questions done for ${item.subject?.name}`}>
+													<div className='relative z-10 flex flex-col items-center'>
+														<span className='text-xl font-normal font-badge tracking-tight md:text-2xl '>
+															{item.questionsDone}
+														</span>
+														<span className='my-1 text-xs font-normal capitalize tracking-wider text-muted-foreground opacity-90 transition-colors group-hover/btn:text-foreground font-heading'>
+															Questions Done Today
+														</span>
+													</div>
+												</button>
+
+												<div className='relative flex w-full flex-col items-center justify-center overflow-hidden rounded-4xl border border-primary/30 p-6 text-center transition-all duration-300 hover:bg-primary/10 hover:border-primary/10'>
+													<div className='relative z-10 flex flex-col items-center'>
+														<span
+															className={`text-xl font-normal font-badge tracking-tight md:text-2xl
+														${currentStudySession.isStudySessionActive &&
+																	currentStudySession.subjectDetails._id ===
+																	item.subject._id
+																	? 'text-primary'
+																	: 'text-foreground/80'
+																}
+															`}>
+															{formatMilliseconds(
+																currentStudySession.isStudySessionActive &&
+																	currentStudySession.subjectDetails._id ===
+																	item.subject._id
+																	? liveTimestamp
+																	: item.timeStudied,
+															)}
+														</span>
+														<span className='mt-2 text-xs font-medium capitalize tracking-wider text-muted-foreground opacity-90 font-heading'>
+															{currentStudySession.isStudySessionActive &&
+																currentStudySession.subjectDetails._id ===
+																item.subject._id
+																? 'Current Study Session'
+																: 'Hours Studied Today'}
+														</span>
+														<div>
+															<CardHeader>
+																<Label className='text-sm font-normal text-primary'>
+																	Add Time Hrs:Min:Sec
+																</Label>
+															</CardHeader>
+															<CardContent className='w-full h-full'>
+																<div className='flex gap-0.5'>
+																	<Input
+																		type='number'
+																		placeholder='Enter Hours'
+																		className='bg-background/5 border-0 outline-0 border-b border-foreground rounded-none focus:border-0 focus:ring-0 focus:outline-0'
+																		value={item.hours}
+																		onChange={(e) => {
+																			handleTimeChange(
+																				index,
+																				'hours',
+																				e.target.value,
+																			);
+																		}}
+																	/>
+																	:
+																	<Input
+																		type='number'
+																		placeholder='Enter Minutes'
+																		className='bg-background/5 border-0 outline-0 border-b border-foreground rounded-none focus:border-0 focus:ring-0 focus:outline-0'
+																		value={item.minutes}
+																		onChange={(e) => {
+																			handleTimeChange(
+																				index,
+																				'minutes',
+																				e.target.value,
+																			);
+																		}}
+																	/>
+																</div>
+																<Button
+																	onClick={() => {
+																		handleAddTime(index);
+																	}}
+																	className='w-full my-1 bg-primary/90'>
+																	Add This Time
+																</Button>
+															</CardContent>
+														</div>
+													</div>
+												</div>
+
+												{/* Study Button  */}
+												<Button
+													size={'lg'}
+													variant={
+														!currentStudySession.isStudySessionActive
+															? 'default'
+															: 'destructive'
+													}
+													onClick={() => {
+														studySessionToggle(
+															item._id,
+															item.subject._id,
+															item.subject.name,
+														);
+													}}
+													disabled={
+														currentStudySession.isStudySessionActive &&
+														currentStudySession.subjectDetails._id !=
+														item.subject._id
+													}
+													className='cursor-pointer'>
+													{' '}
+													{!currentStudySession.isStudySessionActive ? (
+														<>
+															{' '}
+															<IconTimeDuration10 /> &apos;Start Study Session&apos;
+														</>
+													) : (
+														<>
+															<IconTimeDurationOff /> &apos;End Study Session &apos;
+														</>
+													)}
+												</Button>
+											</CardContent>
+										</Card>
+									))}
+								</div>
+							</div>
+							<div className='grid grid-cols-2 grid-rows-flow gap-4 '>
+								<CurrentTaskCard className={cn('col-span-1 row-span-1')} />
+								<MissionCountdownCard className={cn('col-span-1 row-span-1')} />
+							</div>
 						</div>
+
+
+						<Button className='w-full my-5 hover:bg-primary/10 border-0 bg-primary/5' variant={'outline'} asChild>
+							<Link href='/tracker/data'>Daily Data</Link>
+						</Button>
+						<Sheet>
+							<SheetTrigger asChild>
+								<Button className='w-full'> <ImTarget />Open TARGETED CHAPTERS</Button>
+							</SheetTrigger>
+							<SheetContent side='bottom' className='overflow-auto py-8 bg-primary/10 px-5'>
+								<SheetHeader>
+									<SheetTitle> Chapters in System</SheetTitle>
+									<SheetDescription>
+										These are your target
+									</SheetDescription>
+								</SheetHeader>
+								<CardBlockUI cardBlockUIContentList={
+									InProgressChaptersList.map((chapter, index) => ({
+										value: `${index + 1}. ${chapter.name}`,
+										label: `${chapter.totalTopicsCompleted}/${chapter.totalTopics}`,
+										subtext: `${Math.round((chapter.totalTopicsCompleted || 0) * 100 / (chapter.totalTopics || 1))}%`,
+										animate: Math.round((chapter.totalTopicsCompleted || 0) * 100 / (chapter.totalTopics || 1)) >= 70,
+									}))
+								}
+									orientation={cardBlockUIOrientation.Vertical}
+									className=''
+								/>
+							</SheetContent>
+						</Sheet>
 					</TooltipProvider>
 				)}
 			</section>
@@ -1658,52 +998,7 @@ export default function Tracker() {
 	);
 }
 
-// * Enhanced Input Container Component with Glass Morphism
-const EnhancedInputContainer = ({
-	children,
-	className,
-}: {
-	children: React.ReactNode;
-	className?: string;
-}) => {
-	return (
-		<div
-			className={cn(
-				'flex w-full flex-col space-y-3 group',
-				'transition-all duration-300',
-				className,
-			)}>
-			{children}
-		</div>
-	);
-};
 
-// * Enhanced Card Component with Modern Glass Effects
-const EnhancedCard = ({
-	children,
-	className,
-	sizeProp,
-}: {
-	children: React.ReactNode;
-	className?: string;
-	sizeProp?: 'default' | 'sm' | undefined;
-}) => {
-	return (
-		<Card
-			size={sizeProp}
-			className={cn(
-				'backdrop-blur-md bg-white/40 dark:bg-black/20',
-				'border border-white/30 dark:border-white/10',
-				'shadow-2xl shadow-primary/10 dark:shadow-primary/20',
-				'rounded-4xl overflow-hidden',
-				'transition-all duration hover:shadow-3xl hover:shadow-primary/20',
-				'hover:bg-white/50 dark:hover:bg-black/30',
-				className,
-			)}>
-			{children}
-		</Card>
-	);
-};
 
 // ! IMPROVEMENTS IMPLEMENTED:
 // * 1. Implemented a data stream synchronization loop (`fetchTodayStreaksIncremental`) providing backend pagination compatibility without changing the UI/UX.

@@ -94,7 +94,7 @@ export const MissionCountdownCard = ({ className }: { className?: string }) => {
             variant='secondary'
             className='bg-accent/50 px-4 py-2 text-sm backdrop-blur-md transition-colors hover:bg-accent/70 shadow-sm border border-border/50'>
             <Timer className='mr-2 h-4 w-4' />
-            {percentageElapsed.toFixed(5)}% Elapsed
+            {percentageElapsed.toFixed(7)}% Elapsed
           </Badge>
         </CardAction>
       </CardHeader>

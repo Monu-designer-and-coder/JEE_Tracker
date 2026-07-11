@@ -3,10 +3,9 @@
 
 // * 1. Third-party & React imports
 import { useState, useEffect } from 'react';
-import { Clock } from 'lucide-react';
 
 // * 2. Local UI Components
-import { Card, CardContent, CardHeader } from '@/components/ui/card';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { cn } from '@/lib/utils';
 
 
@@ -18,6 +17,7 @@ import { CurrentTaskCard, CurrentTaskSubjectStudySessionController, TodayTasksSt
 import { MissionCountdownCard } from '@/components/module/mission-countdown.module';
 import { PendingChapterListCard } from '@/components/module/pendingChapterList.module';
 import PomodoroTimer from '@/components/Pomodoro-timer';
+import { FcClock } from 'react-icons/fc';
 
 export default function Home() {
 	// ! HYDRATION & STATE MANAGEMENT
@@ -48,25 +48,19 @@ export default function Home() {
 			<PendingChapterListCard className='col-span-6 row-span-1 col-start-1 row-start-3' />
 			<Card className='relative overflow-hidden my-1 col-span-6 row-span-1 col-start-7 row-start-3'>
 				<CardHeader>
-					<div className='mb-10 flex flex-col items-start justify-between gap-4 sm:flex-row sm:items-center'>
-						<div className='space-y-1'>
-							<h2 className='flex items-center gap-3 text-2xl font-bold tracking-tight text-foreground'>
-								<div className='flex h-10 w-10 items-center justify-center rounded-xl bg-primary/10 text-primary'>
-									<Clock className='h-5 w-5' />
-								</div>
-								<Button variant={'ghost'} className='text-base' asChild>
-									<Link href={'/system'} className='text-base'>
-										Current Chapters To Study
-									</Link>
-								</Button>
-							</h2>
-							<p className='text-sm text-muted-foreground ml-13'>
-								Tracking progress towards your current goal.
-							</p>
-						</div>
-					</div>
+					<CardTitle className='flex gap-3 items-center'>
+						<FcClock className='h-5 w-5' />
+						<Button variant={'ghost'} className='text-lg font-badge' asChild>
+							<Link href={'/pomodoro/'}>
+								POMODORO
+							</Link>
+						</Button>
+					</CardTitle>
+					<CardDescription>
+						Focus Session
+					</CardDescription>
 				</CardHeader>
-				<CardContent className='flex flex-col gap-4 item-center justify-center'>
+				<CardContent>
 					<PomodoroTimer
 						size='sm'
 						initialWorkDuration={45}

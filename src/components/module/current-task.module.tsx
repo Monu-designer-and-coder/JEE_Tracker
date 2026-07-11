@@ -723,9 +723,7 @@ export const TodayTasksStreakCard = ({ className }: { className?: string }) => {
     <Card className={cn('relative overflow-hidden my-1 ', className)}>
       <CardHeader className=' gap-4'>
         <CardTitle className='flex items-center gap-3 text-2xl font-bold tracking-tight text-foreground'>
-          <div className='flex h-10 w-10 items-center justify-center rounded-xl bg-primary/10 text-primary'>
             <FcPlanner className='h-5 w-5' />
-          </div>
           <Button variant={'ghost'} className='text-base' asChild>
             <Link href={'/tracker'} className='text-base'>
               Current Study Session

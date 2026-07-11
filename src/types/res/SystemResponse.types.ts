@@ -1,5 +1,6 @@
 import { currentChapterStatus } from "@/model/chapters.model";
 import { getTopicResponse } from "./topicsOrganized.types";
+import { GetSubjectResponse } from "./GetResponse.types";
 
 export interface getPendingChapter {
     _id: string;
@@ -31,16 +32,28 @@ export interface detailedListOfChaptersInSystem extends getPendingChapter {
     topicsCompletedPercent: number;
     topicsLeftPercent: number;
     currentChapterStatus: currentChapterStatus;
+    subjectDetails: GetSubjectResponse;
 }
 
 //tasks
 
 export interface inProgressChaptersTaskList {
-    chapter: string;
+    chapter: GetSubjectResponse;
     topicsToComplete: string[];
     tagsToComplete: string[];
+    subjectDetails: GetSubjectResponse;
 }
 export interface inProgressChaptersCurrentTaskList {
-    chapter: string;
+    chapter: GetSubjectResponse;
     task: string;
+    subjectDetails: GetSubjectResponse;
+}
+
+export interface currentTaskDetails {
+    _id: string;
+    task: string;
+    subject: GetSubjectResponse;
+    chapter: GetSubjectResponse;
+    seqNumber: number;
+    assignDate: Date;
 }

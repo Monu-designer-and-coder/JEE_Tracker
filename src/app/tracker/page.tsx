@@ -34,15 +34,17 @@ import {
 	SheetTrigger,
 } from '@/components/ui/sheet';
 import { Badge } from '@/components/ui/badge';
-import { getPendingChapter } from '@/types/res/SystemResponse.types';
 import { ImTarget } from "react-icons/im";
 import { CardBlockUI } from '@/components/module/card-block.module';
 import { cardBlockUIOrientation } from '@/components/module/card-block.module';
 import { CurrentTaskCard } from '@/components/module/current-task.module';
 import { MissionCountdownCard } from '@/components/module/mission-countdown.module';
+import { formatDate, formatMilliseconds } from '@/lib/helpers';
+import { Skeleton } from '@/components/ui/skeleton';
+import { PendingChapterListCard } from '@/components/module/pendingChapterList.module';
 
 // * Standardized structural definitions describing expected paginated envelopes
-interface PaginatedAPIResponseEnvelope<T> {
+export interface PaginatedAPIResponseEnvelope<T> {
 	data: T[];
 	pagination: {
 		page: number;
@@ -52,7 +54,7 @@ interface PaginatedAPIResponseEnvelope<T> {
 	};
 }
 
-interface frontendGetSubjectStreakTodayResponse extends getSubjectStreakTodayResponse {
+export interface frontendGetSubjectStreakTodayResponse extends getSubjectStreakTodayResponse {
 	hours?: string;
 	minutes?: string;
 }
@@ -85,15 +87,6 @@ export default function Tracker() {
 	// ! Hydration Safety Pattern: Prevents mismatches between SSR and Client rendering
 	const [isMounted, setIsMounted] = useState<boolean>(false);
 
-	const [InProgressChaptersList, setInProgressChaptersList] = useState<
-		getPendingChapter[]
-	>([
-		{
-			_id: '_id',
-			seqNumber: 0,
-			name: 'loading',
-		},
-	]);
 
 	const [todaysProgressData, setTodaysProgressData] = useState<{
 		totalQuestionsDone: number;
@@ -191,12 +184,6 @@ export default function Tracker() {
 		axios
 			.request(axiosConfig('subjectStreak/data?type=peak', 'get'))
 			.then((res) => setAllTimePeak(res.data));
-
-		axios
-			.request(axiosConfig('system', 'get'))
-			.then((response: AxiosResponse<getPendingChapter[]>) => {
-				setInProgressChaptersList(response.data);
-			});
 
 	}, []);
 
@@ -456,6 +443,7 @@ export default function Tracker() {
 					subjectDetails: { _id: '', subjectName: 'No Study Session' },
 				}),
 			);
+			setLiveTimestamp(0)
 		}
 	};
 
@@ -541,34 +529,6 @@ export default function Tracker() {
 		);
 	};
 
-	// * ==========================================================================
-	// * Helper Methods
-	// * ==========================================================================
-
-	// * Formats date cleanly using Intl API to avoid manual month indexing bugs
-	const formatDate = (dateText: string) => {
-		if (!dateText) return '';
-		const date = new Date(dateText);
-		return new Intl.DateTimeFormat('en-IN', {
-			weekday: 'short',
-			day: '2-digit',
-			month: 'short',
-			year: 'numeric',
-		}).format(date);
-	};
-
-
-	function formatMilliseconds(ms: number): string {
-		const totalSeconds = Math.floor(ms / 1000);
-		const seconds = totalSeconds % 60;
-		const totalMinutes = Math.floor(totalSeconds / 60);
-		const minutes = totalMinutes % 60;
-		const hours = Math.floor(totalMinutes / 60);
-
-		const pad = (num: number) => String(num).padStart(2, '0');
-
-		return `${pad(hours)}.${pad(minutes)}.${pad(seconds)}`;
-	}
 
 	// ! Hydration check: Return null or a skeleton loader until mounted
 	if (!isMounted) return null;
@@ -583,9 +543,9 @@ export default function Tracker() {
 			<section className='relative z-10 mx-auto w-11/12 flex flex-col justify-center'>
 				{isLoading ? (
 					// * Loading State
-					<div className='flex h-64 items-center justify-center'>
+					<Skeleton className='flex h-64 items-center justify-center'>
 						<div className='h-8 w-8 animate-spin rounded-full border-b-2 border-primary' />
-					</div>
+					</Skeleton>
 				) : (
 					// ! Added TooltipProvider here to ensure tooltips portal correctly and don't get clipped by overflow-hidden
 					<TooltipProvider delayDuration={200} >
@@ -972,22 +932,17 @@ export default function Tracker() {
 							</SheetTrigger>
 							<SheetContent side='bottom' className='overflow-auto py-8 bg-primary/10 px-5'>
 								<SheetHeader>
-									<SheetTitle> Chapters in System</SheetTitle>
+									<SheetTitle className='text-center'>
+										<Button variant={'ghost'} className='text-lg font-badge' asChild>
+											<Link href={'/system/'}>
+												Current Chapters To Study
+											</Link>
+										</Button></SheetTitle>
 									<SheetDescription>
-										These are your target
+										List:
 									</SheetDescription>
 								</SheetHeader>
-								<CardBlockUI cardBlockUIContentList={
-									InProgressChaptersList.map((chapter, index) => ({
-										value: `${index + 1}. ${chapter.name}`,
-										label: `${chapter.totalTopicsCompleted}/${chapter.totalTopics}`,
-										subtext: `${Math.round((chapter.totalTopicsCompleted || 0) * 100 / (chapter.totalTopics || 1))}%`,
-										animate: Math.round((chapter.totalTopicsCompleted || 0) * 100 / (chapter.totalTopics || 1)) >= 70,
-									}))
-								}
-									orientation={cardBlockUIOrientation.Vertical}
-									className=''
-								/>
+								<PendingChapterListCard className='col-span-6 row-span-1 col-start-1 row-start-3 bg-transparent' />
 							</SheetContent>
 						</Sheet>
 					</TooltipProvider>

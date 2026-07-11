@@ -1,4 +1,4 @@
-import mongoose, { Schema, Document } from "mongoose";
+import mongoose, { Schema, Document, Types } from "mongoose";
 import mongooseAggregatePaginate from "mongoose-aggregate-paginate-v2";
 
 
@@ -19,6 +19,8 @@ export interface TaskModelInterface extends Document {
   assignDate: Date;
   completionDate: Date;
   totalTimeTaken: number;
+  subject: Types.ObjectId;
+  chapter: Types.ObjectId;
 }
 
 
@@ -59,6 +61,16 @@ const TaskSchema = new Schema<TaskModelInterface>(
       type: Number,
       default: 0,
       min: [0, 'Studied Time cannot be negative'],
+    },
+    subject: {
+      type: Schema.Types.ObjectId,
+      ref: 'Subject',
+      required: true,
+    },
+    chapter: {
+      type: Schema.Types.ObjectId,
+      ref: 'Chapter',
+      required: true,
     },
 
 

@@ -1,5 +1,6 @@
 import dbConn from "@/lib/dbConn";
 import TaskModel, { TaskModelInterface, taskStatus } from "@/model/tasks.model";
+import { currentTaskDetails } from "@/types/res/SystemResponse.types";
 import { NextResponse } from "next/server";
 import z from "zod";
 
@@ -60,8 +61,12 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: 'Request body is missing' }, { status: 400 });
     }
 
+    console.log(clientBodyData)
+
     const validationResult = z.object({
       task: z.string(),
+      subjectID: z.string(),
+      chapterID: z.string(),
     }).safeParse(clientBodyData);
     if (!validationResult.success) {
       console.log(validationResult.error)
@@ -98,6 +103,8 @@ export async function POST(request: Request) {
     const newTask = await TaskModel.create({
       task: validationResult.data.task,
       seqNumber: previousSeqNumber + 1,
+      subject: validationResult.data.subjectID,
+      chapter: validationResult.data.chapterID,
       assignDate: new Date(),
       completionDate: new Date(),
     });
@@ -109,37 +116,80 @@ export async function POST(request: Request) {
     return NextResponse.json({ msg: "error", error }, { status: 500 });
   }
 }
-
-
 export async function GET() {
   await dbConn();
   try {
 
-    const currentTask: {
-      _id: string;
-      task: string;
-      seqNumber: number;
-      assignDate: Date;
-    }[] = await TaskModel.aggregate([{ $match: { status: taskStatus.Pending } }, {
-      $project: {
-        _id: 1,
-        task: 1,
-        seqNumber: 1,
-        assignDate: 1,
+    const currentTask: currentTaskDetails[] = await TaskModel.aggregate([
+      { $match: { status: "pending" } },
+      {
+        $lookup: {
+          from: "chapters",
+          localField: "chapter",
+          foreignField: "_id",
+          as: "chapterDetails",
+          pipeline: [
+            {
+              $project: {
+                _id: 1,
+                name: 1
+              }
+            }
+          ]
+        }
+      },
+      {
+        $lookup: {
+          from: "subjects",
+          localField: "subject",
+          foreignField: "_id",
+          as: "subjectDetails",
+          pipeline: [
+            {
+              $project: {
+                _id: 1,
+                name: 1
+              }
+            }
+          ]
+        }
+      },
+      {
+        $addFields: {
+          chapter: {
+            $first: "$chapterDetails"
+          },
+          subject: {
+            $first: "$subjectDetails"
+          },
+        }
+      },
+      {
+        $project: {
+          _id: 1,
+          task: 1,
+          seqNumber: 1,
+          assignDate: 1,
+          subject: 1,
+          chapter: 1,
+        }
       }
-    }])
+    ])
 
 
-    return NextResponse.json<{
-      _id: string;
-      task: string;
-      seqNumber: number;
-      assignDate: Date;
-    }>(currentTask[0] || {
+    return NextResponse.json<currentTaskDetails>(currentTask[0] || {
       _id: "loading",
       task: "loading",
       seqNumber: 0,
       assignDate: new Date(),
+      subject: {
+        _id: "",
+        name: "no task"
+      },
+      chapter: {
+        _id: "",
+        name: "no task"
+      },
     });
   }
 

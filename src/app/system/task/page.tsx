@@ -84,11 +84,13 @@ export default function SyllabusHomePage() {
 		);
 	}
 
-	async function handleTaskButton(task: string) {
+	async function handleTaskButton(input: {
+		task: string,
+		chapterID: string;
+		subjectID: string;
+	}) {
 		if (!currentTask._id || currentTask._id == "loading") {
-			await axios.request(axiosConfig('system/task', "post", { "Content-Type": "application/json" }, {
-				task,
-			}))
+			await axios.request(axiosConfig('system/task', "post", { "Content-Type": "application/json" }, input))
 			axios.request(axiosConfig('system/task/', 'get')).then(
 				(
 					response: AxiosResponse<{
@@ -106,7 +108,7 @@ export default function SyllabusHomePage() {
 			);
 			fetchTaskLists();
 		}
-		if (task === currentTask.task) {
+		if (input.task === currentTask.task) {
 			try {
 				await axios.request(axiosConfig('system/task', "put", { "Content-Type": "application/json" }, {
 					taskId: currentTask._id,
@@ -185,11 +187,11 @@ export default function SyllabusHomePage() {
 										{allListOfCurrentTasksChapterInProgress.map((item) => (
 											<div
 												className='w-full h-full rounded-4xl border p-4 flex flex-col items-center justify-center gap-5'
-												key={item.chapter}>
+												key={item.chapter._id}>
 												<h3 className='w-full text-center text-xl'>
 													{item.task}
 												</h3>
-												<Button onClick={() => handleTaskButton(item.task)} className='w-full py-3 px-4' disabled={((Boolean(currentTask._id) && (currentTask._id != "loading")) && (currentTask.task != item.task))}>
+												<Button onClick={() => handleTaskButton({ task: item.task, chapterID: item.chapter._id, subjectID: item.subjectDetails._id })} className='w-full py-3 px-4' disabled={((Boolean(currentTask._id) && (currentTask._id != "loading")) && (currentTask.task != item.task))}>
 													{(currentTask.task == item.task) ? "Mark as Done" : "Make this Current Task"}
 												</Button>
 											</div>
@@ -227,7 +229,7 @@ export default function SyllabusHomePage() {
 												})
 													.map((item, index) => (
 														item.map(task => (
-															<CarouselItem key={index + (task[index]?.chapter || "chapter-none") + (task[index]?.heading || "heading None")}>
+															<CarouselItem key={index + (task[index]?.chapter.name || "chapter-none") + (task[index]?.heading || "heading None")}>
 																<EnhancedCard>
 																	<CardHeader>
 																		<CardTitle>

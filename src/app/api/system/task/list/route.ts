@@ -11,7 +11,7 @@ export async function GET() {
     const inProgressChapterList: detailedListOfChaptersInSystem[] = await ChapterModel.aggregate([
       {
         $match: {
-          currentChapterStatus: currentChapterStatus.InProgress,
+          currentChapterStatus: currentChapterStatus.InProgress
         }
       },
       {
@@ -44,6 +44,29 @@ export async function GET() {
               }
             }
           ]
+        }
+      },
+      {
+        $lookup: {
+          from: "subjects",
+          localField: "subject",
+          foreignField: "_id",
+          as: "subjectDetails",
+          pipeline: [
+            {
+              $project: {
+                _id: 1,
+                name: 1
+              }
+            }
+          ]
+        }
+      },
+      {
+        $addFields: {
+          subjectDetails: {
+            $first: "$subjectDetails"
+          }
         }
       },
       {
@@ -119,7 +142,8 @@ export async function GET() {
           topicsLeft: 1,
           topicsCompletedPercent: 1,
           topicsLeftPercent: 1,
-          currentChapterStatus: 1
+          currentChapterStatus: 1,
+          subjectDetails: 1
         }
       }
     ])
@@ -132,19 +156,19 @@ export async function GET() {
       const tagsToComplete = tagsToCompleteForInProgressChapter.filter(tag => !chapter[tag]).map(tag => (`Complete ${chapter.name}'s ${tag}`))
 
 
-      return { chapter: chapter.name, topicsToComplete, tagsToComplete }
+      return { chapter: { _id: chapter._id, name: chapter.name }, topicsToComplete, tagsToComplete, subjectDetails: chapter.subjectDetails }
     })
     const allListOfCurrentTasksChapterInProgress: inProgressChaptersCurrentTaskList[] = inProgressChapterList.map((chapter) => {
 
       const topicsToComplete = chapter.topicsList.filter(topic => (!topic.done)).map(topic => (`Topic: ${topic.name}`))
 
       if (topicsToComplete.length) {
-        return { chapter: chapter.name, task: topicsToComplete[0] }
+        return { chapter: { _id: chapter._id, name: chapter.name }, task: topicsToComplete[0], subjectDetails: chapter.subjectDetails }
       }
       const tagsToComplete = tagsToCompleteForInProgressChapter.filter(tag => !chapter[tag]).map(tag => (`Complete ${chapter.name}'s ${tag}`))
 
 
-      return { chapter: chapter.name, task: tagsToComplete[0] }
+      return { chapter: { _id: chapter._id, name: chapter.name }, task: tagsToComplete[0], subjectDetails: chapter.subjectDetails }
     })
 
 

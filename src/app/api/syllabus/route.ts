@@ -15,7 +15,7 @@ export async function GET() {
     await dbConn();
 
     // * CASE 1: Get all topics
-    const topicsList = await ChapterModel.aggregate([
+    const topicsList:syllabusDetailedData[] = await ChapterModel.aggregate([
         {
             $lookup: {
                 from: "subjects",

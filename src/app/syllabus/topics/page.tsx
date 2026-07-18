@@ -194,6 +194,10 @@ export default function SyllabusHomePage() {
 
 										{topicList.map((subject) => (
 											<TabsContent key={subject._id} value={subject.name}>
+												<Badge variant={'outline'}>Topics:{[...subject.chapterList].map(chapter => chapter.topicsList).flat().filter(topic => topic.done).length}/{[...subject.chapterList].reduce((accumulator, currentChapterInReduce) => (accumulator + currentChapterInReduce.topicsList.length), 0)}</Badge>
+												<Badge variant={"secondary"}>
+													{(([...subject.chapterList].map(chapter => chapter.topicsList).flat().filter(topic => topic.done).length * 100 / [...subject.chapterList].reduce((accumulator, currentChapterInReduce) => (accumulator + currentChapterInReduce.topicsList.length), 0))).toFixed(2)}%
+												</Badge>
 												<Accordion
 													type='single'
 													collapsible
@@ -210,8 +214,8 @@ export default function SyllabusHomePage() {
 																		chapter.topicsList.length === 0
 																			? 'ghost'
 																			: chapter.topicsList.filter(
-																						(topic) => topic.done,
-																				  ).length === chapter.topicsList.length
+																				(topic) => topic.done,
+																			).length === chapter.topicsList.length
 																				? 'default'
 																				: 'destructive'
 																	}>

@@ -9,6 +9,8 @@ import {
     getChapterResponse,
     getSubjectWiseChapterResponse,
 } from '@/types/res/chapterResponse.types';
+import { syllabusDetailedDataChapter } from '@/types/res/syllabusDataResponse.types';
+import { Types } from 'mongoose';
 import { NextResponse } from 'next/server';
 
 /**
@@ -137,14 +139,169 @@ export async function GET(request: Request) {
 
     // * CASE 3: Fetch chapter by ID
     if (chapterId) {
-        const chapterById = await ChapterModel.findById(chapterId);
-        if (!chapterById) {
+        const topicsList: syllabusDetailedDataChapter[] = await ChapterModel.aggregate([
+            {
+                $match: {
+                    _id: new Types.ObjectId(chapterId)
+                }
+            },
+            {
+                $lookup: {
+                    from: "subjects",
+                    localField: "subject",
+                    foreignField: "_id",
+                    as: "subjectDetails",
+                    pipeline: [
+                        {
+                            $project: {
+                                _id: 1,
+                                name: 1
+                            }
+                        }
+                    ]
+                }
+            },
+            {
+                $addFields: {
+                    subject: {
+                        $first: "$subjectDetails"
+                    }
+                }
+            },
+            {
+                $sort: {
+                    subject: 1,
+                    seqNumber: 1
+                }
+            },
+            {
+                $lookup: {
+                    from: "topics",
+                    localField: "_id",
+                    foreignField: "chapter",
+                    as: "topicsList",
+                    pipeline: [
+                        {
+                            $project: {
+                                _id: 1,
+                                name: 1,
+                                seqNumber: 1,
+                                done: 1,
+                                theory: 1,
+                                inTextQuestions: 1,
+                                inClassQuestions: 1
+                            }
+                        },
+                        {
+                            $sort: {
+                                chapter: 1,
+                                seqNumber: 1
+                            }
+                        }
+                    ]
+                }
+            },
+            {
+                $addFields: {
+                    totalTopics: {
+                        $size: "$topicsList"
+                    }
+                }
+            },
+            {
+                $project: {
+                    _id: "$_id",
+                    seqNumber: "$seqNumber",
+                    name: "$name",
+                    done: "$done",
+                    theory: "$theory",
+                    shortNotes: "$shortNotes",
+                    mindMap: "$mindMap",
+                    DPP1: "$DPP1",
+                    DPP2: "$DPP2",
+                    Module: "$Module",
+                    PYQ_Mains: "$PYQ_Mains",
+                    PYQ_Advanced: "$PYQ_Advanced",
+                    Book: "$Book",
+                    totalTopics: "$totalTopics",
+                    subject: "$subjectDetails",
+                    topicsList: "$topicsList",
+                    currentChapterStatus: "$currentChapterStatus"
+                }
+            },
+            {
+                $addFields: {
+                    totalTopicsCompleted: {
+                        $size: {
+                            $filter: {
+                                input: "$topicsList",
+                                as: "topic",
+                                cond: { $eq: ["$$topic.done", true] }
+                            }
+                        }
+                    },
+                    totalTopicsTheoryCompleted: {
+                        $size: {
+                            $filter: {
+                                input: "$topicsList",
+                                as: "topic",
+                                cond: { $eq: ["$$topic.theory", true] }
+                            }
+                        }
+                    }
+                }
+            },
+            {
+                $addFields: {
+                    totalTopicsCompletedPercentage: {
+                        $cond: [
+                            { $eq: ["$totalTopics", 0] },
+                            0,
+                            {
+                                $divide: [
+                                    {
+                                        $multiply: [
+                                            "$totalTopicsCompleted",
+                                            100
+                                        ]
+                                    },
+                                    "$totalTopics"
+                                ]
+                            }
+                        ]
+                    },
+                    totalTopicsTheoryCompletedPercentage: {
+                        $cond: [
+                            { $eq: ["$totalTopics", 0] },
+                            0,
+                            {
+                                $divide: [
+                                    {
+                                        $multiply: [
+                                            "$totalTopicsTheoryCompleted",
+                                            100
+                                        ]
+                                    },
+                                    "$totalTopics"
+                                ]
+                            }
+                        ]
+                    }
+                }
+            }
+        ]);
+
+        if (topicsList.length != 1) {
             return NextResponse.json(
-                { message: 'Chapter not found' },
-                { status: 404 },
+                {
+                    message: 'Invalid request parameters',
+                    data: topicsList
+                },
+                { status: 400 },
             );
+
         }
-        return NextResponse.json<ChapterModelInterface>(chapterById);
+        return NextResponse.json(topicsList[0]);
     }
 
     // ! Default: Bad request if neither type nor ID provided

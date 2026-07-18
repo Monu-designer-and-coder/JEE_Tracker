@@ -648,7 +648,6 @@ export const TodayTasksStreakCard = ({ className }: { className?: string }) => {
 
 
   //! State Management
-  const dispatch = useAppDispatch();
   const currentStudySession = useAppSelector((state) => state.studySession);
 
   // ! Hydration Safety Pattern: Prevents mismatches between SSR and Client rendering
@@ -669,45 +668,25 @@ export const TodayTasksStreakCard = ({ className }: { className?: string }) => {
   // * UseEffects
   useEffect(() => {
     setIsMounted(true);
+    const todaysProgressInLocalStorage: string | null = localStorage.getItem(STORAGE_KEYS.TODAYS_PROGRESS)
+    if (todaysProgressInLocalStorage) {
+      setTodaysProgressData(
+        JSON.parse(
+          todaysProgressInLocalStorage
+        ),
+      );
+    }
   }, []);
   useEffect(() => {
-    const initialStateOfStudySession = {
-      isStudySessionActive: false,
-      subjectDetails: {
-        _id: '',
-        subjectName: 'No Study Session',
-      },
-      sessionStartTime: 0,
-    };
-    const StudySessionLocalStorage = JSON.parse(
-      localStorage.getItem(STORAGE_KEYS.STUDY_SESSION) ||
-      JSON.stringify(initialStateOfStudySession),
-    );
-
-    setTodaysProgressData(
-      JSON.parse(
-        localStorage.getItem(STORAGE_KEYS.TODAYS_PROGRESS) ||
-        JSON.stringify({ totalQuestionsDone: 0, totalTimeStudiedMs: 0 }),
-      ),
-    );
-
-    if (StudySessionLocalStorage.isStudySessionActive) {
-      dispatch(startStudySession(StudySessionLocalStorage));
-    } else {
-      dispatch(endStudySession(StudySessionLocalStorage));
-    }
-
-    // fetchTodayStreaks()
-
-  }, [dispatch]);
-  useEffect(() => {
     if (currentStudySession.isStudySessionActive) return
-    setTodaysProgressData(
-      JSON.parse(
-        localStorage.getItem(STORAGE_KEYS.TODAYS_PROGRESS) ||
-        JSON.stringify({ totalQuestionsDone: 0, totalTimeStudiedMs: 0 }),
-      ),
-    );
+    const todaysProgressInLocalStorage: string | null = localStorage.getItem(STORAGE_KEYS.TODAYS_PROGRESS)
+    if (todaysProgressInLocalStorage) {
+      setTodaysProgressData(
+        JSON.parse(
+          todaysProgressInLocalStorage
+        ),
+      );
+    }
   }, [currentStudySession])
 
 
@@ -723,7 +702,7 @@ export const TodayTasksStreakCard = ({ className }: { className?: string }) => {
     <Card className={cn('relative overflow-hidden my-1 ', className)}>
       <CardHeader className=' gap-4'>
         <CardTitle className='flex items-center gap-3 text-2xl font-bold tracking-tight text-foreground'>
-            <FcPlanner className='h-5 w-5' />
+          <FcPlanner className='h-5 w-5' />
           <Button variant={'ghost'} className='text-base' asChild>
             <Link href={'/tracker'} className='text-base'>
               Current Study Session

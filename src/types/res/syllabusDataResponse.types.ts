@@ -9,6 +9,8 @@ export interface syllabusDetailedDataChapter extends getChapterResponse {
     totalTopicsCompletedPercentage: number;
     totalTopicsTheoryCompleted: number;
     totalTopicsTheoryCompletedPercentage: number;
+    currentChapterStatus?:  'pending' | 'upNext' | 'inProgress' | 'unFinished' | 'done';
+
 }
 
 export interface syllabusDetailedData extends GetSubjectResponse {

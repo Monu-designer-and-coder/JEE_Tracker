@@ -2,6 +2,7 @@
 /* eslint-disable react-hooks/set-state-in-effect */
 'use client';
 
+import { ChapterModularUI } from '@/components/module/chapter.module';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import {
@@ -194,7 +195,7 @@ export default function SyllabusHomePage() {
 		};
 		const StudySessionLocalStorage = JSON.parse(
 			localStorage.getItem(STORAGE_KEYS.STUDY_SESSION) ||
-				JSON.stringify(initialStateOfStudySession),
+			JSON.stringify(initialStateOfStudySession),
 		);
 
 		setCurrentStudySession(StudySessionLocalStorage);
@@ -272,13 +273,13 @@ export default function SyllabusHomePage() {
 										List of tasks to do for the inProgress Chapters.
 									</SheetDescription>
 								</SheetHeader>
-								<div className='grid grid-flow-col w-full h-[70vh]'>
+								<div className='w-full h-[70vh]'>
 									{syllabusData.map((subject) => (
 										<div key={subject._id} className='p-4 '>
 											<h3 className='capitalize text-lg underline text-center'>
 												{subject.name}:
 											</h3>
-											<div className='w-full grid grid-flow-col gap-2 py-2'>
+											<div className='gap-2 py-2'>
 												{subject.chapterList
 													.filter((chapter) => {
 														return InProgressChaptersList.some(
@@ -287,74 +288,7 @@ export default function SyllabusHomePage() {
 														);
 													})
 													.map((filteredChapter) => (
-														<div key={filteredChapter._id} className={`w-full`}>
-															<Badge className={`text-base py-4 w-full`}>
-																{filteredChapter.name}
-															</Badge>
-															{filteredChapter[
-																CHAPTER_COMPLETION_SEQUENCE[0]
-															] ? (
-																<></>
-															) : (
-																<Badge
-																	variant='destructive'
-																	className='w-full my-2 capitalize'>
-																	{CHAPTER_COMPLETION_SEQUENCE[0]}
-																</Badge>
-															)}
-															{filteredChapter[
-																CHAPTER_COMPLETION_SEQUENCE[1]
-															] ? (
-																<></>
-															) : (
-																<Badge
-																	variant='destructive'
-																	className='w-full my-2 capitalize'>
-																	{CHAPTER_COMPLETION_SEQUENCE[1]}
-																</Badge>
-															)}
-															{filteredChapter[
-																CHAPTER_COMPLETION_SEQUENCE[2]
-															] ? (
-																<></>
-															) : (
-																<Badge
-																	variant='destructive'
-																	className='w-full my-2 capitalize'>
-																	{CHAPTER_COMPLETION_SEQUENCE[2]}
-																</Badge>
-															)}
-															{filteredChapter[
-																CHAPTER_COMPLETION_SEQUENCE[3]
-															] ? (
-																<></>
-															) : (
-																<Badge
-																	variant='destructive'
-																	className='w-full my-2 capitalize'>
-																	{CHAPTER_COMPLETION_SEQUENCE[3]}
-																</Badge>
-															)}
-
-															{filteredChapter.topicsList.length -
-																filteredChapter.totalTopicsCompleted ===
-															0 ? (
-																<></>
-															) : (
-																<Badge
-																	variant='outline'
-																	className='w-full my-2 capitalize'>
-																	Topics To Complete:{' '}
-																	{filteredChapter.topicsList.length -
-																		filteredChapter.totalTopicsCompleted}
-																</Badge>
-															)}
-															{filteredChapter.topicsList
-																.filter((topicToFilter) => !topicToFilter.done)
-																.map((topic) => (
-																	<Item key={topic._id}>{topic.name}</Item>
-																))}
-														</div>
+														<ChapterModularUI key={filteredChapter._id} chapter={{ ...filteredChapter, currentChapterStatus: "inProgress", subject: { _id: subject._id, name: subject.name } }} />
 													))}
 											</div>
 										</div>
@@ -395,7 +329,7 @@ export default function SyllabusHomePage() {
 																	chapter.totalTopics === 0
 																		? 'ghost'
 																		: chapter.totalTopicsCompleted ===
-																			  chapter.totalTopics
+																			chapter.totalTopics
 																			? 'default'
 																			: 'destructive'
 																}

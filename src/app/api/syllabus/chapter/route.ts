@@ -139,7 +139,7 @@ export async function GET(request: Request) {
 
     // * CASE 3: Fetch chapter by ID
     if (chapterId) {
-        const topicsList: syllabusDetailedDataChapter[] = await ChapterModel.aggregate([
+        const selectChapterById: syllabusDetailedDataChapter[] = await ChapterModel.aggregate([
             {
                 $match: {
                     _id: new Types.ObjectId(chapterId)
@@ -210,23 +210,23 @@ export async function GET(request: Request) {
             },
             {
                 $project: {
-                    _id: "$_id",
-                    seqNumber: "$seqNumber",
-                    name: "$name",
-                    done: "$done",
-                    theory: "$theory",
-                    shortNotes: "$shortNotes",
-                    mindMap: "$mindMap",
-                    DPP1: "$DPP1",
-                    DPP2: "$DPP2",
-                    Module: "$Module",
-                    PYQ_Mains: "$PYQ_Mains",
-                    PYQ_Advanced: "$PYQ_Advanced",
-                    Book: "$Book",
-                    totalTopics: "$totalTopics",
-                    subject: "$subjectDetails",
-                    topicsList: "$topicsList",
-                    currentChapterStatus: "$currentChapterStatus"
+                    _id: 1,
+                    seqNumber: 1,
+                    name: 1,
+                    done: 1,
+                    theory: 1,
+                    shortNotes: 1,
+                    mindMap: 1,
+                    DPP1: 1,
+                    DPP2: 1,
+                    Module: 1,
+                    PYQ_Mains: 1,
+                    PYQ_Advanced: 1,
+                    Book: 1,
+                    totalTopics: 1,
+                    subject: 1,
+                    topicsList: 1,
+                    currentChapterStatus: 1
                 }
             },
             {
@@ -291,17 +291,17 @@ export async function GET(request: Request) {
             }
         ]);
 
-        if (topicsList.length != 1) {
+        if (selectChapterById.length != 1) {
             return NextResponse.json(
                 {
                     message: 'Invalid request parameters',
-                    data: topicsList
+                    data: selectChapterById
                 },
                 { status: 400 },
             );
 
         }
-        return NextResponse.json(topicsList[0]);
+        return NextResponse.json(selectChapterById[0]);
     }
 
     // ! Default: Bad request if neither type nor ID provided

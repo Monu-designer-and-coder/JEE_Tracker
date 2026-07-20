@@ -14,7 +14,6 @@ import {
 } from '@/components/ui/card';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Field, FieldDescription, FieldLabel } from '@/components/ui/field';
-import { Item } from '@/components/ui/item';
 import {
 	Select,
 	SelectContent,
@@ -217,6 +216,7 @@ export default function SyllabusHomePage() {
 			});
 		axios.get('/api/syllabus').then((res: AxiosResponse<finalResultData[]>) => {
 			setSyllabusData(res.data);
+			// console.log(JSON.stringify(res.data[0].chapterList[0]))
 		});
 	}, []);
 
@@ -288,7 +288,7 @@ export default function SyllabusHomePage() {
 														);
 													})
 													.map((filteredChapter) => (
-														<ChapterModularUI key={filteredChapter._id} chapter={{ ...filteredChapter, currentChapterStatus: "inProgress", subject: { _id: subject._id, name: subject.name } }} />
+														<ChapterModularUI key={filteredChapter._id} chapterDetails={{ ...filteredChapter, currentChapterStatus: "inProgress", subject: { _id: subject._id, name: subject.name } }} />
 													))}
 											</div>
 										</div>

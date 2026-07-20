@@ -9,7 +9,7 @@ export interface syllabusDetailedDataChapter extends getChapterResponse {
     totalTopicsCompletedPercentage: number;
     totalTopicsTheoryCompleted: number;
     totalTopicsTheoryCompletedPercentage: number;
-    currentChapterStatus?:  'pending' | 'upNext' | 'inProgress' | 'unFinished' | 'done';
+    currentChapterStatus?: 'pending' | 'upNext' | 'inProgress' | 'unFinished' | 'done';
 
 }
 
@@ -26,4 +26,12 @@ export interface finalResultData extends syllabusDetailedData {
     percentChaptersCompleted: number;
     percentTheoryCompleted: number;
     percentPYQsSolved: number;
+}
+
+export interface subjectsChaptersList {
+    _id: string;
+    name: string;
+    seqNumber: number;
+    subject: GetSubjectResponse;
+    currentChapterStatus: 'pending' | 'upNext' | 'inProgress' | 'unFinished' | 'done';
 }

@@ -11,7 +11,13 @@ import {
 	CardHeader,
 	CardTitle,
 } from '@/components/ui/card';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import {
+	Select,
+	SelectContent,
+	SelectItem,
+	SelectTrigger,
+	SelectValue,
+} from '@/components/ui/select';
 import { Skeleton } from '@/components/ui/skeleton';
 import {
 	Table,
@@ -26,17 +32,21 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { axiosConfig } from '@/config/axios.config';
 import { cn } from '@/lib/utils';
 import { getSubjectWiseChapterResponse } from '@/types/res/chapterResponse.types';
-import { subjectsChaptersList, syllabusDetailedDataChapter } from '@/types/res/syllabusDataResponse.types';
+import {
+	subjectsChaptersList,
+	syllabusDetailedDataChapter,
+} from '@/types/res/syllabusDataResponse.types';
 import axios, { AxiosResponse } from 'axios';
 import Link from 'next/link';
 import { useEffect, useState } from 'react';
 import { FcLink } from 'react-icons/fc';
 import { ChevronLeftIcon, ChevronRightIcon } from 'lucide-react';
-
-
+import {
+	NativeSelect,
+	NativeSelectOption,
+} from '@/components/ui/native-select';
 
 export default function SyllabusHomePage() {
-
 	const subjectList = [
 		{
 			_id: '6a25121bf37357e395a82f16',
@@ -57,33 +67,38 @@ export default function SyllabusHomePage() {
 	const [isMounted, setIsMounted] = useState(false);
 	const [isLoading, setIsLoading] = useState<boolean>(true);
 
-	const [selectedChapterData, setSelectedChapterData] = useState<syllabusDetailedDataChapter>({
-		_id: 'chapter_id',
-		seqNumber: 0,
-		name: 'Select A Chapter',
-		done: false,
-		theory: false,
-		shortNotes: false,
-		mindMap: false,
-		DPP1: false,
-		DPP2: false,
-		Module: false,
-		PYQ_Mains: false,
-		PYQ_Advanced: false,
-		Book: false,
-		totalTopics: 0,
-		subject: { _id: 'subject_id', name: 'Please Select Some Subject' },
-		topicsList: [],
-		currentChapterStatus: 'pending',
-		totalTopicsCompleted: 0,
-		totalTopicsCompletedPercentage: 0,
-		totalTopicsTheoryCompleted: 0,
-		totalTopicsTheoryCompletedPercentage: 0,
-	})
+	const [selectedChapterData, setSelectedChapterData] =
+		useState<syllabusDetailedDataChapter>({
+			_id: 'chapter_id',
+			seqNumber: 0,
+			name: 'Select A Chapter',
+			done: false,
+			theory: false,
+			shortNotes: false,
+			mindMap: false,
+			DPP1: false,
+			DPP2: false,
+			Module: false,
+			PYQ_Mains: false,
+			PYQ_Advanced: false,
+			Book: false,
+			totalTopics: 0,
+			subject: { _id: 'subject_id', name: 'Please Select Some Subject' },
+			topicsList: [],
+			currentChapterStatus: 'pending',
+			totalTopicsCompleted: 0,
+			totalTopicsCompletedPercentage: 0,
+			totalTopicsTheoryCompleted: 0,
+			totalTopicsTheoryCompletedPercentage: 0,
+		});
 
-	const [selectedChapter, setSelectedChapter] = useState<string>(String("6a25121bf37357e395a82f10"))
-	const [chaptersList, setChaptersList] = useState<subjectsChaptersList[]>([])
-	const [selectedSubject, setSelectedSubject] = useState<string>(String("6a25121bf37357e395a82f10"))
+	const [selectedChapter, setSelectedChapter] = useState<string>(
+		String('6a25121bf37357e395a82f10'),
+	);
+	const [chaptersList, setChaptersList] = useState<subjectsChaptersList[]>([]);
+	const [selectedSubject, setSelectedSubject] = useState<string>(
+		String('6a25121bf37357e395a82f10'),
+	);
 
 	// ! SIDE EFFECTS
 	useEffect(() => {
@@ -93,18 +108,25 @@ export default function SyllabusHomePage() {
 
 	useEffect(() => {
 		axios
-			.request(axiosConfig(`syllabus/data/getChapterList?id=${selectedSubject}`, 'get'))
+			.request(
+				axiosConfig(
+					`syllabus/data/getChapterList?id=${selectedSubject}`,
+					'get',
+				),
+			)
 			.then((response: AxiosResponse<subjectsChaptersList[]>) => {
 				setChaptersList(response.data);
-			}).catch(() => { })
-	}, [selectedSubject])
+			})
+			.catch(() => {});
+	}, [selectedSubject]);
 	useEffect(() => {
 		axios
 			.request(axiosConfig(`syllabus/chapter?id=${selectedChapter}`, 'get'))
 			.then((response: AxiosResponse<syllabusDetailedDataChapter>) => {
 				setSelectedChapterData(response.data);
-			}).catch(() => { })
-	}, [selectedChapter])
+			})
+			.catch(() => {});
+	}, [selectedChapter]);
 
 	// ! HYDRATION FALLBACK
 	// * Render a skeleton or empty wrapper before client hydration to ensure exact HTML matching
@@ -116,7 +138,6 @@ export default function SyllabusHomePage() {
 
 	return (
 		<main className='relative w-[95%] mx-auto my-4 px-4'>
-
 			{/* * Content Section */}
 			<section className='relative z-10 mx-auto w-full  flex flex-col justify-center'>
 				{isLoading ? (
@@ -129,11 +150,13 @@ export default function SyllabusHomePage() {
 						<header className='w-full'>
 							<Card className='h-full'>
 								<CardHeader>
-									<CardTitle className='font-heading font-normal text-4xl'>Select The Chapter</CardTitle>
+									<CardTitle className='font-heading font-normal text-4xl'>
+										Select The Chapter
+									</CardTitle>
 									<CardAction>
-										<Button variant="link" asChild>
+										<Button variant='link' asChild>
 											<Link href={'/system/'}>
-												<FcLink className="w-5 h-5" />
+												<FcLink className='w-5 h-5' />
 											</Link>
 										</Button>
 									</CardAction>
@@ -144,19 +167,18 @@ export default function SyllabusHomePage() {
 											<Select
 												value={selectedSubject}
 												onValueChange={(e) => {
-													setSelectedSubject(e)
+													setSelectedSubject(e);
 												}}
-												defaultValue={"6a25121bf37357e395a82f10"}
-											>
+												defaultValue={'6a25121bf37357e395a82f10'}>
 												<SelectTrigger className='w-full' size='default'>
 													<SelectValue placeholder='Select the subject of the chapter' />
 												</SelectTrigger>
 												<SelectContent className=''>
-													<SelectItem value='6a25121bf37357e395a82f10' disabled>Select the subject of the chapter</SelectItem>
+													<SelectItem value='6a25121bf37357e395a82f10' disabled>
+														Select the subject of the chapter
+													</SelectItem>
 													{subjectList.map((subject) => (
-														<SelectItem
-															key={subject._id}
-															value={subject._id}>
+														<SelectItem key={subject._id} value={subject._id}>
 															{subject.name}
 														</SelectItem>
 													))}
@@ -164,55 +186,91 @@ export default function SyllabusHomePage() {
 											</Select>
 										</div>
 										<div className='col-span-4'>
-											<Select
+											<NativeSelect
 												value={selectedChapter}
-												onValueChange={(e) => {
-													setSelectedChapter(e)
+												onChange={(e) => {
+													setSelectedChapter(e.target.value);
 												}}
-												defaultValue={"6a25121bf37357e395a82f10"}>
-												<SelectTrigger size='sm' className='w-full'>
-													<SelectValue placeholder='Select the chapter of the selected Chapter' />
-												</SelectTrigger>
-												<SelectContent className='w-full'>
-													<SelectItem value='6a25121bf37357e395a82f10' disabled>Select the chapter of the selected Chapter</SelectItem>
-													{chaptersList.map((chapter) => (
-														<SelectItem
-															key={chapter._id}
-															value={chapter._id}>
-															{chapter.name}
-														</SelectItem>
-													))}
-												</SelectContent>
-											</Select>
+												defaultValue={'6a25121bf37357e395a82f10'}>
+												{chaptersList.map((selectedChapterFromTheList) => (
+													<NativeSelectOption
+														key={selectedChapterFromTheList._id}
+														value={selectedChapterFromTheList._id}>
+														{selectedChapterFromTheList.name}
+													</NativeSelectOption>
+												))}
+											</NativeSelect>
 										</div>
 									</section>
-									<section className="col-span-8 grid grid-cols-12 gap-2">
+									<section className='col-span-8 grid grid-cols-12 gap-2'>
 										<div className='col-span-5 border border-primary rounded-full px-3 py-2 flex items-center gap-5'>
-											<h3 className='font-badge text-lg text-primary font-medium'>Current Chapter Status</h3>
-											<p className={cn("text-base font-normal font-content-primary capitalize", selectedChapterData.seqNumber == 0 ? "text-muted" : "text-foreground/80")}>{selectedChapterData.currentChapterStatus}</p>
+											<h3 className='font-badge text-lg text-primary font-medium'>
+												Current Chapter Status
+											</h3>
+											<p
+												className={cn(
+													'text-base font-normal font-content-primary capitalize',
+													selectedChapterData.seqNumber == 0
+														? 'text-muted'
+														: 'text-foreground/80',
+												)}>
+												{selectedChapterData.currentChapterStatus}
+											</p>
 										</div>
 										<div className='col-span-5 border border-primary rounded-full px-3 py-2 flex items-center gap-5'>
-											<h3 className='font-badge text-lg text-primary font-medium'>Current Sequence</h3>
-											<Button variant={"default"} size={"icon"} disabled={selectedChapterData.seqNumber - 2 < 0} onClick={() => { setSelectedChapter(chaptersList[selectedChapterData.seqNumber - 2]._id) }}> <ChevronLeftIcon /></Button>
-											<p className={cn("text-base font-normal font-content-primary capitalize", selectedChapterData.seqNumber == 0 ? "text-muted" : "text-foreground/80")}>{selectedChapterData.seqNumber}</p>
-											<Button variant={"default"} size={"icon"} disabled={selectedChapterData.seqNumber >= chaptersList.length} onClick={() => { setSelectedChapter(chaptersList[selectedChapterData.seqNumber]._id) }}> <ChevronRightIcon /></Button>
+											<h3 className='font-badge text-lg text-primary font-medium'>
+												Current Sequence
+											</h3>
+											<Button
+												variant={'default'}
+												size={'icon'}
+												disabled={selectedChapterData.seqNumber - 2 < 0}
+												onClick={() => {
+													setSelectedChapter(
+														chaptersList[selectedChapterData.seqNumber - 2]._id,
+													);
+												}}>
+												{' '}
+												<ChevronLeftIcon />
+											</Button>
+											<p
+												className={cn(
+													'text-base font-normal font-content-primary capitalize',
+													selectedChapterData.seqNumber == 0
+														? 'text-muted'
+														: 'text-foreground/80',
+												)}>
+												{selectedChapterData.seqNumber}
+											</p>
+											<Button
+												variant={'default'}
+												size={'icon'}
+												disabled={
+													selectedChapterData.seqNumber >= chaptersList.length
+												}
+												onClick={() => {
+													setSelectedChapter(
+														chaptersList[selectedChapterData.seqNumber]._id,
+													);
+												}}>
+												{' '}
+												<ChevronRightIcon />
+											</Button>
 										</div>
 									</section>
 								</CardContent>
 							</Card>
-						</header >
+						</header>
 						<ChapterModularUI
 							className='w-full'
 							chapterDetails={selectedChapterData}
 						/>
-					</section >
-				)
-				}
-			</section >
-		</main >
+					</section>
+				)}
+			</section>
+		</main>
 	);
 }
-
 
 // eslint-disable-next-line @typescript-eslint/no-unused-vars
 function TabsOfChapter_OldLayout() {
@@ -249,7 +307,6 @@ function TabsOfChapter_OldLayout() {
 				setChapterList(response.data);
 			});
 	}, []);
-
 
 	return (
 		<Tabs
@@ -297,121 +354,84 @@ function TabsOfChapter_OldLayout() {
 								<TableCaption>A list of your chapters.</TableCaption>
 								<TableHeader>
 									<TableRow>
-										<TableHead className='capitalize text-xs'>
-											S.No:
-										</TableHead>
+										<TableHead className='capitalize text-xs'>S.No:</TableHead>
 										<TableHead className='capitalize text-xs'>
 											Chapter Name
 										</TableHead>
-										<TableHead className='capitalize text-xs'>
-											done
-										</TableHead>
-										<TableHead className='capitalize text-xs'>
-											theory
-										</TableHead>
+										<TableHead className='capitalize text-xs'>done</TableHead>
+										<TableHead className='capitalize text-xs'>theory</TableHead>
 										<TableHead className='capitalize text-xs'>
 											shortNotes
 										</TableHead>
 										<TableHead className='capitalize text-xs'>
 											mindMap
 										</TableHead>
-										<TableHead className='capitalize text-xs'>
-											DPP1
-										</TableHead>
-										<TableHead className='capitalize text-xs'>
-											DPP2
-										</TableHead>
-										<TableHead className='capitalize text-xs'>
-											Module
-										</TableHead>
+										<TableHead className='capitalize text-xs'>DPP1</TableHead>
+										<TableHead className='capitalize text-xs'>DPP2</TableHead>
+										<TableHead className='capitalize text-xs'>Module</TableHead>
 										<TableHead className='capitalize text-xs'>
 											PYQ_Mains
 										</TableHead>
 										<TableHead className='capitalize text-xs'>
 											PYQ_Advanced
 										</TableHead>
-										<TableHead className='capitalize text-xs'>
-											Book
-										</TableHead>
+										<TableHead className='capitalize text-xs'>Book</TableHead>
 									</TableRow>
 								</TableHeader>
 								<TableBody>
 									{subject.chapterList.map((chapter) => (
-										<TableRow
-											key={chapter.seqNumber + '-' + chapter.name}>
+										<TableRow key={chapter.seqNumber + '-' + chapter.name}>
 											<TableCell>{chapter.seqNumber}</TableCell>
-											<TableCell className='text-xs'>
-												{chapter.name}
-											</TableCell>
+											<TableCell className='text-xs'>{chapter.name}</TableCell>
 											<TableCell
 												className={cn(
 													'border',
-													chapter.done
-														? 'bg-green-600'
-														: 'bg-red-600',
+													chapter.done ? 'bg-green-600' : 'bg-red-600',
 												)}></TableCell>
 											<TableCell
 												className={cn(
 													'border',
-													chapter.theory
-														? 'bg-green-600'
-														: 'bg-red-600',
+													chapter.theory ? 'bg-green-600' : 'bg-red-600',
 												)}></TableCell>
 											<TableCell
 												className={cn(
 													'border',
-													chapter.shortNotes
-														? 'bg-green-600'
-														: 'bg-red-600',
+													chapter.shortNotes ? 'bg-green-600' : 'bg-red-600',
 												)}></TableCell>
 											<TableCell
 												className={cn(
 													'border',
-													chapter.mindMap
-														? 'bg-green-600'
-														: 'bg-red-600',
+													chapter.mindMap ? 'bg-green-600' : 'bg-red-600',
 												)}></TableCell>
 											<TableCell
 												className={cn(
 													'border',
-													chapter.DPP1
-														? 'bg-green-600'
-														: 'bg-red-600',
+													chapter.DPP1 ? 'bg-green-600' : 'bg-red-600',
 												)}></TableCell>
 											<TableCell
 												className={cn(
 													'border',
-													chapter.DPP2
-														? 'bg-green-600'
-														: 'bg-red-600',
+													chapter.DPP2 ? 'bg-green-600' : 'bg-red-600',
 												)}></TableCell>
 											<TableCell
 												className={cn(
 													'border',
-													chapter.Module
-														? 'bg-green-600'
-														: 'bg-red-600',
+													chapter.Module ? 'bg-green-600' : 'bg-red-600',
 												)}></TableCell>
 											<TableCell
 												className={cn(
 													'border',
-													chapter.PYQ_Mains
-														? 'bg-green-600'
-														: 'bg-red-600',
+													chapter.PYQ_Mains ? 'bg-green-600' : 'bg-red-600',
 												)}></TableCell>
 											<TableCell
 												className={cn(
 													'border',
-													chapter.PYQ_Advanced
-														? 'bg-green-600'
-														: 'bg-red-600',
+													chapter.PYQ_Advanced ? 'bg-green-600' : 'bg-red-600',
 												)}></TableCell>
 											<TableCell
 												className={cn(
 													'border',
-													chapter.Book
-														? 'bg-green-600'
-														: 'bg-red-600',
+													chapter.Book ? 'bg-green-600' : 'bg-red-600',
 												)}></TableCell>
 										</TableRow>
 									))}

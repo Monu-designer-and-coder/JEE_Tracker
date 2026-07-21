@@ -1,15 +1,23 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 'use client';
 
-import { useEffect, useMemo, useState } from 'react';
+import {
+	HTMLInputTypeAttribute,
+	useCallback,
+	useEffect,
+	useMemo,
+	useState,
+} from 'react';
 import { Skeleton } from '../ui/skeleton';
 import {
 	Card,
+	CardAction,
 	CardContent,
 	CardDescription,
 	CardHeader,
 	CardTitle,
 } from '../ui/card';
-import { FcDataSheet } from 'react-icons/fc';
+import { FcDataSheet, FcEditImage } from 'react-icons/fc';
 import { Button } from '../ui/button';
 import Link from 'next/link';
 import { cn } from '@/lib/utils';
@@ -45,6 +53,22 @@ import {
 import { toast } from 'react-toastify';
 import { axiosConfig } from '@/config/axios.config';
 import axios from 'axios';
+import { IoMdAddCircle } from 'react-icons/io';
+import {
+	Dialog,
+	DialogContent,
+	DialogDescription,
+	DialogFooter,
+	DialogHeader,
+	DialogTitle,
+	DialogTrigger,
+} from '../ui/dialog';
+import { TopicValidationSchema } from '@/schema/topic.schema';
+import { zodResolver } from '@hookform/resolvers/zod';
+import { Controller, useForm } from 'react-hook-form';
+import z from 'zod';
+import { Field, FieldDescription, FieldError, FieldLabel } from '../ui/field';
+import { Input } from '../ui/input';
 
 export const ChapterModularUI = ({
 	className,
@@ -364,15 +388,17 @@ export const ChapterModularUI = ({
 						}
 					}),
 				}));
-				axios.request({
-					...axiosTopicFormConfigHook,
-					data: {
-						_id: topicId,
-						data: dataToUpdate,
-					},
-				}).then(()=>{
-          toast.success(`Successfully updated Topic`)
-        })
+				axios
+					.request({
+						...axiosTopicFormConfigHook,
+						data: {
+							_id: topicId,
+							data: dataToUpdate,
+						},
+					})
+					.then(() => {
+						toast.success(`Successfully updated Topic`);
+					});
 				break;
 
 			case 'theory':
@@ -392,15 +418,17 @@ export const ChapterModularUI = ({
 						}
 					}),
 				}));
-				axios.request({
-					...axiosTopicFormConfigHook,
-					data: {
-						_id: topicId,
-						data: dataToUpdate,
-					},
-				}).then(()=>{
-          toast.success(`Successfully updated Topic`)
-        })
+				axios
+					.request({
+						...axiosTopicFormConfigHook,
+						data: {
+							_id: topicId,
+							data: dataToUpdate,
+						},
+					})
+					.then(() => {
+						toast.success(`Successfully updated Topic`);
+					});
 				break;
 
 			case 'inTextQuestions':
@@ -420,15 +448,17 @@ export const ChapterModularUI = ({
 						}
 					}),
 				}));
-				axios.request({
-					...axiosTopicFormConfigHook,
-					data: {
-						_id: topicId,
-						data: dataToUpdate,
-					},
-				}).then(()=>{
-          toast.success(`Successfully updated Topic`)
-        })
+				axios
+					.request({
+						...axiosTopicFormConfigHook,
+						data: {
+							_id: topicId,
+							data: dataToUpdate,
+						},
+					})
+					.then(() => {
+						toast.success(`Successfully updated Topic`);
+					});
 				break;
 			case 'inClassQuestions':
 				setChapter((prev) => ({
@@ -447,15 +477,17 @@ export const ChapterModularUI = ({
 						}
 					}),
 				}));
-				axios.request({
-					...axiosTopicFormConfigHook,
-					data: {
-						_id: topicId,
-						data: dataToUpdate,
-					},
-				}).then(()=>{
-          toast.success(`Successfully updated Topic`)
-        })
+				axios
+					.request({
+						...axiosTopicFormConfigHook,
+						data: {
+							_id: topicId,
+							data: dataToUpdate,
+						},
+					})
+					.then(() => {
+						toast.success(`Successfully updated Topic`);
+					});
 				break;
 		}
 	}
@@ -501,6 +533,11 @@ export const ChapterModularUI = ({
 						);
 					})()}
 				</CardDescription>
+				<CardAction>
+					<Button variant='ghost' size={'icon'}>
+						<FcEditImage className='w-5 h-5' />
+					</Button>
+				</CardAction>
 			</CardHeader>
 			<CardContent className='grid grid-cols-12 gap-4'>
 				{/* Tags  */}
@@ -761,9 +798,9 @@ export const ChapterModularUI = ({
 						</RadialBarChart>
 					</ChartContainer>
 				</div>
-				{/*chapter timeline  */}
-				<div className='col-span-12  flex items-center justify-center '>
-					<Breadcrumb>
+				{/*chapter timeline and Add Todo  */}
+				<div className='col-span-12 grid grid-cols-12'>
+					<Breadcrumb className='col-span-6 col-start-2'>
 						<BreadcrumbList>
 							<BreadcrumbItem className='capitalize text-lg font-medium font-badges text-ring'>
 								{chapter.currentChapterStatus === 'pending' ? (
@@ -816,6 +853,26 @@ export const ChapterModularUI = ({
 							</BreadcrumbItem>
 						</BreadcrumbList>
 					</Breadcrumb>
+					<Dialog>
+						<Button asChild variant={'default'}>
+							<DialogTrigger className='col-span-1 col-start-11'>
+								Add Topic <IoMdAddCircle />{' '}
+							</DialogTrigger>
+						</Button>
+						<DialogContent className='bg-transparent'>
+							<DialogHeader>
+								<DialogTitle>Add Topic</DialogTitle>
+								<DialogDescription>
+									Add Topics to {chapter.name}
+								</DialogDescription>
+							</DialogHeader>
+							<AddTopicModalForm
+								className='bg-primary/5'
+								chapterId={chapter._id}
+							/>
+							<DialogFooter showCloseButton></DialogFooter>
+						</DialogContent>
+					</Dialog>
 				</div>
 				{/* Topics  */}
 				<div className='col-span-12 rounded-b-xl p-3'>
@@ -879,5 +936,154 @@ export const ChapterModularUI = ({
 				</div>
 			</CardContent>
 		</Card>
+	);
+};
+
+function AddTopicModalForm({
+	className,
+	chapterId,
+}: {
+	className?: string;
+	chapterId: string;
+}) {
+	// * Memoized Axios Configuration - Performance optimization
+	const AddTopicAxiosConfigHook = useMemo(
+		() =>
+			axiosConfig('syllabus/topic', 'post', {
+				'Content-Type': 'application/json',
+			}),
+		[],
+	);
+
+	// * Enhanced Chapter Form with Improved Validation
+
+	type topicCreateFormValidationSchemaType = z.infer<
+		typeof TopicValidationSchema
+	>;
+
+	const topicCreateForm = useForm<topicCreateFormValidationSchemaType>({
+		resolver: zodResolver(TopicValidationSchema),
+		defaultValues: {
+			name: '',
+			seqNumber: '0',
+			chapter: chapterId,
+		},
+		mode: 'onChange',
+	});
+
+	// * Enhanced Chapter Submit Handler with Improved Logic
+	const handleTopicCreateSubmit = useCallback(
+		async (values: topicCreateFormValidationSchemaType) => {
+			try {
+				const config = {
+					...AddTopicAxiosConfigHook,
+					data: { ...values },
+				};
+				const response = await axios.request(config);
+				console.log(response.data)
+				toast.success('Topic created successfully:');
+
+				// * Smart form reset - keep all data except name and increment seqNumber
+				const currentSeqNumber = Number(topicCreateForm.getValues('seqNumber'));
+				topicCreateForm.setValue('name', '');
+				topicCreateForm.setValue('seqNumber', String(currentSeqNumber + 1));
+			} catch (error: any) {
+				const ErrorMessage = error?.response?.data || 'Error';
+				toast.error(ErrorMessage);
+			}
+		},
+		[AddTopicAxiosConfigHook, topicCreateForm],
+	);
+
+	return (
+		<Card className={cn(className)}>
+			<CardContent>
+				<form onSubmit={topicCreateForm.handleSubmit(handleTopicCreateSubmit)}>
+					<CustomInputController
+						label='Topic Name'
+						type='text'
+						control={topicCreateForm.control}
+						name='name'
+						description='Enter the Topic Name'
+						htmlID='topicName'
+						placeholder='E.g. Motion in 1D due to Gravity'
+					/>
+					<CustomInputController
+						label='Sequence Number'
+						type='number'
+						control={topicCreateForm.control}
+						name='seqNumber'
+						description='Enter the Topic Sequence'
+						htmlID='sequenceNumber'
+						placeholder='0'
+					/>
+					<Button
+						type='submit'
+						className='w-full bg-primary/20'>
+						Create Chapter
+					</Button>
+				</form>
+			</CardContent>
+		</Card>
+	);
+}
+
+const CustomInputController = ({
+	className,
+	containerClassName,
+	descriptionClassName,
+	labelClassName,
+	control,
+	name,
+	label,
+	description,
+	htmlID,
+	type = 'text',
+	placeholder,
+}: {
+	className?: string;
+	containerClassName?: string;
+	descriptionClassName?: string;
+	labelClassName?: string;
+	control: any;
+	name: string;
+	label: string;
+	description: string;
+	htmlID: string;
+	type: HTMLInputTypeAttribute;
+	placeholder: string;
+}) => {
+	return (
+		<Controller
+			control={control}
+			name={name}
+			render={({ field }) => (
+				<Field className='my-5 border border-primary/20 bg-primary/5 py-4 px-5 rounded-4xl'>
+					<div className={cn('', containerClassName)}>
+						<FieldLabel
+							htmlFor={htmlID}
+							className={cn(
+								'text-base font-content-primary font-semibold text-primary',
+								labelClassName,
+							)}>
+							{label}
+						</FieldLabel>
+						<Input
+							id={htmlID}
+							type={type}
+							placeholder={placeholder}
+							autoComplete='off'
+							className={cn('font-content-secondary', className)}
+							{...field}
+						/>
+					</div>
+					<FieldDescription
+						className={cn('text-sm text-foreground/40', descriptionClassName)}>
+						{description}
+					</FieldDescription>
+					<FieldError />
+				</Field>
+			)}
+		/>
 	);
 };

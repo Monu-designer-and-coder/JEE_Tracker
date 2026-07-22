@@ -360,7 +360,7 @@ export const ChapterModularUI = ({
 				break;
 		}
 	}
-	function updateTopic(
+	function updateTopicTags(
 		tag: 'done' | 'theory' | 'inTextQuestions' | 'inClassQuestions',
 		topicId: string,
 	) {
@@ -372,9 +372,8 @@ export const ChapterModularUI = ({
 		} = {};
 		switch (tag) {
 			case 'done':
-				setChapter((prev) => ({
-					...prev,
-					topicsList: prev.topicsList.map((item) => {
+				setChapter((prev) => {
+					const newTopicsList = prev.topicsList.map((item) => {
 						if (item._id == topicId) {
 							dataToUpdate.done = !item.done;
 
@@ -386,8 +385,18 @@ export const ChapterModularUI = ({
 						} else {
 							return item;
 						}
-					}),
-				}));
+					});
+					const newTotalTopicsDone = newTopicsList.filter(
+						(topic) => topic.done,
+					).length;
+					return {
+						...prev,
+						topicsList: newTopicsList,
+						totalTopicsCompleted: newTotalTopicsDone,
+						totalTopicsCompletedPercentage:
+							(newTotalTopicsDone * 100) / prev.totalTopics,
+					};
+				});
 				axios
 					.request({
 						...axiosTopicFormConfigHook,
@@ -402,9 +411,8 @@ export const ChapterModularUI = ({
 				break;
 
 			case 'theory':
-				setChapter((prev) => ({
-					...prev,
-					topicsList: prev.topicsList.map((item) => {
+				setChapter((prev) => {
+					const newTopicsList = prev.topicsList.map((item) => {
 						if (item._id == topicId) {
 							dataToUpdate.theory = !item.theory;
 
@@ -416,8 +424,19 @@ export const ChapterModularUI = ({
 						} else {
 							return item;
 						}
-					}),
-				}));
+					});
+					const newTotalTopicsTheoryCompletedPercentage = newTopicsList.filter(
+						(topic) => topic.theory,
+					).length;
+					return {
+						...prev,
+						topicsList: newTopicsList,
+						totalTopicsCompleted: newTotalTopicsTheoryCompletedPercentage,
+						totalTopicsTheoryCompletedPercentage:
+							(newTotalTopicsTheoryCompletedPercentage * 100) /
+							prev.totalTopics,
+					};
+				});
 				axios
 					.request({
 						...axiosTopicFormConfigHook,
@@ -897,7 +916,7 @@ export const ChapterModularUI = ({
 										{' '}
 										<Checkbox
 											onClick={() => {
-												updateTopic('theory', topic._id);
+												updateTopicTags('theory', topic._id);
 											}}
 											checked={topic.theory}
 										/>{' '}
@@ -906,7 +925,7 @@ export const ChapterModularUI = ({
 										{' '}
 										<Checkbox
 											onClick={() => {
-												updateTopic('inTextQuestions', topic._id);
+												updateTopicTags('inTextQuestions', topic._id);
 											}}
 											checked={topic.inTextQuestions}
 										/>{' '}
@@ -915,7 +934,7 @@ export const ChapterModularUI = ({
 										{' '}
 										<Checkbox
 											onClick={() => {
-												updateTopic('inClassQuestions', topic._id);
+												updateTopicTags('inClassQuestions', topic._id);
 											}}
 											checked={topic.inClassQuestions}
 										/>{' '}
@@ -924,7 +943,7 @@ export const ChapterModularUI = ({
 										{' '}
 										<Checkbox
 											onClick={() => {
-												updateTopic('done', topic._id);
+												updateTopicTags('done', topic._id);
 											}}
 											checked={topic.done}
 										/>{' '}

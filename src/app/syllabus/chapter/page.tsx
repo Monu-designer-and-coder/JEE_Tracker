@@ -190,8 +190,7 @@ export default function SyllabusHomePage() {
 												value={selectedChapter}
 												onChange={(e) => {
 													setSelectedChapter(e.target.value);
-												}}
-												defaultValue={'6a25121bf37357e395a82f10'}>
+												}}>
 												{chaptersList.map((selectedChapterFromTheList) => (
 													<NativeSelectOption
 														key={selectedChapterFromTheList._id}

@@ -716,7 +716,7 @@ export const ChapterModularUI = ({
 						<div className='w-full'>
 							<div className='flex justify-between items-end text-sm font-medium'>
 								<span className='text-muted-foreground'>
-									Total Topics Theory Completed :{' '}
+									Total Topics Completed :{' '}
 									<Badge>
 										{chapter.totalTopicsCompleted}/{chapter.totalTopics}
 									</Badge>
@@ -738,7 +738,7 @@ export const ChapterModularUI = ({
 						<div className='w-full'>
 							<div className='flex justify-between items-end text-sm font-medium'>
 								<span className='text-muted-foreground'>
-									Total Topics Completed{' '}
+									Total Topics Theory Completed{' '}
 									<Badge>
 										{chapter.totalTopicsTheoryCompleted}/{chapter.totalTopics}
 									</Badge>
@@ -980,7 +980,7 @@ function AddTopicModalForm({
 					data: { ...values },
 				};
 				const response = await axios.request(config);
-				console.log(response.data)
+				console.log(response.data);
 				toast.success('Topic created successfully:');
 
 				// * Smart form reset - keep all data except name and increment seqNumber
@@ -1017,9 +1017,7 @@ function AddTopicModalForm({
 						htmlID='sequenceNumber'
 						placeholder='0'
 					/>
-					<Button
-						type='submit'
-						className='w-full bg-primary/20'>
+					<Button type='submit' className='w-full bg-primary/20'>
 						Create Chapter
 					</Button>
 				</form>

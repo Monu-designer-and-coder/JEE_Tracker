@@ -15,7 +15,7 @@ export interface syllabusDetailedDataChapter extends getChapterResponse {
 
 export interface syllabusDetailedData extends GetSubjectResponse {
     completedChapters: number;
-    completedMainsAdvancedPYQs: number;
+    completedAdvancedPYQs: number;
     completedMainsPYQs: number;
     completedTheory: number;
     totalChapters: number;

@@ -111,7 +111,7 @@ export async function GET() {
                         ]
                     }
                 },
-                completedMainsAdvancedPYQs: {
+                completedAdvancedPYQs: {
                     $sum: {
                         $cond: [
                             { $eq: ["$PYQ_Advanced", true] },
@@ -136,7 +136,7 @@ export async function GET() {
                         PYQ_Advanced: "$PYQ_Advanced",
                         Book: "$Book",
                         totalTopics: "$totalTopics",
-                        subjectDetails: "$subjectDetails",
+                        subject: "$subjectDetails",
                         topicsList: "$topicsList",
                         currentChapterStatus: "$currentChapterStatus"
                     }
@@ -149,7 +149,7 @@ export async function GET() {
                 name: 1,
                 totalChapters: 1,
                 completedMainsPYQs: 1,
-                completedMainsAdvancedPYQs: 1,
+                completedAdvancedPYQs: 1,
                 completedChapters: 1,
                 completedTheory: 1,
                 chapterList: 1
@@ -161,7 +161,7 @@ export async function GET() {
 
         const percentChaptersCompleted = item.completedChapters * 100 / item.totalChapters
         const percentTheoryCompleted = item.completedTheory * 100 / item.totalChapters
-        const percentPYQsSolved = (item.completedMainsAdvancedPYQs + item.completedMainsPYQs) * 50 / item.totalChapters
+        const percentPYQsSolved = (item.completedAdvancedPYQs + item.completedMainsPYQs) * 50 / item.totalChapters
 
         item.chapterList = item.chapterList.map(chapter => {
             const totalTopicsCompleted = chapter.topicsList.filter(topic => topic.done).length

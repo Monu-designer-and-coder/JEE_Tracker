@@ -34,10 +34,10 @@ import {
 	SheetTrigger,
 } from '@/components/ui/sheet';
 import { Badge } from '@/components/ui/badge';
-import { ImTarget } from "react-icons/im";
+import { ImTarget } from 'react-icons/im';
 import { CardBlockUI } from '@/components/module/card-block.module';
 import { cardBlockUIOrientation } from '@/components/module/card-block.module';
-import { CurrentTaskCard } from '@/components/module/current-task.module';
+import { CurrentTaskCard03 } from '@/components/module/current-task.module';
 import { MissionCountdownCard } from '@/components/module/mission-countdown.module';
 import { formatDate, formatMilliseconds } from '@/lib/helpers';
 import { Skeleton } from '@/components/ui/skeleton';
@@ -75,7 +75,6 @@ export default function Tracker() {
 	// * Redux State
 	const currentStudySession = useAppSelector((state) => state.studySession);
 
-
 	// * State Management
 	const [subjectStreaks, setSubjectStreaks] = useState<
 		frontendGetSubjectStreakTodayResponse[]
@@ -86,7 +85,6 @@ export default function Tracker() {
 
 	// ! Hydration Safety Pattern: Prevents mismatches between SSR and Client rendering
 	const [isMounted, setIsMounted] = useState<boolean>(false);
-
 
 	const [todaysProgressData, setTodaysProgressData] = useState<{
 		totalQuestionsDone: number;
@@ -120,7 +118,6 @@ export default function Tracker() {
 		},
 	});
 
-
 	const [allTimePeak, setAllTimePeak] = useState<{
 		peakTimeStudiedDay: {
 			totalQuestions: number;
@@ -153,14 +150,10 @@ export default function Tracker() {
 		subjectWisePeaks: [],
 	});
 
-
-
 	// * Lifecycle Hooks
 	useEffect(() => {
-
 		// * Optimized interval: Changed from 100ms to 1000ms.
 		// * React renders 10x less frequently while maintaining visually
-
 
 		setIsMounted(true);
 		fetchTodayStreaksIncremental(1, []);
@@ -174,7 +167,7 @@ export default function Tracker() {
 		};
 		const StudySessionLocalStorage = JSON.parse(
 			localStorage.getItem(STORAGE_KEYS.STUDY_SESSION) ||
-			JSON.stringify(initialStateOfStudySession),
+				JSON.stringify(initialStateOfStudySession),
 		);
 		if (StudySessionLocalStorage.isStudySessionActive) {
 			dispatch(startStudySession(StudySessionLocalStorage));
@@ -184,7 +177,6 @@ export default function Tracker() {
 		axios
 			.request(axiosConfig('subjectStreak/data?type=peak', 'get'))
 			.then((res) => setAllTimePeak(res.data));
-
 	}, []);
 
 	useEffect(() => {
@@ -240,8 +232,6 @@ export default function Tracker() {
 			},
 		});
 	}, [subjectStreaks]);
-
-
 
 	// * ==========================================================================
 	// * API Methods
@@ -443,7 +433,7 @@ export default function Tracker() {
 					subjectDetails: { _id: '', subjectName: 'No Study Session' },
 				}),
 			);
-			setLiveTimestamp(0)
+			setLiveTimestamp(0);
 		}
 	};
 
@@ -529,7 +519,6 @@ export default function Tracker() {
 		);
 	};
 
-
 	// ! Hydration check: Return null or a skeleton loader until mounted
 	if (!isMounted) return null;
 
@@ -538,7 +527,6 @@ export default function Tracker() {
 	// * ==========================================================================
 	return (
 		<main className='relative w-full overflow-auto bg-background px-4 py-8 md:px-8'>
-
 			{/* * Content Section */}
 			<section className='relative z-10 mx-auto w-11/12 flex flex-col justify-center'>
 				{isLoading ? (
@@ -548,12 +536,14 @@ export default function Tracker() {
 					</Skeleton>
 				) : (
 					// ! Added TooltipProvider here to ensure tooltips portal correctly and don't get clipped by overflow-hidden
-					<TooltipProvider delayDuration={200} >
+					<TooltipProvider delayDuration={200}>
 						<Sheet>
 							<SheetTrigger asChild>
 								<Button className='w-full'>Open Details</Button>
 							</SheetTrigger>
-							<SheetContent side='bottom' className='overflow-auto py-8 bg-primary/10 px-5'>
+							<SheetContent
+								side='bottom'
+								className='overflow-auto py-8 bg-primary/10 px-5'>
 								<SheetHeader>
 									<SheetTitle>Your Peak v/s Today</SheetTitle>
 									<SheetDescription>
@@ -566,87 +556,99 @@ export default function Tracker() {
 											<CardTitle>Your Peak</CardTitle>
 										</CardHeader>
 										<CardContent className='overflow-auto flex flex-col gap-3 h-full'>
-											<CardBlockUI cardBlockUIContentList={[
-												{
-													label: 'Peak Questions Done',
-													value:
-														String(allTimePeak.peakQuestionsDoneDay[0]
-															?.totalQuestions || 0),
-													subtext: formatDate(
-														String(
-															allTimePeak.peakQuestionsDoneDay[0]?.date || '',
+											<CardBlockUI
+												cardBlockUIContentList={[
+													{
+														label: 'Peak Questions Done',
+														value: String(
+															allTimePeak.peakQuestionsDoneDay[0]
+																?.totalQuestions || 0,
 														),
-													),
-													animate: false,
-												},
-												{
-													label: 'Peak Time Studied',
-													value: formatMilliseconds(
-														allTimePeak.peakTimeStudiedDay[0]?.totalTime || 0,
-													),
-													subtext: formatDate(
-														String(
-															allTimePeak.peakTimeStudiedDay[0]?.date || '',
+														subtext: formatDate(
+															String(
+																allTimePeak.peakQuestionsDoneDay[0]?.date || '',
+															),
 														),
-													),
-													animate: true,
-												},
-											]} />
-											<CardBlockUI cardBlockUIContentList={[
-												{
-													label: 'Overall Best Day',
-													value:
-														String(allTimePeak.bestOverallDay[0]?.totalQuestions ||
-															0),
-													subtext: 'Question Done',
-													animate: false,
-												},
-												{
-													label: 'Overall Best Day',
-													value: formatMilliseconds(
-														allTimePeak.bestOverallDay[0]?.totalTime || 0,
-													),
-													subtext: 'Time Studied',
-													animate: false,
-												},
-												{
-													label: "Overall Best Day's Score",
-													value: String(Math.round(
-														allTimePeak.bestOverallDay[0]?.averageScore || 0,
-													)),
-													subtext: formatDate(
-														String(allTimePeak.bestOverallDay[0]?.date || ''),
-													),
-													animate: true,
-												},
-											]} />
+														animate: false,
+													},
+													{
+														label: 'Peak Time Studied',
+														value: formatMilliseconds(
+															allTimePeak.peakTimeStudiedDay[0]?.totalTime || 0,
+														),
+														subtext: formatDate(
+															String(
+																allTimePeak.peakTimeStudiedDay[0]?.date || '',
+															),
+														),
+														animate: true,
+													},
+												]}
+											/>
+											<CardBlockUI
+												cardBlockUIContentList={[
+													{
+														label: 'Overall Best Day',
+														value: String(
+															allTimePeak.bestOverallDay[0]?.totalQuestions ||
+																0,
+														),
+														subtext: 'Question Done',
+														animate: false,
+													},
+													{
+														label: 'Overall Best Day',
+														value: formatMilliseconds(
+															allTimePeak.bestOverallDay[0]?.totalTime || 0,
+														),
+														subtext: 'Time Studied',
+														animate: false,
+													},
+													{
+														label: "Overall Best Day's Score",
+														value: String(
+															Math.round(
+																allTimePeak.bestOverallDay[0]?.averageScore ||
+																	0,
+															),
+														),
+														subtext: formatDate(
+															String(allTimePeak.bestOverallDay[0]?.date || ''),
+														),
+														animate: true,
+													},
+												]}
+											/>
 
 											<div className='grid grid-cols-3 gap-4 '>
 												{allTimePeak.subjectWisePeaks.length ? (
 													allTimePeak?.subjectWisePeaks?.map((subject) => (
-														<div
-															key={subject._id}
-															className='my-5 gap-4'>
-															<CardBlockUI cardBlockUIContentList={[
-																{
-																	label: 'Total Questions Done',
-																	value: String(subject.peakQuestions),
-																	subtext: `${subject.subjectName}'s Peak`,
-																	animate: false,
-																},
-																{
-																	label: 'Total Time Studied',
-																	value: formatMilliseconds(subject.peakTime),
-																	subtext: `${subject.subjectName}'s Peak`,
-																	animate: false,
-																},
-																{
-																	label: 'Score:',
-																	value: String(Math.round(subject.peakAverageScore)),
-																	subtext: `${subject.subjectName}'s Peak: ${formatDate(String(subject.bestDate))}`,
-																	animate: true,
-																},
-															]} orientation={cardBlockUIOrientation.Vertical} />
+														<div key={subject._id} className='my-5 gap-4'>
+															<CardBlockUI
+																cardBlockUIContentList={[
+																	{
+																		label: 'Total Questions Done',
+																		value: String(subject.peakQuestions),
+																		subtext: `${subject.subjectName}'s Peak`,
+																		animate: false,
+																	},
+																	{
+																		label: 'Total Time Studied',
+																		value: formatMilliseconds(subject.peakTime),
+																		subtext: `${subject.subjectName}'s Peak`,
+																		animate: false,
+																	},
+																	{
+																		label: 'Score:',
+																		value: String(
+																			Math.round(subject.peakAverageScore),
+																		),
+																		subtext: `${subject.subjectName}'s Peak: ${formatDate(String(subject.bestDate))}`,
+																		animate: true,
+																	},
+																]}
+																orientation={cardBlockUIOrientation.Vertical}
+															/>
 														</div>
 													))
 												) : (
@@ -659,89 +661,106 @@ export default function Tracker() {
 										<CardHeader>
 											<CardTitle>
 												<Badge className='w-full text-lg' variant={'ghost'}>
-													Your Score Today: <Badge className={cn(
-														'text-xl p-5 py-4 font-normal tracking-tighter text-foreground transition-transform duration-300 group-hover:scale-105',
-														'text-primary drop-shadow-sm capitalize',
-													)} variant="ghost">
-														{Math.round(((todaysProgressData.totalQuestionsDone * 1000000) + todaysProgressData.totalTimeStudiedMs) / 200000)}
+													Your Score Today:{' '}
+													<Badge
+														className={cn(
+															'text-xl p-5 py-4 font-normal tracking-tighter text-foreground transition-transform duration-300 group-hover:scale-105',
+															'text-primary drop-shadow-sm capitalize',
+														)}
+														variant='ghost'>
+														{Math.round(
+															(todaysProgressData.totalQuestionsDone * 1000000 +
+																todaysProgressData.totalTimeStudiedMs) /
+																200000,
+														)}
 													</Badge>
 												</Badge>
 											</CardTitle>
 										</CardHeader>
 										<CardContent>
-											<CardBlockUI cardBlockUIContentList={[
-												{
-													label: 'Total Questions Done',
-													value: String(todaysProgressData.totalQuestionsDone),
-													subtext: '',
-													animate: currentStudySession.isStudySessionActive,
-												},
-												{
-													label: 'Total Time Studied',
-													value: formatMilliseconds(
-														todaysProgressData.totalTimeStudiedMs,
-													),
-													subtext: '',
-													animate: true,
-												},
-											]} />
+											<CardBlockUI
+												cardBlockUIContentList={[
+													{
+														label: 'Total Questions Done',
+														value: String(
+															todaysProgressData.totalQuestionsDone,
+														),
+														subtext: '',
+														animate: currentStudySession.isStudySessionActive,
+													},
+													{
+														label: 'Total Time Studied',
+														value: formatMilliseconds(
+															todaysProgressData.totalTimeStudiedMs,
+														),
+														subtext: '',
+														animate: true,
+													},
+												]}
+											/>
 											<div className='grid grid-cols-1 grid-rows-3 my-2 p-6 px-8 gap-4'>
-												<CardBlockUI cardBlockUIContentList={[
-													{
-														animate: true,
-														subtext: 'Total Questions Done',
-														value:
-															String(todaysProgressData.physics.totalQuestionsDone),
-														label: 'Physics',
-
-													},
-													{
-														subtext: 'Total Time Studied',
-														value: formatMilliseconds(
-															todaysProgressData.physics.totalTimeStudiedMs,
-														),
-														label: 'Physics',
-														animate: false,
-													},
-												]} />
-												<CardBlockUI cardBlockUIContentList={[
-													{
-														animate: true,
-														subtext: 'Total Questions Done',
-														value:
-															String(todaysProgressData.chemistry.totalQuestionsDone),
-														label: 'Chemistry',
-
-													},
-													{
-														subtext: 'Total Time Studied',
-														value: formatMilliseconds(
-															todaysProgressData.chemistry.totalTimeStudiedMs,
-														),
-														label: 'Chemistry',
-														animate: false,
-													},
-												]} />
-												<CardBlockUI cardBlockUIContentList={[
-													{
-														animate: true,
-														subtext: 'Total Questions Done',
-														value:
-															String(todaysProgressData.mathematics
-																.totalQuestionsDone),
-														label: 'Mathematics',
-
-													},
-													{
-														subtext: 'Total Time Studied',
-														value: formatMilliseconds(
-															todaysProgressData.mathematics
-																.totalTimeStudiedMs,
-														),
-														label: 'Mathematics',
-														animate: false,
-													},
-												]} />
+												<CardBlockUI
+													cardBlockUIContentList={[
+														{
+															animate: true,
+															subtext: 'Total Questions Done',
+															value: String(
+																todaysProgressData.physics.totalQuestionsDone,
+															),
+															label: 'Physics',
+														},
+														{
+															subtext: 'Total Time Studied',
+															value: formatMilliseconds(
+																todaysProgressData.physics.totalTimeStudiedMs,
+															),
+															label: 'Physics',
+															animate: false,
+														},
+													]}
+												/>
+												<CardBlockUI
+													cardBlockUIContentList={[
+														{
+															animate: true,
+															subtext: 'Total Questions Done',
+															value: String(
+																todaysProgressData.chemistry.totalQuestionsDone,
+															),
+															label: 'Chemistry',
+														},
+														{
+															subtext: 'Total Time Studied',
+															value: formatMilliseconds(
+																todaysProgressData.chemistry.totalTimeStudiedMs,
+															),
+															label: 'Chemistry',
+															animate: false,
+														},
+													]}
+												/>
+												<CardBlockUI
+													cardBlockUIContentList={[
+														{
+															animate: true,
+															subtext: 'Total Questions Done',
+															value: String(
+																todaysProgressData.mathematics
+																	.totalQuestionsDone,
+															),
+															label: 'Mathematics',
+														},
+														{
+															subtext: 'Total Time Studied',
+															value: formatMilliseconds(
+																todaysProgressData.mathematics
+																	.totalTimeStudiedMs,
+															),
+															label: 'Mathematics',
+															animate: false,
+														},
+													]}
+												/>
 											</div>
 										</CardContent>
 									</Card>
@@ -749,9 +768,7 @@ export default function Tracker() {
 							</SheetContent>
 						</Sheet>
 
-
-						<div className="grid grid-rows-flow grid-cols-1 gap-2 my-2">
-
+						<div className='grid grid-rows-flow grid-cols-1 gap-2 my-2'>
 							<div className='gap-2 flex flex-col '>
 								<div className='grid grid-cols-3 gap-2'>
 									{subjectStreaks.map((item, index) => (
@@ -808,24 +825,25 @@ export default function Tracker() {
 													<div className='relative z-10 flex flex-col items-center'>
 														<span
 															className={`text-xl font-normal font-badge tracking-tight md:text-2xl
-														${currentStudySession.isStudySessionActive &&
-																	currentStudySession.subjectDetails._id ===
-																	item.subject._id
-																	? 'text-primary'
-																	: 'text-foreground/80'
-																}
+														${
+															currentStudySession.isStudySessionActive &&
+															currentStudySession.subjectDetails._id ===
+																item.subject._id
+																? 'text-primary'
+																: 'text-foreground/80'
+														}
 															`}>
 															{formatMilliseconds(
 																currentStudySession.isStudySessionActive &&
 																	currentStudySession.subjectDetails._id ===
-																	item.subject._id
+																		item.subject._id
 																	? liveTimestamp
 																	: item.timeStudied,
 															)}
 														</span>
 														<span className='mt-2 text-xs font-medium capitalize tracking-wider text-muted-foreground opacity-90 font-heading'>
 															{currentStudySession.isStudySessionActive &&
-																currentStudySession.subjectDetails._id ===
+															currentStudySession.subjectDetails._id ===
 																item.subject._id
 																? 'Current Study Session'
 																: 'Hours Studied Today'}
@@ -896,18 +914,20 @@ export default function Tracker() {
 													disabled={
 														currentStudySession.isStudySessionActive &&
 														currentStudySession.subjectDetails._id !=
-														item.subject._id
+															item.subject._id
 													}
 													className='cursor-pointer'>
 													{' '}
 													{!currentStudySession.isStudySessionActive ? (
 														<>
 															{' '}
-															<IconTimeDuration10 /> &apos;Start Study Session&apos;
+															<IconTimeDuration10 /> &apos;Start Study
+															Session&apos;
 														</>
 													) : (
 														<>
-															<IconTimeDurationOff /> &apos;End Study Session &apos;
+															<IconTimeDurationOff /> &apos;End Study Session
+															&apos;
 														</>
 													)}
 												</Button>
@@ -916,31 +936,39 @@ export default function Tracker() {
 									))}
 								</div>
 							</div>
-							<div className='grid grid-cols-2 grid-rows-flow gap-4 '>
-								<CurrentTaskCard className={cn('col-span-1 row-span-1')} />
-								<MissionCountdownCard className={cn('col-span-1 row-span-1')} />
+							<div className='grid grid-cols-12 grid-rows-flow gap-4 '>
+								<CurrentTaskCard03 className={cn('col-span-8 row-span-1')} />
+								<MissionCountdownCard className={cn('col-span-4 row-span-1')} />
 							</div>
 						</div>
 
-
-						<Button className='w-full my-5 hover:bg-primary/10 border-0 bg-primary/5' variant={'outline'} asChild>
+						<Button
+							className='w-full my-5 hover:bg-primary/10 border-0 bg-primary/5'
+							variant={'outline'}
+							asChild>
 							<Link href='/tracker/data'>Daily Data</Link>
 						</Button>
 						<Sheet>
 							<SheetTrigger asChild>
-								<Button className='w-full'> <ImTarget />Open TARGETED CHAPTERS</Button>
+								<Button className='w-full'>
+									{' '}
+									<ImTarget />
+									Open TARGETED CHAPTERS
+								</Button>
 							</SheetTrigger>
-							<SheetContent side='bottom' className='overflow-auto py-8 bg-primary/10 px-5'>
+							<SheetContent
+								side='bottom'
+								className='overflow-auto py-8 bg-primary/10 px-5'>
 								<SheetHeader>
 									<SheetTitle className='text-center'>
-										<Button variant={'ghost'} className='text-lg font-badge' asChild>
-											<Link href={'/system/'}>
-												Current Chapters To Study
-											</Link>
-										</Button></SheetTitle>
-									<SheetDescription>
-										List:
-									</SheetDescription>
+										<Button
+											variant={'ghost'}
+											className='text-lg font-badge'
+											asChild>
+											<Link href={'/system/'}>Current Chapters To Study</Link>
+										</Button>
+									</SheetTitle>
+									<SheetDescription>List:</SheetDescription>
 								</SheetHeader>
 								<PendingChapterListCard className='col-span-6 row-span-1 col-start-1 row-start-3 bg-transparent' />
 							</SheetContent>
@@ -948,12 +976,9 @@ export default function Tracker() {
 					</TooltipProvider>
 				)}
 			</section>
-
 		</main>
 	);
 }
-
-
 
 // ! IMPROVEMENTS IMPLEMENTED:
 // * 1. Implemented a data stream synchronization loop (`fetchTodayStreaksIncremental`) providing backend pagination compatibility without changing the UI/UX.

@@ -1,69 +1,44 @@
-/* eslint-disable @typescript-eslint/no-explicit-any */
-/* eslint-disable react-hooks/set-state-in-effect */
 'use client';
 
-import { ChapterModularUI } from '@/components/module/chapter.module';
-import { Badge } from '@/components/ui/badge';
+import { Container } from '@/components/base/Container.base.component';
 import { Button } from '@/components/ui/button';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import {
-	Card,
-	CardContent,
-	CardDescription,
-	CardHeader,
-	CardTitle,
-} from '@/components/ui/card';
-import { Checkbox } from '@/components/ui/checkbox';
-import { Field, FieldDescription, FieldLabel } from '@/components/ui/field';
-import {
-	Select,
-	SelectContent,
-	SelectGroup,
-	SelectItem,
-	SelectLabel,
-	SelectSeparator,
-	SelectTrigger,
-	SelectValue,
-} from '@/components/ui/select';
-import {
-	Sheet,
-	SheetContent,
-	SheetDescription,
-	SheetHeader,
-	SheetTitle,
-	SheetTrigger,
-} from '@/components/ui/sheet';
+	Item,
+	ItemActions,
+	ItemContent,
+	ItemMedia,
+	ItemTitle,
+} from '@/components/ui/item';
+import { Skeleton } from '@/components/ui/skeleton';
 import { axiosConfig } from '@/config/axios.config';
-import { CHAPTER_COMPLETION_SEQUENCE, STORAGE_KEYS } from '@/config/constants';
-import { cn } from '@/lib/utils';
-import { addChapterToSystem } from '@/schema/system.schema';
-import { finalResultData } from '@/types/res/syllabusDataResponse.types';
+import { chapterStatusUpdateSchema } from '@/schema/studyTask.schema';
 import {
 	getPendingChapter,
 	getPendingChapterSubjectWiseList,
 } from '@/types/res/SystemResponse.types';
-import { zodResolver } from '@hookform/resolvers/zod';
 import axios, { AxiosResponse } from 'axios';
-import Link from 'next/link';
-import { useCallback, useEffect, useMemo, useState } from 'react';
-import { Controller, useForm } from 'react-hook-form';
-import { toast } from 'react-toastify';
+// * 1. Third-party & React imports
+import { useState, useEffect, useMemo } from 'react';
+import { FcRight } from 'react-icons/fc';
 import z from 'zod';
+import { Badge } from '@/components/ui/badge';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { syllabusDetailedDataChapter } from '@/types/res/syllabusDataResponse.types';
+import {
+	Carousel,
+	CarouselContent,
+	CarouselItem,
+	CarouselNext,
+	CarouselPrevious,
+} from '@/components/ui/carousel';
+import { ChapterModularUI } from '@/components/module/chapter.module';
+import Fade from 'embla-carousel-fade';
 
-export default function SyllabusHomePage() {
+export default function Home() {
 	// ! HYDRATION & STATE MANAGEMENT
 	// * Use a single 'mounted' state to prevent React hydration mismatch errors on time-based UI
 	const [isMounted, setIsMounted] = useState(false);
-	const [isLoading, setIsLoading] = useState<boolean>(true);
-	const [syllabusData, setSyllabusData] = useState<finalResultData[]>([]);
-
-	const [currentStudySession, setCurrentStudySession] = useState({
-		isStudySessionActive: false,
-		subjectDetails: {
-			_id: '',
-			subjectName: 'No Study Session',
-		},
-		sessionStartTime: 0,
-	});
 
 	const [pendingChapterSubjectWiseList, setPendingChapterSubjectWiseList] =
 		useState<getPendingChapterSubjectWiseList[]>([
@@ -80,14 +55,8 @@ export default function SyllabusHomePage() {
 			},
 		]);
 	const [InProgressChaptersList, setInProgressChaptersList] = useState<
-		getPendingChapter[]
-	>([
-		{
-			_id: '_id',
-			seqNumber: 0,
-			name: 'loading',
-		},
-	]);
+		syllabusDetailedDataChapter[]
+	>([]);
 	const [upcomingChaptersList, setUpcomingChaptersList] = useState<
 		getPendingChapter[]
 	>([
@@ -97,107 +66,22 @@ export default function SyllabusHomePage() {
 			name: 'loading',
 		},
 	]);
-
-	// * Memoized Axios Configuration - Performance optimization
-	const axiosConfigHook = useMemo(
-		() =>
-			axiosConfig('system', 'put', {
-				'Content-Type': 'application/json',
-			}),
-		[],
-	);
-
-	// * Enhanced Chapter Form with Improved Validation
-
-	type markChapterUpcomingType = z.infer<typeof addChapterToSystem>;
-
-	const markChapterAsUpComingForm = useForm<markChapterUpcomingType>({
-		resolver: zodResolver(addChapterToSystem),
-		defaultValues: {
-			_id: '',
+	const [unfinishedChaptersList, setUnfinishedChaptersList] = useState<
+		getPendingChapterSubjectWiseList[]
+	>([]);
+	const [completedChaptersList, setCompletedChaptersList] = useState<
+		getPendingChapter[]
+	>([
+		{
+			_id: '_id',
+			seqNumber: 0,
+			name: 'loading',
 		},
-		mode: 'onChange',
-	});
-
-	// * Enhanced Chapter Submit Handler with Improved Logic
-	const handleMarkChapterAsUpComing = useCallback(
-		async (values: markChapterUpcomingType) => {
-			try {
-				const config = {
-					...axiosConfigHook,
-					data: { ...values, type: 'markChapterAsUpComing' },
-				};
-				await axios.request(config);
-				markChapterAsUpComingForm.setValue('_id', 'loading');
-				axios
-					.request(axiosConfig('system?type=getPendingList', 'get'))
-					.then(
-						(response: AxiosResponse<getPendingChapterSubjectWiseList[]>) => {
-							setPendingChapterSubjectWiseList(response.data);
-						},
-					);
-				axios
-					.request(axiosConfig('system?type=getUpcomingList', 'get'))
-					.then((response: AxiosResponse<getPendingChapter[]>) => {
-						setUpcomingChaptersList(response.data);
-					});
-			} catch (error: any) {
-				const ErrorMessage = error?.response?.data || 'Error';
-				toast.error(ErrorMessage);
-			}
-		},
-		[axiosConfigHook, markChapterAsUpComingForm],
-	);
-
-	const handleMarkAsUnfinished = async (_id: string) => {
-		const config = {
-			...axiosConfigHook,
-			data: { _id, type: 'markChapterAsUnfinished' },
-		};
-		await axios.request(config);
-		axios
-			.request(axiosConfig('system', 'get'))
-			.then((response: AxiosResponse<getPendingChapter[]>) => {
-				setInProgressChaptersList(response.data);
-			});
-	};
-	const handleMarkAsInProgress = async (_id: string) => {
-		const config = {
-			...axiosConfigHook,
-			data: { _id, type: 'addChapterToSystem' },
-		};
-		await axios.request(config);
-		axios
-			.request(axiosConfig('system', 'get'))
-			.then((response: AxiosResponse<getPendingChapter[]>) => {
-				setInProgressChaptersList(response.data);
-			});
-		axios
-			.request(axiosConfig('system?type=getUpcomingList', 'get'))
-			.then((response: AxiosResponse<getPendingChapter[]>) => {
-				setUpcomingChaptersList(response.data);
-			});
-	};
+	]);
 
 	// ! SIDE EFFECTS
 	useEffect(() => {
 		setIsMounted(true);
-		setIsLoading(false);
-
-		const initialStateOfStudySession = {
-			isStudySessionActive: false,
-			subjectDetails: {
-				_id: '',
-				subjectName: 'No Study Session',
-			},
-			sessionStartTime: 0,
-		};
-		const StudySessionLocalStorage = JSON.parse(
-			localStorage.getItem(STORAGE_KEYS.STUDY_SESSION) ||
-			JSON.stringify(initialStateOfStudySession),
-		);
-
-		setCurrentStudySession(StudySessionLocalStorage);
 
 		axios
 			.request(axiosConfig('system?type=getPendingList', 'get'))
@@ -211,349 +95,294 @@ export default function SyllabusHomePage() {
 			});
 		axios
 			.request(axiosConfig('system', 'get'))
-			.then((response: AxiosResponse<getPendingChapter[]>) => {
+			.then((response: AxiosResponse<syllabusDetailedDataChapter[]>) => {
 				setInProgressChaptersList(response.data);
 			});
-		axios.get('/api/syllabus').then((res: AxiosResponse<finalResultData[]>) => {
-			setSyllabusData(res.data);
-			// console.log(JSON.stringify(res.data[0].chapterList[0]))
-		});
+		axios
+			.request(axiosConfig('system?type=getUnfinishedList', 'get'))
+			.then((response: AxiosResponse<getPendingChapterSubjectWiseList[]>) => {
+				setUnfinishedChaptersList(response.data);
+			});
+		axios
+			.request(axiosConfig('system?type=getCompletedList', 'get'))
+			.then((response: AxiosResponse<getPendingChapter[]>) => {
+				setCompletedChaptersList(response.data);
+			});
 	}, []);
+
+	// * Memoized Axios Configuration - Performance optimization
+	const markChapterStatusAxiosConfigHook = useMemo(
+		() =>
+			axiosConfig('system/study-task/chapter-status', 'put', {
+				'Content-Type': 'application/json',
+			}),
+		[],
+	);
+
+	async function markChapterUpcoming(chapterId: string) {
+		type markChapterUpcomingType = z.infer<typeof chapterStatusUpdateSchema>;
+		const data: markChapterUpcomingType = {
+			chapterId,
+			type: 'markAsUpcoming',
+		};
+		const config = {
+			...markChapterStatusAxiosConfigHook,
+			data,
+		};
+		await axios.request(config);
+		axios
+			.request(axiosConfig('system?type=getPendingList', 'get'))
+			.then((response: AxiosResponse<getPendingChapterSubjectWiseList[]>) => {
+				setPendingChapterSubjectWiseList(response.data);
+			});
+		axios
+			.request(axiosConfig('system?type=getUpcomingList', 'get'))
+			.then((response: AxiosResponse<getPendingChapter[]>) => {
+				setUpcomingChaptersList(response.data);
+			});
+	}
+	async function markChapterInProgress(chapterId: string) {
+		type markChapterUpcomingType = z.infer<typeof chapterStatusUpdateSchema>;
+		const data: markChapterUpcomingType = {
+			chapterId,
+			type: 'markAsInProgress',
+		};
+		const config = {
+			...markChapterStatusAxiosConfigHook,
+			data,
+		};
+		await axios.request(config);
+		axios
+			.request(axiosConfig('system', 'get'))
+			.then((response: AxiosResponse<syllabusDetailedDataChapter[]>) => {
+				setInProgressChaptersList(response.data);
+			});
+		axios
+			.request(axiosConfig('system?type=getUpcomingList', 'get'))
+			.then((response: AxiosResponse<getPendingChapter[]>) => {
+				setUpcomingChaptersList(response.data);
+			});
+	}
 
 	// ! HYDRATION FALLBACK
 	// * Render a skeleton or empty wrapper before client hydration to ensure exact HTML matching
 	if (!isMounted) {
 		return (
-			<div className='min-h-100 w-full animate-pulse rounded-[2rem] bg-accent/20 mx-auto max-w-5xl mt-8' />
+			<Skeleton className='min-h-100 w-full animate-pulse rounded-[2rem] bg-accent/20 mx-auto max-w-5xl mt-8' />
 		);
 	}
 
 	return (
-		<main className='relative min-h-[80vh] w-full overflow-hidden overflow-y-auto bg-background px-4 py-8 md:px-8'>
-			{/* * Ambient Background Effects (Aceternity / Minimalist styling) */}
-			<div className='pointer-events-none absolute inset-0 z-0 overflow-hidden'>
-				<div className='absolute -left-[10%] top-[20%] h-125 w-125 rounded-full bg-primary/10 blur-[120px] mix-blend-screen' />
-				<div className='absolute right-[5%] top-[10%] h-100 w-100 rounded-full bg-primary/10 blur-[100px] mix-blend-screen' />
-			</div>
-
-			{/* * Content Section */}
-			<section className='relative z-10 mx-auto max-w-7xl h-[80vh] flex flex-col justify-center'>
-				{isLoading ? (
-					// * Loading State
-					<div className='flex h-64 items-center justify-center'>
-						<div className='h-8 w-8 animate-spin rounded-full border-b-2 border-primary' />
-					</div>
-				) : (
-					<div className='w-full h-full'>
-						<header className='flex items-center justify-between w-full'>
-							<h1 className='text-primary text-6xl font-black'>SYSTEM</h1>
-							<Badge
-								className={`text-xl px-7 py-4 my-5 mx-2 font-mono`}
-								variant={
-									currentStudySession.isStudySessionActive
-										? 'default'
-										: 'destructive'
-								}>
-								Current Study Session:
-								{''}
-								{currentStudySession.subjectDetails.subjectName}{' '}
+		// ! MAIN CONTAINER
+		// * Utilizes responsive max-width and center alignment for larger screens
+		<Tabs
+			defaultValue='chapterStatus'
+			className='w-full h-[85vh] py-3 px-2 overflow-scroll no-scrollbar'>
+			<TabsList variant={'line'}>
+				<TabsTrigger value='chapterStatus'>Chapters Status</TabsTrigger>
+				<TabsTrigger value='currentChapters'>Current Chapters</TabsTrigger>
+			</TabsList>
+			<TabsContent
+				value='chapterStatus'
+				className='mx-auto w-11/12 gap-4 grid grid-cols-12 grid-rows-12 h-[80vh] px-2 py-4'>
+				<Card className='col-span-4 row-span-10 overflow-scroll scroll-smooth no-scrollbar'>
+					<CardHeader>
+						<CardTitle>
+							Pending Chapters
+							<Badge>
+								{
+									pendingChapterSubjectWiseList
+										.map((subject) => subject.chapterList)
+										.flat().length
+								}
 							</Badge>
-						</header>
-						<Button className='w-full' asChild variant='outline'>
-							<Link href='/system/task'> Open Tasks Page</Link>
-						</Button>
-						<Sheet>
-							<SheetTrigger asChild>
-								<Button className='w-full'>Open Tasks InProgress</Button>
-							</SheetTrigger>
-							<SheetContent side='bottom' className='overflow-auto '>
-								<SheetHeader>
-									<SheetTitle>List of Tasks</SheetTitle>
-									<SheetDescription>
-										List of tasks to do for the inProgress Chapters.
-									</SheetDescription>
-								</SheetHeader>
-								<div className='w-full h-[70vh]'>
-									{syllabusData.map((subject) => (
-										<div key={subject._id} className='p-4 '>
-											<h3 className='capitalize text-lg underline text-center'>
-												{subject.name}:
-											</h3>
-											<div className='gap-2 py-2'>
-												{subject.chapterList
-													.filter((chapter) => {
-														return InProgressChaptersList.some(
-															(inProgressChapter) =>
-																inProgressChapter._id === chapter._id,
-														);
-													})
-													.map((filteredChapter) => (
-														<ChapterModularUI key={filteredChapter._id} chapterDetails={{ ...filteredChapter, currentChapterStatus: "inProgress", subject: { _id: subject._id, name: subject.name } }} />
-													))}
-											</div>
-										</div>
-									))}
-								</div>
-							</SheetContent>
-						</Sheet>
-						<section className='grid grid-cols-2 gap-3'>
-							<div>
-								<EnhancedCard className='w-full my-5 mx-2'>
-									<CardHeader>
-										<CardTitle
-											className={cn(
-												'text-2xl font-bold bg-linear-to-r from-chart-1 to-primary bg-clip-text text-transparent capitalize',
-												'scroll-m-20 text-center text-4xl font-extrabold tracking-tight text-balance',
-											)}>
-											{' '}
-											Chapters in the System
-										</CardTitle>
-										<CardDescription className='text-secondary-foreground'>
-											List of all the chapters in Progress
-										</CardDescription>
-									</CardHeader>
-									<CardContent>
-										<div className='grid grid-cols-1 gap-2 grid-flow-row my-4'>
-											{InProgressChaptersList.map((chapter, index) => (
-												<EnhancedCard key={chapter._id}>
-													<CardHeader>
-														<CardTitle
-															className={cn(
-																'text-2xl font-bold bg-linear-to-r from-chart-1 to-primary bg-clip-text text-transparent capitalize',
-																'scroll-m-20 text-center text-4xl font-extrabold tracking-tight text-balance',
-																'capitalize text-base/8',
-															)}>
-															{index + 1}. {chapter.name}
-															<Badge
-																variant={
-																	chapter.totalTopics === 0
-																		? 'ghost'
-																		: chapter.totalTopicsCompleted ===
-																			chapter.totalTopics
-																			? 'default'
-																			: 'destructive'
-																}
-																className='text-base/9 mx-3'>
-																{chapter.totalTopicsCompleted}/
-																{chapter.totalTopics}
-															</Badge>
-														</CardTitle>
-													</CardHeader>
-													<CardContent>
-														<div className='grid grid-cols-2 grid-rows-2 gap-2 w-full'>
-															{CHAPTER_COMPLETION_SEQUENCE.map(
-																(task, taskIndex) => (
-																	<Field
-																		className='space-y-2'
-																		key={taskIndex + task}>
-																		<div className='flex items-center space-x-3 p-3 rounded-xl bg-white/20 dark:bg-black/20 border border-white/20 hover:bg-white/30 dark:hover:bg-black/30 transition-all duration-300 group'>
-																			<Checkbox
-																				id={`${chapter._id}-${task}`}
-																				checked={chapter[task]}
-																				className='enhanced-checkbox data-[state=checked]:bg-primary data-[state=checked]:border-primary border-2 border-slate-300 dark:border-slate-600'
-																			/>
-																			<FieldLabel
-																				className='text-sm font-medium text-slate-700 dark:text-slate-300 cursor-pointer group-hover:text-primary dark:group-hover:text-chart-1 transition-colors duration-300 capitalize'
-																				htmlFor={`${chapter._id}-${task}`}>
-																				{taskIndex + 1}. {task}
-																			</FieldLabel>
-																		</div>
-																	</Field>
-																),
-															)}
-															<Button
-																onClick={() => {
-																	handleMarkAsUnfinished(chapter._id);
-																}}
-																className='hover:pointer'>
-																Mark As Unfinished
-															</Button>
-														</div>
-													</CardContent>
-												</EnhancedCard>
-											))}
-										</div>
-									</CardContent>
-								</EnhancedCard>
-							</div>
-							<div>
-								<EnhancedCard className='w-full my-5 mx-2'>
-									<CardHeader>
-										<CardTitle
-											className={cn(
-												'text-2xl font-bold bg-linear-to-r from-chart-1 to-primary bg-clip-text text-transparent capitalize',
-												'scroll-m-20 text-center text-4xl font-extrabold tracking-tight text-balance',
-											)}>
-											{' '}
-											Select Upcoming Chapter
-										</CardTitle>
-										<CardDescription className='text-secondary-foreground'>
-											List of all the chapters of the subject
-										</CardDescription>
-									</CardHeader>
-									<CardContent>
-										<form
-											onSubmit={markChapterAsUpComingForm.handleSubmit(
-												handleMarkChapterAsUpComing,
-											)}
-											className='space-y-6'>
-											<Controller
-												control={markChapterAsUpComingForm.control}
-												name='_id'
-												render={({ field }) => (
-													<Field>
-														<EnhancedInputContainer>
-															<FieldLabel className='text-sm font-semibold text-primary'>
-																Chapter
-															</FieldLabel>
-															<Select
-																onValueChange={field.onChange}
-																defaultValue={field.value}>
-																<SelectTrigger className='glass-select w-full'>
-																	<SelectValue placeholder='Select the chapter' />
-																</SelectTrigger>
-																<SelectContent className='glass-content'>
-																	<SelectItem
-																		defaultChecked
-																		disabled
-																		value={'loading'}
-																		className='hover:bg-primary'>
-																		Select The Chapter{' '}
-																	</SelectItem>
-																	{pendingChapterSubjectWiseList.map(
-																		(subject) => (
-																			<div key={subject._id}>
-																				<SelectGroup key={subject._id}>
-																					<SelectLabel className='capitalize'>
-																						{subject.name}
-																					</SelectLabel>
-																					{subject.chapterList.map(
-																						(chapter) => (
-																							<SelectItem
-																								key={chapter._id}
-																								value={chapter._id}
-																								className='hover:bg-primary'>
-																								{chapter.seqNumber +
-																									'. ' +
-																									chapter.name}
-																							</SelectItem>
-																						),
-																					)}
-																				</SelectGroup>
-																				<SelectSeparator />
-																			</div>
-																		),
-																	)}
-																</SelectContent>
-															</Select>
-														</EnhancedInputContainer>
-														<FieldDescription className='text-xs text-secondary-foreground'>
-															Select the chapter.
-														</FieldDescription>
-													</Field>
-												)}
-											/>
-											<Button
-												type='submit'
-												className='w-full bg-linear-to-r from-emerald-600 to-green-600 hover:from-emerald-700 hover:to-green-700 text-white font-semibold py-3 rounded-full shadow-lg hover:shadow-xl transition-all duration-300 transform hover:scale-[1.02]'>
-												Add Chapter
-											</Button>
-										</form>
-									</CardContent>
-								</EnhancedCard>
-								<EnhancedCard className='w-full my-5 mx-2'>
-									<CardHeader>
-										<CardTitle
-											className={cn(
-												'text-2xl font-bold bg-linear-to-r from-chart-1 to-primary bg-clip-text text-transparent capitalize',
-												'scroll-m-20 text-center text-4xl font-extrabold tracking-tight text-balance',
-											)}>
-											{' '}
-											NEAR FUTURE
-										</CardTitle>
-										<CardDescription className='text-secondary-foreground'>
-											List of all the chapters upcoming
-										</CardDescription>
-									</CardHeader>
-									<CardContent>
-										<div className='grid grid-cols-1 gap-2 grid-flow-row my-4'>
-											{upcomingChaptersList.map((chapter, index) => (
-												<EnhancedCard key={chapter._id}>
-													<CardHeader>
-														<CardTitle
-															className={cn(
-																'text-2xl font-bold bg-linear-to-r from-chart-1 to-primary bg-clip-text text-transparent capitalize',
-																'scroll-m-20 text-center text-4xl font-extrabold tracking-tight text-balance',
-																'capitalize text-base/8',
-															)}>
-															{index + 1}. {chapter.name}
-														</CardTitle>
-													</CardHeader>
-													<CardContent>
-														<div className='w-full'>
-															<Button
-																onClick={() => {
-																	handleMarkAsInProgress(chapter._id);
-																}}
-																className='hover:pointer w-full'>
-																Mark As In Progress
-															</Button>
-														</div>
-													</CardContent>
-												</EnhancedCard>
-											))}
-										</div>
-									</CardContent>
-								</EnhancedCard>
-							</div>
-						</section>
-					</div>
-				)}
-			</section>
-		</main>
+						</CardTitle>
+					</CardHeader>
+					<CardContent className='gap-2 flex flex-col'>
+						{interleaveArrays(
+							pendingChapterSubjectWiseList.map(
+								(subject) => subject.chapterList,
+							),
+						).map((chapter, index) => (
+							<Item key={chapter._id} variant={'outline'}>
+								<ItemMedia variant='icon'>
+									{index + 1}
+									<FcRight />
+								</ItemMedia>
+								<ItemContent>
+									<ItemTitle>{chapter.name}</ItemTitle>
+								</ItemContent>
+								<ItemActions>
+									<Button
+										onClick={() => {
+											markChapterUpcoming(chapter._id);
+										}}
+										size={'sm'}>
+										Mark Upcoming.
+									</Button>
+								</ItemActions>
+							</Item>
+						))}
+					</CardContent>
+				</Card>
+				<Container className='col-span-4 row-span-10 flex flex-col gap-4'>
+					<Card className='w-full h-1/2 overflow-scroll scroll-smooth no-scrollbar'>
+						<CardHeader>
+							<CardTitle>
+								Up coming Chapters <Badge>{upcomingChaptersList.length}</Badge>
+							</CardTitle>
+						</CardHeader>
+						<CardContent className='gap-2 flex flex-col'>
+							{upcomingChaptersList.map((chapter, index) => (
+								<Item key={chapter._id} variant={'outline'}>
+									<ItemMedia variant='icon'>
+										{index + 1}
+										<FcRight />
+									</ItemMedia>
+									<ItemContent>
+										<ItemTitle>{chapter.name}</ItemTitle>
+									</ItemContent>
+									<ItemActions>
+										<Button
+											onClick={() => {
+												markChapterInProgress(chapter._id);
+											}}
+											size={'sm'}>
+											Mark Inprogress
+										</Button>
+									</ItemActions>
+								</Item>
+							))}
+						</CardContent>
+					</Card>
+					<Card className='w-full h-1/2 overflow-scroll scroll-smooth no-scrollbar'>
+						<CardHeader>
+							<CardTitle>
+								In Progress Chapters{' '}
+								<Badge>{InProgressChaptersList.length}</Badge>
+							</CardTitle>
+						</CardHeader>
+						<CardContent className='gap-2 flex flex-col'>
+							{InProgressChaptersList.map((chapter, index) => (
+								<Item key={chapter._id} variant={'outline'}>
+									<ItemMedia variant='icon'>
+										{index + 1}
+										<FcRight />
+									</ItemMedia>
+									<ItemContent>
+										<ItemTitle>{chapter.name}</ItemTitle>
+									</ItemContent>
+									<ItemActions>
+										<Button size={'sm'}>Mark Unfinished</Button>
+									</ItemActions>
+								</Item>
+							))}
+						</CardContent>
+					</Card>
+				</Container>
+				<Card className='col-span-4 row-span-10 overflow-scroll scroll-smooth no-scrollbar'>
+					<CardHeader>
+						<CardTitle>
+							Un-finished Chapters
+							<Badge>
+								{
+									unfinishedChaptersList
+										.map((subject) => subject.chapterList)
+										.flat().length
+								}
+							</Badge>
+						</CardTitle>
+					</CardHeader>
+					<CardContent className='gap-2 flex flex-col'>
+						{interleaveArrays(
+							unfinishedChaptersList.map((subject) => subject.chapterList),
+						).map((chapter, index) => (
+							<Item key={chapter._id} variant={'outline'}>
+								<ItemMedia variant='icon'>
+									{index + 1}
+									<FcRight />
+								</ItemMedia>
+								<ItemContent>
+									<ItemTitle>{chapter.name}</ItemTitle>
+								</ItemContent>
+								<ItemActions>
+									<Button size={'sm'}>Mark Completed</Button>
+								</ItemActions>
+							</Item>
+						))}
+					</CardContent>
+				</Card>
+				<Card className='col-span-12 row-span-2 overflow-scroll scroll-smooth no-scrollbar'>
+					<CardHeader>
+						<CardTitle>
+							Completed Chapters<Badge>{completedChaptersList.length}</Badge>
+						</CardTitle>
+					</CardHeader>
+					<CardContent className='gap-2 flex flex-col'>
+						{completedChaptersList.map((chapter, index) => (
+							<Item key={chapter._id} variant={'outline'}>
+								<ItemMedia variant='icon'>
+									{index + 1} <FcRight />
+								</ItemMedia>
+								<ItemContent>
+									<ItemTitle>{chapter.name}</ItemTitle>
+								</ItemContent>
+								<ItemActions>
+									<Button size={'sm'}>Done</Button>
+								</ItemActions>
+							</Item>
+						))}
+					</CardContent>
+				</Card>
+			</TabsContent>
+			<TabsContent value='currentChapters' className='py-4'>
+				<Container className='w-[95%] mx-auto	'>
+					<Carousel plugins={[Fade(),]}>
+						<CarouselContent>
+							{InProgressChaptersList.map((chapter) => (
+								<CarouselItem key={chapter._id}>
+									<ChapterModularUI
+										chapterDetails={chapter}
+										className='w-full h-full'
+									/>
+								</CarouselItem>
+							))}
+						</CarouselContent>
+						<CarouselPrevious />
+						<CarouselNext />
+					</Carousel>
+				</Container>
+			</TabsContent>
+		</Tabs>
 	);
 }
 
-// * Enhanced Card Component with Modern Glass Effects
-const EnhancedCard = ({
-	children,
-	className,
-}: {
-	children: React.ReactNode;
-	className?: string;
-}) => {
-	return (
-		<Card
-			className={cn(
-				'backdrop-blur-md bg-white/40 dark:bg-black/20',
-				'border border-white/30 dark:border-white/10',
-				'shadow-2xl shadow-primary/10 dark:shadow-primary/20',
-				'rounded-2xl overflow-hidden',
-				'transition-all duration-500 hover:shadow-3xl hover:shadow-primary/20',
-				'hover:bg-white/50 dark:hover:bg-black/30',
-				className,
-			)}>
-			{children}
-		</Card>
-	);
-};
+function interleaveArrays<T>(arrays: T[][]): T[] {
+	let totalElements = 0;
+	let maxLength = 0;
 
-// * Enhanced Input Container Component with Glass Morphism
-const EnhancedInputContainer = ({
-	children,
-	className,
-}: {
-	children: React.ReactNode;
-	className?: string;
-}) => {
-	return (
-		<div
-			className={cn(
-				'flex w-full flex-col space-y-3 group',
-				'transition-all duration-300',
-				className,
-			)}>
-			{children}
-		</div>
-	);
-};
+	// 1. Calculate dimensions to pre-allocate memory and find the longest array
+	for (let i = 0; i < arrays.length; i++) {
+		const len = arrays[i].length;
+		totalElements += len;
+		if (len > maxLength) {
+			maxLength = len;
+		}
+	}
+
+	// 2. Pre-allocate the result array for maximum performance
+	const result = new Array<T>(totalElements);
+	let currentIndex = 0;
+
+	// 3. Loop column-by-column, then row-by-row
+	for (let col = 0; col < maxLength; col++) {
+		for (let row = 0; row < arrays.length; row++) {
+			// Only read if the current array actually has an element at this column index
+			if (col < arrays[row].length) {
+				result[currentIndex++] = arrays[row][col];
+			}
+		}
+	}
+
+	return result;
+}

@@ -5,15 +5,23 @@
 import { useState, useEffect } from 'react';
 
 // * 2. Local UI Components
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import {
+	Card,
+	CardContent,
+	CardDescription,
+	CardHeader,
+	CardTitle,
+} from '@/components/ui/card';
 import { cn } from '@/lib/utils';
-
 
 // * 3. Configuration Imports
 import { Button } from '@/components/ui/button';
 import Link from 'next/link';
 import { Skeleton } from '@/components/ui/skeleton';
-import { CurrentTaskCard, CurrentTaskSubjectStudySessionController, TodayTasksStreakCard } from '@/components/module/current-task.module';
+import {
+	CurrentTaskCard02,
+	TodayTasksStreakCard,
+} from '@/components/module/current-task.module';
 import { MissionCountdownCard } from '@/components/module/mission-countdown.module';
 import { PendingChapterListCard } from '@/components/module/pendingChapterList.module';
 import PomodoroTimer from '@/components/Pomodoro-timer';
@@ -41,8 +49,7 @@ export default function Home() {
 		// ! MAIN CONTAINER
 		// * Utilizes responsive max-width and center alignment for larger screens
 		<div className='mx-auto w-11/12 px-4 py-8 gap-4 grid grid-cols-12 grid-flow-row'>
-			<CurrentTaskSubjectStudySessionController className='col-span-4 row-start-1' />
-			<CurrentTaskCard className={cn('col-span-8 row-start-1')} />
+			<CurrentTaskCard02 className={cn('col-span-12 row-start-1')} />
 			<MissionCountdownCard className={cn('col-span-7')} />
 			<TodayTasksStreakCard className='col-span-5' />
 			<PendingChapterListCard className='col-span-6 row-span-1 col-start-1 row-start-3' />
@@ -51,14 +58,10 @@ export default function Home() {
 					<CardTitle className='flex gap-3 items-center'>
 						<FcClock className='h-5 w-5' />
 						<Button variant={'ghost'} className='text-lg font-badge' asChild>
-							<Link href={'/pomodoro/'}>
-								POMODORO
-							</Link>
+							<Link href={'/pomodoro/'}>POMODORO</Link>
 						</Button>
 					</CardTitle>
-					<CardDescription>
-						Focus Session
-					</CardDescription>
+					<CardDescription>Focus Session</CardDescription>
 				</CardHeader>
 				<CardContent>
 					<PomodoroTimer

@@ -17,6 +17,7 @@
 		"class-variance-authority": "^0.7.1",
 		"clsx": "^2.1.1",
 		"date-fns": "^4.4.0",
+		"embla-carousel-accessibility": "9.0.0-rc01",
 		"embla-carousel-auto-scroll": "^8.6.0",
 		"embla-carousel-autoplay": "^8.6.0",
 		"embla-carousel-fade": "^8.6.0",

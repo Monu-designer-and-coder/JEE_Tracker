@@ -32,6 +32,9 @@ importers:
       date-fns:
         specifier: ^4.4.0
         version: 4.4.0
+      embla-carousel-accessibility:
+        specifier: 9.0.0-rc01
+        version: 9.0.0-rc01(embla-carousel@8.6.0)
       embla-carousel-auto-scroll:
         specifier: ^8.6.0
         version: 8.6.0(embla-carousel@8.6.0)
@@ -2157,6 +2160,11 @@ packages:
 
   electron-to-chromium@1.5.336:
     resolution: {integrity: sha512-AbH9q9J455r/nLmdNZes0G0ZKcRX73FicwowalLs6ijwOmCJSRRrLX63lcAlzy9ux3dWK1w1+1nsBJEWN11hcQ==}
+
+  embla-carousel-accessibility@9.0.0-rc01:
+    resolution: {integrity: sha512-H0ur9/ctEE5cc0/NLRD4aS2aNHLX1vJumFoPztcHpe6zmIZtg42pNlfpIuWwnAH9sqTs8J+puce9GAJTNsGI3g==}
+    peerDependencies:
+      embla-carousel: 9.0.0-rc01
 
   embla-carousel-auto-scroll@8.6.0:
     resolution: {integrity: sha512-WT9fWhNXFpbQ6kP+aS07oF5IHYLZ1Dx4DkwgCY8Hv2ZyYd2KMCPfMV1q/cA3wFGuLO7GMgKiySLX90/pQkcOdQ==}
@@ -6092,6 +6100,10 @@ snapshots:
   ee-first@1.1.1: {}
 
   electron-to-chromium@1.5.336: {}
+
+  embla-carousel-accessibility@9.0.0-rc01(embla-carousel@8.6.0):
+    dependencies:
+      embla-carousel: 8.6.0
 
   embla-carousel-auto-scroll@8.6.0(embla-carousel@8.6.0):
     dependencies:

@@ -11,12 +11,18 @@ import { useEffect, useState } from 'react';
 import axios, { AxiosResponse } from 'axios';
 import { axiosConfig } from '@/config/axios.config';
 import { Button } from '@/components/ui/button';
-import { Carousel, CarouselContent, CarouselItem, CarouselNext, CarouselPrevious } from '@/components/ui/carousel';
+import {
+	Carousel,
+	CarouselContent,
+	CarouselItem,
+	CarouselNext,
+	CarouselPrevious,
+} from '@/components/ui/carousel';
 
-import Autoplay from "embla-carousel-autoplay"
-import carouselFade from "embla-carousel-fade"
+import Autoplay from 'embla-carousel-autoplay';
+import carouselFade from 'embla-carousel-fade';
 
-export default function SyllabusHomePage() {
+export default function Page() {
 	// ! HYDRATION & STATE MANAGEMENT
 	// * Use a single 'mounted' state to prevent React hydration mismatch errors on time-based UI
 	const [isMounted, setIsMounted] = useState(false);
@@ -27,11 +33,11 @@ export default function SyllabusHomePage() {
 		seqNumber: number;
 		assignDate: Date;
 	}>({
-		_id: "loading",
-		task: "loading",
+		_id: 'loading',
+		task: 'loading',
 		seqNumber: 0,
-		assignDate: new Date()
-	})
+		assignDate: new Date(),
+	});
 
 	const [
 		allListOfCurrentTasksChapterInProgress,
@@ -40,14 +46,12 @@ export default function SyllabusHomePage() {
 	const [allListOfTasksChapterInProgress, setAllListOfTasksChapterInProgress] =
 		useState<inProgressChaptersTaskList[]>([]);
 
-
 	// ! SIDE EFFECTS
 	useEffect(() => {
 		setIsMounted(true);
 		setIsLoading(false);
 
-
-		fetchTaskLists()
+		fetchTaskLists();
 		axios.request(axiosConfig('system/task/', 'get')).then(
 			(
 				response: AxiosResponse<{
@@ -57,14 +61,11 @@ export default function SyllabusHomePage() {
 					assignDate: Date;
 				}>,
 			) => {
-				const responseData = response.data
-				setCurrentTask(
-					responseData
-				);
+				const responseData = response.data;
+				setCurrentTask(responseData);
 			},
 		);
 	}, []);
-
 
 	function fetchTaskLists() {
 		axios.request(axiosConfig('system/task/list', 'get')).then(
@@ -85,12 +86,19 @@ export default function SyllabusHomePage() {
 	}
 
 	async function handleTaskButton(input: {
-		task: string,
+		task: string;
 		chapterID: string;
 		subjectID: string;
 	}) {
-		if (!currentTask._id || currentTask._id == "loading") {
-			await axios.request(axiosConfig('system/task', "post", { "Content-Type": "application/json" }, input))
+		if (!currentTask._id || currentTask._id == 'loading') {
+			await axios.request(
+				axiosConfig(
+					'system/task',
+					'post',
+					{ 'Content-Type': 'application/json' },
+					input,
+				),
+			);
 			axios.request(axiosConfig('system/task/', 'get')).then(
 				(
 					response: AxiosResponse<{
@@ -100,25 +108,28 @@ export default function SyllabusHomePage() {
 						assignDate: Date;
 					}>,
 				) => {
-					const responseData = response.data
-					setCurrentTask(
-						responseData
-					);
+					const responseData = response.data;
+					setCurrentTask(responseData);
 				},
 			);
 			fetchTaskLists();
 		}
 		if (input.task === currentTask.task) {
 			try {
-				await axios.request(axiosConfig('system/task', "put", { "Content-Type": "application/json" }, {
-					taskId: currentTask._id,
-					type: "markTaskAsFinished"
-				}))
-			}
-			catch (error) {
-				console.log(error)
-			}
-			finally {
+				await axios.request(
+					axiosConfig(
+						'system/task',
+						'put',
+						{ 'Content-Type': 'application/json' },
+						{
+							taskId: currentTask._id,
+							type: 'markTaskAsFinished',
+						},
+					),
+				);
+			} catch (error) {
+				console.log(error);
+			} finally {
 				axios.request(axiosConfig('system/task/', 'get')).then(
 					(
 						response: AxiosResponse<{
@@ -128,17 +139,14 @@ export default function SyllabusHomePage() {
 							assignDate: Date;
 						}>,
 					) => {
-						const responseData = response.data
-						setCurrentTask(
-							responseData
-						);
+						const responseData = response.data;
+						setCurrentTask(responseData);
 					},
 				);
 				fetchTaskLists();
 			}
 		}
 	}
-
 
 	// ! HYDRATION FALLBACK
 	// * Render a skeleton or empty wrapper before client hydration to ensure exact HTML matching
@@ -167,9 +175,7 @@ export default function SyllabusHomePage() {
 					<div className='w-full h-full'>
 						<header className='flex items-center justify-between w-full'>
 							<h1 className='text-primary text-6xl font-black'>SYSTEM/Task</h1>
-							<Badge
-								className={`text-xl px-7 py-4 my-5 mx-2 font-mono`}
-							>
+							<Badge className={`text-xl px-7 py-4 my-5 mx-2 font-mono`}>
 								{currentTask.seqNumber}. GOAL: {currentTask?.task}
 							</Badge>
 						</header>
@@ -191,8 +197,23 @@ export default function SyllabusHomePage() {
 												<h3 className='w-full text-center text-xl'>
 													{item.task}
 												</h3>
-												<Button onClick={() => handleTaskButton({ task: item.task, chapterID: item.chapter._id, subjectID: item.subjectDetails._id })} className='w-full py-3 px-4' disabled={((Boolean(currentTask._id) && (currentTask._id != "loading")) && (currentTask.task != item.task))}>
-													{(currentTask.task == item.task) ? "Mark as Done" : "Make this Current Task"}
+												<Button
+													onClick={() =>
+														handleTaskButton({
+															task: item.task,
+															chapterID: item.chapter._id,
+															subjectID: item.subjectDetails._id,
+														})
+													}
+													className='w-full py-3 px-4'
+													disabled={
+														Boolean(currentTask._id) &&
+														currentTask._id != 'loading' &&
+														currentTask.task != item.task
+													}>
+													{currentTask.task == item.task
+														? 'Mark as Done'
+														: 'Make this Current Task'}
 												</Button>
 											</div>
 										))}
@@ -207,50 +228,68 @@ export default function SyllabusHomePage() {
 										</CardTitle>
 									</CardHeader>
 									<CardContent className='h-full w-full overflow-auto flex items-center justify-center'>
-										<Carousel className="w-10/12"
+										<Carousel
+											className='w-10/12'
 											opts={{
-												containScroll: false
+												containScroll: false,
 											}}
 											plugins={[
 												Autoplay({
-													delay: 2500
+													delay: 2500,
 												}),
-												carouselFade()
-											]}
-										>
+												carouselFade(),
+											]}>
 											<CarouselContent>
-												{allListOfTasksChapterInProgress.map((item) => {
-													const topicsToDo = item.topicsToComplete.map(topic => ({ task: topic, chapter: item.chapter, heading: `Topic To Do for: ${item.chapter}` }))
-													const tagsToDo = item.tagsToComplete.map(topic => ({ task: topic, chapter: item.chapter, heading: `Tags To Do for: ${item.chapter}` }))
-													return [
-														topicsToDo,
-														tagsToDo
-													]
-												})
-													.map((item, index) => (
-														item.map(task => (
-															<CarouselItem key={index + (task[index]?.chapter.name || "chapter-none") + (task[index]?.heading || "heading None")}>
+												{allListOfTasksChapterInProgress
+													.map((item) => {
+														const topicsToDo = item.topicsToComplete.map(
+															(topic) => ({
+																task: topic,
+																chapter: item.chapter,
+																heading: `Topic To Do for: ${item.chapter.name}`,
+															}),
+														);
+														const tagsToDo = item.tagsToComplete.map(
+															(topic) => ({
+																task: topic,
+																chapter: item.chapter,
+																heading: `Tags To Do for: ${item.chapter.name}`,
+															}),
+														);
+														return [topicsToDo, tagsToDo];
+													})
+													.map((item, index) =>
+														item.map((task, Index) => (
+															<CarouselItem
+																key={
+																	index +
+																	Index +
+																	(task[index]?.chapter._id || 'chapter-none') +
+																	(task[index]?.heading || 'heading None')
+																}>
 																<EnhancedCard>
 																	<CardHeader>
 																		<CardTitle>
 																			<h3 className='w-full text-center text-2xl/5 font-black capitalize'>
-																				{task[index]?.heading || "Completed: Nothing to do, "}</h3>
+																				{task[index]?.heading ||
+																					'Completed: Nothing to do, '}
+																			</h3>
 																		</CardTitle>
 																	</CardHeader>
-																	<CardContent className="flex aspect-square items-center justify-center p-6 flex-col gap-3 px-7">
-																		{
-																			task.map(todo => (
-																				<Badge className='text-xl' key={todo.task} variant="ghost">{todo.task}</Badge>
-																			))
-																		}
+																	<CardContent className='flex aspect-square items-center justify-center p-6 flex-col gap-3 px-7'>
+																		{task.map((todo) => (
+																			<Badge
+																				className='text-xl'
+																				key={todo.task}
+																				variant='ghost'>
+																				{todo.task}
+																			</Badge>
+																		))}
 																	</CardContent>
 																</EnhancedCard>
 															</CarouselItem>
-														))
-													)
-													)
-
-												}
+														)),
+													)}
 											</CarouselContent>
 											<CarouselPrevious />
 											<CarouselNext />

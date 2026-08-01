@@ -110,14 +110,14 @@ export function SystemNavigator() {
 						</Button>
 					</Link>
 				</li>
-				<li className='pointer hover:pointer'>
+				{/* <li className='pointer hover:pointer'>
 					<Link href='/system/study/task' className='hover:pointer pointer'>
 						{' '}
 						<Button variant={'link'} className='hover:pointer pointer'>
 							Study Tasks
 						</Button>
 					</Link>
-				</li>
+				</li> */}
 			</ul>
 		</nav>
 	);

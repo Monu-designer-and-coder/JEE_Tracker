@@ -10,7 +10,7 @@ export interface studyTaskListItem {
   done: boolean;
   subjectDetails: { _id: Types.ObjectId; name: string };
   studyTask: { enum: studyTaskOptions; _id: Types.ObjectId; tag: string };
-  refDetails: { _id: Types.ObjectId; name: string }; // * resolved chapter OR topic doc
+  refDetails: { _id: Types.ObjectId; name: string; chapter:Types.ObjectId }; // * resolved chapter OR topic doc
   totalTimeSpent: number;   // * sum of workingSessions[].totalTime, in ms
   isSessionActive: boolean; // * true while a timer is currently running
   workingSessions: { start: Date; end: Date; totalTime: number }[];

@@ -104,13 +104,13 @@ export async function GET(request: Request) {
       {
         $lookup: {
           from: "chapters", localField: "studyTask._id", foreignField: "_id",
-          as: "chapterDetails", pipeline: [{ $project: { _id: 1, name: 1 } }],
+          as: "chapterDetails", pipeline: [{ $project: { _id: 1, name: 1, chapter: "$_id" } }],
         },
       },
       {
         $lookup: {
           from: "topics", localField: "studyTask._id", foreignField: "_id",
-          as: "topicDetails", pipeline: [{ $project: { _id: 1, name: 1 } }],
+          as: "topicDetails", pipeline: [{ $project: { _id: 1, name: 1, chapter: 1 } }],
         },
       },
       {

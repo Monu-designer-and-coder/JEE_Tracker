@@ -460,7 +460,7 @@ export const CurrentTaskCard03 = ({ className }: { className?: string }) => {
 												{task.refDetails.name}
 											</span>
 											<span className='my-1 text-xs font-normal capitalize tracking-wider text-muted-foreground opacity-90 transition-colors group-hover/btn:text-foreground font-heading'>
-												Questions Done Today
+												The GOAL:
 											</span>
 										</div>
 									</button>
@@ -472,7 +472,7 @@ export const CurrentTaskCard03 = ({ className }: { className?: string }) => {
 												{formatMilliseconds(task.totalTimeSpent)}
 											</span>
 											<span className='my-1 text-xs font-normal capitalize tracking-wider text-muted-foreground opacity-90 transition-colors group-hover/btn:text-foreground font-heading'>
-												Questions Done Today
+												Time spent on the GOAL:
 											</span>
 										</div>
 									</button>

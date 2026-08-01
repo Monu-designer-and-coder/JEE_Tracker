@@ -522,13 +522,13 @@ export const ChapterModularUI = ({
 	return (
 		<Card className={cn('relative my-1', className)}>
 			<CardHeader>
-				<CardTitle className='flex items-center gap-3 '>
+				<CardTitle className='flex items-center gap-3 capitalize'>
 					<FcDataSheet />
-					<Button variant={'ghost'} className='text-lg font-badge' asChild>
+					<Button variant={'ghost'} className='text-lg font-badge capitalize' asChild>
 						<Link href={'/system/'}>{chapter.name}</Link>
 					</Button>
 				</CardTitle>
-				<CardDescription>
+				<CardDescription className='capitalize'>
 					{(() => {
 						const num = chapter.seqNumber;
 						const j = num % 10;
@@ -911,7 +911,7 @@ export const ChapterModularUI = ({
 							{chapter.topicsList.map((topic) => (
 								<TableRow key={topic._id}>
 									<TableCell>{topic.seqNumber}</TableCell>
-									<TableCell>{topic.name}</TableCell>
+									<TableCell className='capitalize'>{topic.name}</TableCell>
 									<TableCell>
 										{' '}
 										<Checkbox
@@ -1037,7 +1037,7 @@ function AddTopicModalForm({
 						placeholder='0'
 					/>
 					<Button type='submit' className='w-full bg-primary/20'>
-						Create Chapter
+						Create Topic
 					</Button>
 				</form>
 			</CardContent>

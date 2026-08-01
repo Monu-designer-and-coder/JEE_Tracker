@@ -179,9 +179,7 @@ export default function Page() {
 
 	return (
 		<Container className='w-full h-[85vh] p-5 flex flex-col gap-2'>
-			<Card
-				className='w-full col-span-12 h-fit overflow-scroll no-scrollbar'
-				size='sm'>
+			<Card className='w-full overflow-scroll no-scrollbar h-[30%]' size='sm'>
 				<CardHeader>
 					<CardTitle>CHAPTERS.</CardTitle>
 					<CardDescription>List of chapters in progress.</CardDescription>
@@ -229,10 +227,10 @@ export default function Page() {
 					</Container>
 				</CardContent>
 			</Card>
-			<Container className='w-full grid grid-cols-3 gap-4 h-fit'>
+			<Container className='w-full grid grid-cols-2 h-[70%] gap-4 overflow-scroll no-scrollbar'>
 				{InProgressChaptersList.map((chapter) => {
 					return (
-						<Card key={chapter._id}>
+						<Card key={chapter._id} className='w-full'>
 							<CardHeader>
 								<CardTitle className='uppercase'>{chapter.name}</CardTitle>
 								<CardDescription>
@@ -241,7 +239,8 @@ export default function Page() {
 							</CardHeader>
 							<CardContent className='grid grid-cols-2 gap-1 overflow-scroll no-scrollbar'>
 								<Container>
-									TOPICS LEFT:
+									TOPICS LEFT:{' '}
+									{chapter.topicsList.filter((topic) => !topic.done).length}
 									<Container className='w-full'>
 										{chapter.topicsList
 											.filter((topic) => !topic.done)
@@ -261,8 +260,8 @@ export default function Page() {
 																		Boolean(
 																			CurrentTaskList.docs.filter(
 																				(task) =>
-																					String(task.subjectDetails._id) ==
-																					String(chapter.subject._id),
+																					String(task.refDetails.chapter) ==
+																					String(chapter._id),
 																			).length,
 																		)
 																	}
@@ -291,8 +290,8 @@ export default function Page() {
 																				Boolean(
 																					CurrentTaskList.docs.filter(
 																						(task) =>
-																							String(task.subjectDetails._id) ==
-																							String(chapter.subject._id),
+																							String(task.refDetails.chapter) ==
+																							String(chapter._id),
 																					).length,
 																				)
 																			}
@@ -322,6 +321,10 @@ export default function Page() {
 								</Container>
 								<Container>
 									TAGS LEFT:
+									{
+										CHAPTER_COMPLETION_SEQUENCE.filter((tag) => !chapter[tag])
+											.length
+									}
 									<Container className='w-full'>
 										{CHAPTER_COMPLETION_SEQUENCE.filter(
 											(tag) => !chapter[tag],

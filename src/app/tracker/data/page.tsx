@@ -9,6 +9,7 @@ import axios, { AxiosResponse } from 'axios';
 import { Button } from '@/components/ui/button';
 import {
 	Card,
+	CardAction,
 	CardContent,
 	CardDescription,
 	CardHeader,
@@ -18,16 +19,19 @@ import { axiosConfig } from '@/config/axios.config';
 import { getSubjectStreakByDateResponse } from '@/types/res/subjectStreak.types';
 import { cn } from '@/lib/utils';
 import Link from 'next/link';
-import {
-	Table,
-	TableBody,
-	TableCaption,
-	TableCell,
-	TableHead,
-	TableHeader,
-	TableRow,
-} from '@/components/ui/table';
 import { GetSubjectResponse } from '@/types/res/GetResponse.types';
+import { Skeleton } from '@/components/ui/skeleton';
+import { FcLink, FcOpenedFolder } from 'react-icons/fc';
+import { Container } from '@/components/base/Container.base.component';
+import { Badge } from '@/components/ui/badge';
+import {
+	Dialog,
+	DialogContent,
+	DialogDescription,
+	DialogHeader,
+	DialogTitle,
+	DialogTrigger,
+} from '@/components/ui/dialog';
 
 // * Standardized structural definitions describing expected paginated envelopes
 interface PaginatedAPIResponseEnvelope<T> {
@@ -167,152 +171,137 @@ export default function Tracker() {
 	}
 
 	// ! Hydration check: Return null or a skeleton loader until mounted
-	if (!isMounted) return null;
+	if (!isMounted) {
+		return (
+			<Skeleton className='min-h-100 w-full animate-pulse rounded-[2rem] bg-accent/20 mx-auto max-w-5xl mt-8' />
+		);
+	}
 
 	// * ==========================================================================
 	// * Render
 	// * ==========================================================================
 	return (
-		<main className='relative min-h-[80vh] w-full overflow-auto bg-background px-4 py-8 md:px-8'>
-			{/* * Ambient Background Effects (Aceternity / Minimalist styling) */}
-			<div className='pointer-events-none absolute inset-0 z-0 overflow-hidden'>
-				<div className='absolute -left-[10%] top-[20%] h-125 w-125 rounded-full bg-primary/10 blur-[120px] mix-blend-screen' />
-				<div className='absolute right-[5%] top-[10%] h-100 w-100 rounded-full bg-blue-500/10 blur-[100px] mix-blend-screen' />
-			</div>
-
+		<main className='relative w-full overflow-auto px-4 py-8 md:px-8'>
 			{/* * Content Section */}
-			<section className='relative z-10 mx-auto max-w-7xl h-[80vh] flex flex-col justify-center'>
+			<section className='relative z-10 mx-auto flex flex-col justify-center'>
 				{isLoading ? (
 					// * Loading State
-					<div
-						className={cn(
-							'flex h-64 items-center justify-center',
-						)}>
+					<div className={cn('flex h-64 items-center justify-center')}>
 						<div className='h-8 w-8 animate-spin rounded-full border-b-2 border-primary' />
 					</div>
 				) : (
-					<EnhancedCard>
+					<Card>
 						<CardHeader>
-							<CardTitle className='text-2xl font-bold bg-linear-to-r from-chart-1 to-primary bg-clip-text text-transparent'>
-								Daily Tasks
-							</CardTitle>
-							<CardDescription className='text-secondary-foreground'>
-								Track Your Daily Progress.
-							</CardDescription>
+							<CardTitle>The Progress</CardTitle>
+							<CardDescription>List of all days work</CardDescription>
+							<CardAction>
+								<Button variant='link' asChild>
+									<Link href={'/tracker/'}>
+										<FcLink className='w-5 h-5' />
+									</Link>
+								</Button>
+							</CardAction>
 						</CardHeader>
-						<CardContent className='overflow-auto'>
+						<CardContent className='w-[95%] mx-auto grid grid-cols-6 gap-4'>
 							{subjectStreaks.map((streak) => (
-								<EnhancedCard key={String(streak._id)}>
+								<Card key={String(streak._id)} className='aspect-square'>
 									<CardHeader>
-										<CardTitle className='text-2xl font-bold text-primary'>
+										<CardTitle className='text-2xl font-clock font-bold text-primary'>
 											{new Date(streak._id).toLocaleDateString('en-US', {
 												weekday: 'short',
 												year: '2-digit',
 												month: 'short',
 												day: '2-digit',
-											})}; <span className = "text-4xl font-black"> Score : {Math.round(((calculateDailyTotals(streak.details)
-												.totalQuestionsDone * 1000000) + calculateDailyTotals(streak.details)
-													.totalTimeStudiedMs) / 200000)}</span>
-										</CardTitle>
-										<CardDescription className='text-secondary-foreground'>
-											Your Work on{' '}
-											{new Date(streak._id).toLocaleDateString('en-US', {
-												weekday: 'long',
-												year: 'numeric',
-												month: 'long',
-												day: 'numeric',
 											})}
+										</CardTitle>
+										<CardDescription className='text-secondary-foreground font-content-primary'>
+											Score :{' '}
+											{Math.round(
+												(calculateDailyTotals(streak.details)
+													.totalQuestionsDone *
+													1000000 +
+													calculateDailyTotals(streak.details)
+														.totalTimeStudiedMs) /
+													200000,
+											)}
 										</CardDescription>
+										<CardAction>
+											<Dialog>
+												<DialogTrigger>
+													<FcOpenedFolder />
+												</DialogTrigger>
+												<DialogContent>
+													<DialogHeader>
+														<DialogTitle className='font-2xl'>
+															Subject-wise data of{' '}
+															{new Date(streak._id).toLocaleDateString(
+																'en-US',
+																{
+																	year: 'numeric',
+																	month: 'long',
+																	day: 'numeric',
+																},
+															)}
+														</DialogTitle>
+														<DialogDescription className='font-xl'>
+															Your score for that the is:{' '}
+															{Math.round(
+																(calculateDailyTotals(streak.details)
+																	.totalQuestionsDone *
+																	1000000 +
+																	calculateDailyTotals(streak.details)
+																		.totalTimeStudiedMs) /
+																	200000,
+															)}
+														</DialogDescription>
+													</DialogHeader>
+													<Container className='w-full'>
+														{streak.details.map((detail) => (
+															<Container
+																key={String(detail._id)}
+																className={cn(
+																	'hover:bg-primary/10 w-full flex items-center py-1 px-4 justify-between text-center',
+																)}>
+																<h3
+																	className={cn(
+																		'capitalize text-center font-heading text-xl',
+																	)}>
+																	{String(detail.subject.name)}
+																</h3>
+																<span className='font-clock text-lg tracking-wider'>
+																	{detail.questionsDone}
+																</span>
+																<span className='font-clock text-lg tracking-widest'>
+																	{formatMilliseconds(detail.timeStudied)}
+																</span>
+															</Container>
+														))}
+													</Container>
+												</DialogContent>
+											</Dialog>
+										</CardAction>
 									</CardHeader>
-									<CardContent>
-										<Table className='rounded-[2rem]'>
-											<TableCaption>A list of your chapters.</TableCaption>
-											<TableHeader>
-												<TableRow className='bg-primary hover:bg-secondary '>
-													<TableHead className='capitalize '>Subject</TableHead>
-													<TableHead className='capitalize'>
-														QuestionsDone
-													</TableHead>
-													<TableHead className='capitalize'>
-														Time Studied
-													</TableHead>
-												</TableRow>
-											</TableHeader>
-											<TableBody>
-												{streak.details.map((detail) => (
-													<TableRow
-														key={String(detail._id)}
-														className={cn(
-															'hover:bg-primary/10',
-														)}>
-														<TableCell className={cn('capitalize')}>
-															{String(detail.subject.name)}
-														</TableCell>
-														<TableCell>{detail.questionsDone}</TableCell>
-														<TableCell>
-															{formatMilliseconds(detail.timeStudied)}
-														</TableCell>
-													</TableRow>
-												))}
-												<TableRow className={cn(
-															'hover:bg-primary/10',
-														)}>
-													<TableCell>Total:</TableCell>
-													<TableCell>
-														{
-															calculateDailyTotals(streak.details)
-																.totalQuestionsDone
-														}
-													</TableCell>
-													<TableCell>
-														{formatMilliseconds(
-															calculateDailyTotals(streak.details)
-																.totalTimeStudiedMs,
-														)}
-													</TableCell>
-												</TableRow>
-											</TableBody>
-										</Table>
+									<CardContent className='grid grid-rows-6 w-full h-full gap-2'>
+										<Container className='w-full h-full row-span-2 rounded-full flex items-center justify-center text-lg gap-2 font-clock'>
+											{calculateDailyTotals(streak.details).totalQuestionsDone}{' '}
+											<Badge className=''>Questions Done</Badge>
+										</Container>
+										<Container className='w-full h-full row-span-4 rounded-full flex items-center justify-center text-xl border border-primary/80 flex-col gap-2 font-clock'>
+											{formatMilliseconds(
+												calculateDailyTotals(streak.details).totalTimeStudiedMs,
+											)}
+											<Badge>Studied</Badge>
+										</Container>
 									</CardContent>
-								</EnhancedCard>
+								</Card>
 							))}
 						</CardContent>
-					</EnhancedCard>
+					</Card>
 				)}
-				<Button className='w-full my-5' variant={'secondary'} asChild>
-					<Link href='/tracker/'>.../</Link>
-				</Button>
 			</section>
 		</main>
 	);
 }
-
-// * Enhanced Card Component with Modern Glass Effects
-const EnhancedCard = ({
-	children,
-	className,
-	sizeProp,
-}: {
-	children: React.ReactNode;
-	className?: string;
-	sizeProp?: 'default' | 'sm' | undefined;
-}) => {
-	return (
-		<Card
-			size={sizeProp}
-			className={cn(
-				'backdrop-blur-md bg-white/40 dark:bg-black/20',
-				'border border-white/30 dark:border-white/10',
-				'shadow-2xl shadow-primary/10 dark:shadow-primary/20',
-				'rounded-4xl overflow-auto',
-				'transition-all duration hover:shadow-3xl hover:shadow-primary/20',
-				'hover:bg-white/50 dark:hover:bg-black/30',
-				className,
-			)}>
-			{children}
-		</Card>
-	);
-};
 
 // ! IMPROVEMENTS IMPLEMENTED:
 // * 1. Implemented a data stream synchronization loop (`fetchTodayStreaksIncremental`) providing backend pagination compatibility without changing the UI/UX.

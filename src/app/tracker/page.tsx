@@ -7,7 +7,7 @@
 import { useEffect, useState } from 'react';
 import axios, { AxiosResponse } from 'axios';
 import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Card, CardAction, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import {
 	Tooltip,
 	TooltipContent,
@@ -34,14 +34,13 @@ import {
 	SheetTrigger,
 } from '@/components/ui/sheet';
 import { Badge } from '@/components/ui/badge';
-import { ImTarget } from 'react-icons/im';
 import { CardBlockUI } from '@/components/module/card-block.module';
 import { cardBlockUIOrientation } from '@/components/module/card-block.module';
 import { CurrentTaskCard03 } from '@/components/module/current-task.module';
 import { MissionCountdownCard } from '@/components/module/mission-countdown.module';
 import { formatDate, formatMilliseconds } from '@/lib/helpers';
 import { Skeleton } from '@/components/ui/skeleton';
-import { PendingChapterListCard } from '@/components/module/pendingChapterList.module';
+import { FcLink } from 'react-icons/fc';
 
 // * Standardized structural definitions describing expected paginated envelopes
 export interface PaginatedAPIResponseEnvelope<T> {
@@ -520,13 +519,16 @@ export default function Tracker() {
 	};
 
 	// ! Hydration check: Return null or a skeleton loader until mounted
-	if (!isMounted) return null;
-
+	if (!isMounted) {
+		return (
+			<Skeleton className='min-h-100 w-full animate-pulse rounded-[2rem] bg-accent/20 mx-auto max-w-5xl mt-8' />
+		);
+	}
 	// * ==========================================================================
 	// * Render
 	// * ==========================================================================
 	return (
-		<main className='relative w-full overflow-auto bg-background px-4 py-8 md:px-8'>
+		<main className='relative w-full overflow-auto px-4 py-8 md:px-8'>
 			{/* * Content Section */}
 			<section className='relative z-10 mx-auto w-11/12 flex flex-col justify-center'>
 				{isLoading ? (
@@ -801,6 +803,13 @@ export default function Tracker() {
 														</div>
 													</TooltipContent>
 												</Tooltip>
+												<CardAction>
+													<Button variant='link' asChild>
+														<Link href={'/tracker/data'}>
+															<FcLink className='w-5 h-5' />
+														</Link>
+													</Button>
+												</CardAction>
 											</CardHeader>
 
 											<CardContent className='relative z-10 flex flex-col gap-1'>
@@ -941,38 +950,6 @@ export default function Tracker() {
 								<MissionCountdownCard className={cn('col-span-4 row-span-1')} />
 							</div>
 						</div>
-
-						<Button
-							className='w-full my-5 hover:bg-primary/10 border-0 bg-primary/5'
-							variant={'outline'}
-							asChild>
-							<Link href='/tracker/data'>Daily Data</Link>
-						</Button>
-						<Sheet>
-							<SheetTrigger asChild>
-								<Button className='w-full'>
-									{' '}
-									<ImTarget />
-									Open TARGETED CHAPTERS
-								</Button>
-							</SheetTrigger>
-							<SheetContent
-								side='bottom'
-								className='overflow-auto py-8 bg-primary/10 px-5'>
-								<SheetHeader>
-									<SheetTitle className='text-center'>
-										<Button
-											variant={'ghost'}
-											className='text-lg font-badge'
-											asChild>
-											<Link href={'/system/'}>Current Chapters To Study</Link>
-										</Button>
-									</SheetTitle>
-									<SheetDescription>List:</SheetDescription>
-								</SheetHeader>
-								<PendingChapterListCard className='col-span-6 row-span-1 col-start-1 row-start-3 bg-transparent' />
-							</SheetContent>
-						</Sheet>
 					</TooltipProvider>
 				)}
 			</section>

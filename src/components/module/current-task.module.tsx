@@ -379,7 +379,7 @@ export const CurrentTaskCard03 = ({ className }: { className?: string }) => {
 				<CardDescription>To this Task Now!</CardDescription>
 				<CardAction>
 					<Button variant='link' asChild>
-						<Link href={'/system/'}>
+						<Link href={'/syllabus/chapter'}>
 							<FcLink className='w-5 h-5' />
 						</Link>
 					</Button>
@@ -444,7 +444,7 @@ export const CurrentTaskCard03 = ({ className }: { className?: string }) => {
 								</CardDescription>
 								<CardAction>
 									<Button variant='link' asChild>
-										<Link href={'/tracker'}>
+										<Link href={'/system/study'}>
 											<FcLink className='w-5 h-5' />
 										</Link>
 									</Button>

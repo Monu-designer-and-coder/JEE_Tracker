@@ -7,7 +7,13 @@
 import { useEffect, useState } from 'react';
 import axios, { AxiosResponse } from 'axios';
 import { Button } from '@/components/ui/button';
-import { Card, CardAction, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import {
+	Card,
+	CardAction,
+	CardContent,
+	CardHeader,
+	CardTitle,
+} from '@/components/ui/card';
 import {
 	Tooltip,
 	TooltipContent,
@@ -539,301 +545,350 @@ export default function Tracker() {
 				) : (
 					// ! Added TooltipProvider here to ensure tooltips portal correctly and don't get clipped by overflow-hidden
 					<TooltipProvider delayDuration={200}>
-						<Sheet>
-							<SheetTrigger asChild>
-								<Button className='w-full'>Open Details</Button>
-							</SheetTrigger>
-							<SheetContent
-								side='bottom'
-								className='overflow-auto py-8 bg-primary/10 px-5'>
-								<SheetHeader>
-									<SheetTitle>Your Peak v/s Today</SheetTitle>
-									<SheetDescription>
-										This is your Peak, Recall Who you are!
-									</SheetDescription>
-								</SheetHeader>
-								<div className='grid grid-cols-2 grid-rows-1 w-full h-[80vh] gap-2 p-3 py-8 bg-primary/10 px-5'>
-									<Card className='h-full w-full rounded-4xl py-8 bg-primary/10 px-5'>
-										<CardHeader>
-											<CardTitle>Your Peak</CardTitle>
-										</CardHeader>
-										<CardContent className='overflow-auto flex flex-col gap-3 h-full'>
-											<CardBlockUI
-												cardBlockUIContentList={[
-													{
-														label: 'Peak Questions Done',
-														value: String(
-															allTimePeak.peakQuestionsDoneDay[0]
-																?.totalQuestions || 0,
-														),
-														subtext: formatDate(
-															String(
-																allTimePeak.peakQuestionsDoneDay[0]?.date || '',
-															),
-														),
-														animate: false,
-													},
-													{
-														label: 'Peak Time Studied',
-														value: formatMilliseconds(
-															allTimePeak.peakTimeStudiedDay[0]?.totalTime || 0,
-														),
-														subtext: formatDate(
-															String(
-																allTimePeak.peakTimeStudiedDay[0]?.date || '',
-															),
-														),
-														animate: true,
-													},
-												]}
-											/>
-											<CardBlockUI
-												cardBlockUIContentList={[
-													{
-														label: 'Overall Best Day',
-														value: String(
-															allTimePeak.bestOverallDay[0]?.totalQuestions ||
-																0,
-														),
-														subtext: 'Question Done',
-														animate: false,
-													},
-													{
-														label: 'Overall Best Day',
-														value: formatMilliseconds(
-															allTimePeak.bestOverallDay[0]?.totalTime || 0,
-														),
-														subtext: 'Time Studied',
-														animate: false,
-													},
-													{
-														label: "Overall Best Day's Score",
-														value: String(
-															Math.round(
-																allTimePeak.bestOverallDay[0]?.averageScore ||
-																	0,
-															),
-														),
-														subtext: formatDate(
-															String(allTimePeak.bestOverallDay[0]?.date || ''),
-														),
-														animate: true,
-													},
-												]}
-											/>
+						<Card className='bg-background/5'>
+							<CardHeader>
+								<CardTitle>Dashboard</CardTitle>
+								<CardAction>
+									<Sheet>
+										<SheetTrigger asChild>
+											<Button className='w-full' variant={'outline'}>
+												Today Score:{' '}
+												{Math.round(
+													(todaysProgressData.totalQuestionsDone * 1000000 +
+														todaysProgressData.totalTimeStudiedMs) /
+														200000,
+												)}
+												<Badge>
+													{formatMilliseconds(
+														todaysProgressData.totalTimeStudiedMs,
+													)}
+												</Badge>
+												<Badge variant={'outline'}>
+													{todaysProgressData.totalQuestionsDone}
+												</Badge>
+											</Button>
+										</SheetTrigger>
+										<SheetContent
+											side='bottom'
+											className='overflow-auto py-8 bg-primary/10 px-5'>
+											<SheetHeader>
+												<SheetTitle>Your Peak v/s Today</SheetTitle>
+												<SheetDescription>
+													This is your Peak, Recall Who you are!
+												</SheetDescription>
+											</SheetHeader>
+											<div className='grid grid-cols-2 grid-rows-1 w-full h-[70vh] gap-2 p-3 py-8 bg-primary/10 px-5'>
+												<Card className='h-full w-full rounded-4xl py-8 bg-primary/10 px-5'>
+													<CardHeader>
+														<CardTitle>Your Peak</CardTitle>
+													</CardHeader>
+													<CardContent className='overflow-auto flex flex-col gap-3 h-full'>
+														<CardBlockUI
+															cardBlockUIContentList={[
+																{
+																	label: 'Peak Questions Done',
+																	value: String(
+																		allTimePeak.peakQuestionsDoneDay[0]
+																			?.totalQuestions || 0,
+																	),
+																	subtext: formatDate(
+																		String(
+																			allTimePeak.peakQuestionsDoneDay[0]
+																				?.date || '',
+																		),
+																	),
+																	animate: false,
+																},
+																{
+																	label: 'Peak Time Studied',
+																	value: formatMilliseconds(
+																		allTimePeak.peakTimeStudiedDay[0]
+																			?.totalTime || 0,
+																	),
+																	subtext: formatDate(
+																		String(
+																			allTimePeak.peakTimeStudiedDay[0]?.date ||
+																				'',
+																		),
+																	),
+																	animate: true,
+																},
+															]}
+														/>
+														<CardBlockUI
+															cardBlockUIContentList={[
+																{
+																	label: 'Overall Best Day',
+																	value: String(
+																		allTimePeak.bestOverallDay[0]
+																			?.totalQuestions || 0,
+																	),
+																	subtext: 'Question Done',
+																	animate: false,
+																},
+																{
+																	label: 'Overall Best Day',
+																	value: formatMilliseconds(
+																		allTimePeak.bestOverallDay[0]?.totalTime ||
+																			0,
+																	),
+																	subtext: 'Time Studied',
+																	animate: false,
+																},
+																{
+																	label: "Overall Best Day's Score",
+																	value: String(
+																		Math.round(
+																			allTimePeak.bestOverallDay[0]
+																				?.averageScore || 0,
+																		),
+																	),
+																	subtext: formatDate(
+																		String(
+																			allTimePeak.bestOverallDay[0]?.date || '',
+																		),
+																	),
+																	animate: true,
+																},
+															]}
+														/>
 
-											<div className='grid grid-cols-3 gap-4 '>
-												{allTimePeak.subjectWisePeaks.length ? (
-													allTimePeak?.subjectWisePeaks?.map((subject) => (
-														<div key={subject._id} className='my-5 gap-4'>
+														<div className='grid grid-cols-3 gap-4 '>
+															{allTimePeak.subjectWisePeaks.length ? (
+																allTimePeak?.subjectWisePeaks?.map(
+																	(subject) => (
+																		<div
+																			key={subject._id}
+																			className='my-5 gap-4'>
+																			<CardBlockUI
+																				cardBlockUIContentList={[
+																					{
+																						label: 'Total Questions Done',
+																						value: String(
+																							subject.peakQuestions,
+																						),
+																						subtext: `${subject.subjectName}'s Peak`,
+																						animate: false,
+																					},
+																					{
+																						label: 'Total Time Studied',
+																						value: formatMilliseconds(
+																							subject.peakTime,
+																						),
+																						subtext: `${subject.subjectName}'s Peak`,
+																						animate: false,
+																					},
+																					{
+																						label: 'Score:',
+																						value: String(
+																							Math.round(
+																								subject.peakAverageScore,
+																							),
+																						),
+																						subtext: `${subject.subjectName}'s Peak: ${formatDate(String(subject.bestDate))}`,
+																						animate: true,
+																					},
+																				]}
+																				orientation={
+																					cardBlockUIOrientation.Vertical
+																				}
+																			/>
+																		</div>
+																	),
+																)
+															) : (
+																<></>
+															)}
+														</div>
+													</CardContent>
+												</Card>
+												<Card className='h-full w-full rounded-4xl py-8 bg-primary/10 px-5'>
+													<CardHeader>
+														<CardTitle>
+															<Badge
+																className='w-full text-lg'
+																variant={'ghost'}>
+																Your Score Today:{' '}
+																<Badge
+																	className={cn(
+																		'text-xl p-5 py-4 font-normal tracking-tighter text-foreground transition-transform duration-300 group-hover:scale-105',
+																		'text-primary drop-shadow-sm capitalize',
+																	)}
+																	variant='ghost'>
+																	{Math.round(
+																		(todaysProgressData.totalQuestionsDone *
+																			1000000 +
+																			todaysProgressData.totalTimeStudiedMs) /
+																			200000,
+																	)}
+																</Badge>
+															</Badge>
+														</CardTitle>
+													</CardHeader>
+													<CardContent>
+														<CardBlockUI
+															cardBlockUIContentList={[
+																{
+																	label: 'Total Questions Done',
+																	value: String(
+																		todaysProgressData.totalQuestionsDone,
+																	),
+																	subtext: '',
+																	animate:
+																		currentStudySession.isStudySessionActive,
+																},
+																{
+																	label: 'Total Time Studied',
+																	value: formatMilliseconds(
+																		todaysProgressData.totalTimeStudiedMs,
+																	),
+																	subtext: '',
+																	animate: true,
+																},
+															]}
+														/>
+														<div className='grid grid-cols-1 grid-rows-3 my-2 p-6 px-8 gap-4'>
 															<CardBlockUI
 																cardBlockUIContentList={[
 																	{
-																		label: 'Total Questions Done',
-																		value: String(subject.peakQuestions),
-																		subtext: `${subject.subjectName}'s Peak`,
-																		animate: false,
-																	},
-																	{
-																		label: 'Total Time Studied',
-																		value: formatMilliseconds(subject.peakTime),
-																		subtext: `${subject.subjectName}'s Peak`,
-																		animate: false,
-																	},
-																	{
-																		label: 'Score:',
-																		value: String(
-																			Math.round(subject.peakAverageScore),
-																		),
-																		subtext: `${subject.subjectName}'s Peak: ${formatDate(String(subject.bestDate))}`,
 																		animate: true,
+																		subtext: 'Total Questions Done',
+																		value: String(
+																			todaysProgressData.physics
+																				.totalQuestionsDone,
+																		),
+																		label: 'Physics',
+																	},
+																	{
+																		subtext: 'Total Time Studied',
+																		value: formatMilliseconds(
+																			todaysProgressData.physics
+																				.totalTimeStudiedMs,
+																		),
+																		label: 'Physics',
+																		animate: false,
 																	},
 																]}
-																orientation={cardBlockUIOrientation.Vertical}
+															/>
+															<CardBlockUI
+																cardBlockUIContentList={[
+																	{
+																		animate: true,
+																		subtext: 'Total Questions Done',
+																		value: String(
+																			todaysProgressData.chemistry
+																				.totalQuestionsDone,
+																		),
+																		label: 'Chemistry',
+																	},
+																	{
+																		subtext: 'Total Time Studied',
+																		value: formatMilliseconds(
+																			todaysProgressData.chemistry
+																				.totalTimeStudiedMs,
+																		),
+																		label: 'Chemistry',
+																		animate: false,
+																	},
+																]}
+															/>
+															<CardBlockUI
+																cardBlockUIContentList={[
+																	{
+																		animate: true,
+																		subtext: 'Total Questions Done',
+																		value: String(
+																			todaysProgressData.mathematics
+																				.totalQuestionsDone,
+																		),
+																		label: 'Mathematics',
+																	},
+																	{
+																		subtext: 'Total Time Studied',
+																		value: formatMilliseconds(
+																			todaysProgressData.mathematics
+																				.totalTimeStudiedMs,
+																		),
+																		label: 'Mathematics',
+																		animate: false,
+																	},
+																]}
 															/>
 														</div>
-													))
-												) : (
-													<></>
-												)}
+													</CardContent>
+												</Card>
 											</div>
-										</CardContent>
-									</Card>
-									<Card className='h-full w-full rounded-4xl py-8 bg-primary/10 px-5'>
-										<CardHeader>
-											<CardTitle>
-												<Badge className='w-full text-lg' variant={'ghost'}>
-													Your Score Today:{' '}
-													<Badge
-														className={cn(
-															'text-xl p-5 py-4 font-normal tracking-tighter text-foreground transition-transform duration-300 group-hover:scale-105',
-															'text-primary drop-shadow-sm capitalize',
-														)}
-														variant='ghost'>
-														{Math.round(
-															(todaysProgressData.totalQuestionsDone * 1000000 +
-																todaysProgressData.totalTimeStudiedMs) /
-																200000,
-														)}
-													</Badge>
-												</Badge>
-											</CardTitle>
-										</CardHeader>
-										<CardContent>
-											<CardBlockUI
-												cardBlockUIContentList={[
-													{
-														label: 'Total Questions Done',
-														value: String(
-															todaysProgressData.totalQuestionsDone,
-														),
-														subtext: '',
-														animate: currentStudySession.isStudySessionActive,
-													},
-													{
-														label: 'Total Time Studied',
-														value: formatMilliseconds(
-															todaysProgressData.totalTimeStudiedMs,
-														),
-														subtext: '',
-														animate: true,
-													},
-												]}
-											/>
-											<div className='grid grid-cols-1 grid-rows-3 my-2 p-6 px-8 gap-4'>
-												<CardBlockUI
-													cardBlockUIContentList={[
-														{
-															animate: true,
-															subtext: 'Total Questions Done',
-															value: String(
-																todaysProgressData.physics.totalQuestionsDone,
-															),
-															label: 'Physics',
-														},
-														{
-															subtext: 'Total Time Studied',
-															value: formatMilliseconds(
-																todaysProgressData.physics.totalTimeStudiedMs,
-															),
-															label: 'Physics',
-															animate: false,
-														},
-													]}
-												/>
-												<CardBlockUI
-													cardBlockUIContentList={[
-														{
-															animate: true,
-															subtext: 'Total Questions Done',
-															value: String(
-																todaysProgressData.chemistry.totalQuestionsDone,
-															),
-															label: 'Chemistry',
-														},
-														{
-															subtext: 'Total Time Studied',
-															value: formatMilliseconds(
-																todaysProgressData.chemistry.totalTimeStudiedMs,
-															),
-															label: 'Chemistry',
-															animate: false,
-														},
-													]}
-												/>
-												<CardBlockUI
-													cardBlockUIContentList={[
-														{
-															animate: true,
-															subtext: 'Total Questions Done',
-															value: String(
-																todaysProgressData.mathematics
-																	.totalQuestionsDone,
-															),
-															label: 'Mathematics',
-														},
-														{
-															subtext: 'Total Time Studied',
-															value: formatMilliseconds(
-																todaysProgressData.mathematics
-																	.totalTimeStudiedMs,
-															),
-															label: 'Mathematics',
-															animate: false,
-														},
-													]}
-												/>
-											</div>
-										</CardContent>
-									</Card>
-								</div>
-							</SheetContent>
-						</Sheet>
-
-						<div className='grid grid-rows-flow grid-cols-1 gap-2 my-2'>
-							<div className='gap-2 flex flex-col '>
-								<div className='grid grid-cols-3 gap-2'>
-									{subjectStreaks.map((item, index) => (
-										<Card
-											size='sm'
-											key={item._id}
-											className='group/card relative overflow-hidden rounded-4xl border h-full py-1 px-2 text-center border-primary/30 w-full'>
-											<CardHeader className='relative z-10 pb-2'>
-												<Tooltip>
-													<TooltipTrigger asChild>
-														<Button
-															variant='ghost'
-															size='lg'
-															className='w-full capitalize tracking-wide bg-primary/20 text-base/10 font-badge py-6 border border-primary'>
-															{item.subject?.name || 'Unknown Subject'}
+										</SheetContent>
+									</Sheet>
+								</CardAction>
+							</CardHeader>
+							<CardContent className='grid grid-rows-flow grid-cols-1 gap-2 my-2'>
+								<div className='gap-2 flex flex-col'>
+									<div className='grid grid-cols-3 gap-2'>
+										{subjectStreaks.map((item, index) => (
+											<Card
+												size='sm'
+												key={item._id}
+												className='group/card relative overflow-hidden rounded-4xl border h-full py-1 px-2 text-center border-primary/30 w-full'>
+												<CardHeader className='relative z-10 pb-2'>
+													<Tooltip>
+														<TooltipTrigger asChild>
+															<Button
+																variant='ghost'
+																size='lg'
+																className='w-full capitalize tracking-wide bg-primary/20 text-base/10 font-badge py-6 border border-primary'>
+																{item.subject?.name || 'Unknown Subject'}
+															</Button>
+														</TooltipTrigger>
+														{/* ! FIXED: Tooltip visibility, positioning, sizing, and padding issues */}
+														<TooltipContent
+															side='top'
+															sideOffset={12}
+															className='z-100 min-w-45 p-4 bg-popover/95 backdrop-blur-xl border border-white/20 shadow-[0_10px_40px_-10px_rgba(0,0,0,0.5)] rounded-xl text-center'>
+															<div className='flex flex-col gap-1.5'>
+																<p className='text-sm font-bold uppercase tracking-wider text-primary'>
+																	Active Streak
+																</p>
+																<p className='text-base font-medium text-foreground'>
+																	{formatDate(item.date)}
+																</p>
+															</div>
+														</TooltipContent>
+													</Tooltip>
+													<CardAction>
+														<Button variant='link' asChild>
+															<Link href={'/tracker/data'}>
+																<FcLink className='w-5 h-5' />
+															</Link>
 														</Button>
-													</TooltipTrigger>
-													{/* ! FIXED: Tooltip visibility, positioning, sizing, and padding issues */}
-													<TooltipContent
-														side='top'
-														sideOffset={12}
-														className='z-100 min-w-45 p-4 bg-popover/95 backdrop-blur-xl border border-white/20 shadow-[0_10px_40px_-10px_rgba(0,0,0,0.5)] rounded-xl text-center'>
-														<div className='flex flex-col gap-1.5'>
-															<p className='text-sm font-bold uppercase tracking-wider text-primary'>
-																Active Streak
-															</p>
-															<p className='text-base font-medium text-foreground'>
-																{formatDate(item.date)}
-															</p>
+													</CardAction>
+												</CardHeader>
+
+												<CardContent className='relative z-10 flex flex-col gap-1'>
+													{/* * Interactive Stat Block: Questions Done */}
+													<button
+														onClick={() =>
+															incrementQuestionStreak(
+																item._id,
+																item.subject._id,
+															)
+														}
+														className='group/btn relative flex w-full flex-col items-center justify-center overflow-hidden rounded-4xl border border-primary/30 py-1 text-center  transition-all duration-300 hover:-translate-y-1 hover:bg-primary/10 hover:border-primary/10'
+														aria-label={`Increment questions done for ${item.subject?.name}`}>
+														<div className='relative z-10 flex flex-col items-center'>
+															<span className='text-xl font-normal font-badge tracking-tight md:text-2xl '>
+																{item.questionsDone}
+															</span>
+															<span className='my-1 text-xs font-normal capitalize tracking-wider text-muted-foreground opacity-90 transition-colors group-hover/btn:text-foreground font-heading'>
+																Questions Done Today
+															</span>
 														</div>
-													</TooltipContent>
-												</Tooltip>
-												<CardAction>
-													<Button variant='link' asChild>
-														<Link href={'/tracker/data'}>
-															<FcLink className='w-5 h-5' />
-														</Link>
-													</Button>
-												</CardAction>
-											</CardHeader>
+													</button>
 
-											<CardContent className='relative z-10 flex flex-col gap-1'>
-												{/* * Interactive Stat Block: Questions Done */}
-												<button
-													onClick={() =>
-														incrementQuestionStreak(item._id, item.subject._id)
-													}
-													className='group/btn relative flex w-full flex-col items-center justify-center overflow-hidden rounded-4xl border border-primary/30 py-1 text-center  transition-all duration-300 hover:-translate-y-1 hover:bg-primary/10 hover:border-primary/10'
-													aria-label={`Increment questions done for ${item.subject?.name}`}>
-													<div className='relative z-10 flex flex-col items-center'>
-														<span className='text-xl font-normal font-badge tracking-tight md:text-2xl '>
-															{item.questionsDone}
-														</span>
-														<span className='my-1 text-xs font-normal capitalize tracking-wider text-muted-foreground opacity-90 transition-colors group-hover/btn:text-foreground font-heading'>
-															Questions Done Today
-														</span>
-													</div>
-												</button>
-
-												<div className='relative flex w-full flex-col items-center justify-center overflow-hidden rounded-4xl border border-primary/30 p-6 text-center transition-all duration-300 hover:bg-primary/10 hover:border-primary/10'>
-													<div className='relative z-10 flex flex-col items-center'>
-														<span
-															className={`text-xl font-normal font-badge tracking-tight md:text-2xl
+													<div className='relative flex w-full flex-col items-center justify-center overflow-hidden rounded-4xl border border-primary/30 p-6 text-center transition-all duration-300 hover:bg-primary/10 hover:border-primary/10'>
+														<div className='relative z-10 flex flex-col items-center'>
+															<span
+																className={`text-xl font-normal font-badge tracking-tight md:text-2xl
 														${
 															currentStudySession.isStudySessionActive &&
 															currentStudySession.subjectDetails._id ===
@@ -842,114 +897,117 @@ export default function Tracker() {
 																: 'text-foreground/80'
 														}
 															`}>
-															{formatMilliseconds(
-																currentStudySession.isStudySessionActive &&
-																	currentStudySession.subjectDetails._id ===
-																		item.subject._id
-																	? liveTimestamp
-																	: item.timeStudied,
-															)}
-														</span>
-														<span className='mt-2 text-xs font-medium capitalize tracking-wider text-muted-foreground opacity-90 font-heading'>
-															{currentStudySession.isStudySessionActive &&
-															currentStudySession.subjectDetails._id ===
-																item.subject._id
-																? 'Current Study Session'
-																: 'Hours Studied Today'}
-														</span>
-														<div>
-															<CardHeader>
-																<Label className='text-sm font-normal text-primary'>
-																	Add Time Hrs:Min:Sec
-																</Label>
-															</CardHeader>
-															<CardContent className='w-full h-full'>
-																<div className='flex gap-0.5'>
-																	<Input
-																		type='number'
-																		placeholder='Enter Hours'
-																		className='bg-background/5 border-0 outline-0 border-b border-foreground rounded-none focus:border-0 focus:ring-0 focus:outline-0'
-																		value={item.hours}
-																		onChange={(e) => {
-																			handleTimeChange(
-																				index,
-																				'hours',
-																				e.target.value,
-																			);
+																{formatMilliseconds(
+																	currentStudySession.isStudySessionActive &&
+																		currentStudySession.subjectDetails._id ===
+																			item.subject._id
+																		? liveTimestamp
+																		: item.timeStudied,
+																)}
+															</span>
+															<span className='mt-2 text-xs font-medium capitalize tracking-wider text-muted-foreground opacity-90 font-heading'>
+																{currentStudySession.isStudySessionActive &&
+																currentStudySession.subjectDetails._id ===
+																	item.subject._id
+																	? 'Current Study Session'
+																	: 'Hours Studied Today'}
+															</span>
+															<div>
+																<CardHeader>
+																	<Label className='text-sm font-normal text-primary'>
+																		Add Time Hrs:Min:Sec
+																	</Label>
+																</CardHeader>
+																<CardContent className='w-full h-full'>
+																	<div className='flex gap-0.5'>
+																		<Input
+																			type='number'
+																			placeholder='Enter Hours'
+																			className='bg-background/5 border-0 outline-0 border-b border-foreground rounded-none focus:border-0 focus:ring-0 focus:outline-0'
+																			value={item.hours}
+																			onChange={(e) => {
+																				handleTimeChange(
+																					index,
+																					'hours',
+																					e.target.value,
+																				);
+																			}}
+																		/>
+																		:
+																		<Input
+																			type='number'
+																			placeholder='Enter Minutes'
+																			className='bg-background/5 border-0 outline-0 border-b border-foreground rounded-none focus:border-0 focus:ring-0 focus:outline-0'
+																			value={item.minutes}
+																			onChange={(e) => {
+																				handleTimeChange(
+																					index,
+																					'minutes',
+																					e.target.value,
+																				);
+																			}}
+																		/>
+																	</div>
+																	<Button
+																		onClick={() => {
+																			handleAddTime(index);
 																		}}
-																	/>
-																	:
-																	<Input
-																		type='number'
-																		placeholder='Enter Minutes'
-																		className='bg-background/5 border-0 outline-0 border-b border-foreground rounded-none focus:border-0 focus:ring-0 focus:outline-0'
-																		value={item.minutes}
-																		onChange={(e) => {
-																			handleTimeChange(
-																				index,
-																				'minutes',
-																				e.target.value,
-																			);
-																		}}
-																	/>
-																</div>
-																<Button
-																	onClick={() => {
-																		handleAddTime(index);
-																	}}
-																	className='w-full my-1 bg-primary/90'>
-																	Add This Time
-																</Button>
-															</CardContent>
+																		className='w-full my-1 bg-primary/90'>
+																		Add This Time
+																	</Button>
+																</CardContent>
+															</div>
 														</div>
 													</div>
-												</div>
 
-												{/* Study Button  */}
-												<Button
-													size={'lg'}
-													variant={
-														!currentStudySession.isStudySessionActive
-															? 'default'
-															: 'destructive'
-													}
-													onClick={() => {
-														studySessionToggle(
-															item._id,
-															item.subject._id,
-															item.subject.name,
-														);
-													}}
-													disabled={
-														currentStudySession.isStudySessionActive &&
-														currentStudySession.subjectDetails._id !=
-															item.subject._id
-													}
-													className='cursor-pointer'>
-													{' '}
-													{!currentStudySession.isStudySessionActive ? (
-														<>
-															{' '}
-															<IconTimeDuration10 /> &apos;Start Study
-															Session&apos;
-														</>
-													) : (
-														<>
-															<IconTimeDurationOff /> &apos;End Study Session
-															&apos;
-														</>
-													)}
-												</Button>
-											</CardContent>
-										</Card>
-									))}
+													{/* Study Button  */}
+													<Button
+														size={'lg'}
+														variant={
+															!currentStudySession.isStudySessionActive
+																? 'default'
+																: 'destructive'
+														}
+														onClick={() => {
+															studySessionToggle(
+																item._id,
+																item.subject._id,
+																item.subject.name,
+															);
+														}}
+														disabled={
+															currentStudySession.isStudySessionActive &&
+															currentStudySession.subjectDetails._id !=
+																item.subject._id
+														}
+														className='cursor-pointer'>
+														{' '}
+														{!currentStudySession.isStudySessionActive ? (
+															<>
+																{' '}
+																<IconTimeDuration10 /> &apos;Start Study
+																Session&apos;
+															</>
+														) : (
+															<>
+																<IconTimeDurationOff /> &apos;End Study Session
+																&apos;
+															</>
+														)}
+													</Button>
+												</CardContent>
+											</Card>
+										))}
+									</div>
 								</div>
-							</div>
-							<div className='grid grid-cols-12 grid-rows-flow gap-4 '>
-								<CurrentTaskCard03 className={cn('col-span-8 row-span-1')} />
-								<MissionCountdownCard className={cn('col-span-4 row-span-1')} />
-							</div>
-						</div>
+								<div className='grid grid-cols-12 grid-rows-flow gap-4 '>
+									<CurrentTaskCard03 className={cn('col-span-8 row-span-1')} />
+									<MissionCountdownCard
+										className={cn('col-span-4 row-span-1')}
+									/>
+								</div>
+							</CardContent>
+						</Card>
 					</TooltipProvider>
 				)}
 			</section>

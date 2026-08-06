@@ -184,8 +184,9 @@ export async function GET(request: Request) {
                     const defaultSystemSubjects = await SubjectModel.find({}).select('_id').lean();
 
                     if (defaultSystemSubjects.length > 0) {
+                        const commonDate = new Date();
                         const operationsPayload = defaultSystemSubjects.map((subjectItem) => ({
-                            date: new Date(),
+                            date: commonDate,
                             subject: subjectItem._id,
                             questionsDone: 0,
                             timeStudied: 0,
@@ -278,7 +279,7 @@ export async function PUT(request: Request) {
         if (validationResult.data.type === "plusOneQuestion") {
             const updatedStreakRecord = await SubjectStreakModel.findByIdAndUpdate(
                 validationResult.data._id,
-                { $inc: { questionsDone: 1 } },     
+                { $inc: { questionsDone: 1 } },
                 { new: true, runValidators: true }
             ).lean();
 

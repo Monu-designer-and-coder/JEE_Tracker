@@ -38,8 +38,8 @@ const Header: React.FC<HeaderProps> = ({ className = '' }) => {
 			link: '/system',
 		},
 		{
-			name: 'Pomodoro',
-			link: '/pomodoro',
+			name: 'Todo',
+			link: '/diary',
 		},
 	];
 

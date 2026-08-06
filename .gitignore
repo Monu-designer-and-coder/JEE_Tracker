@@ -43,3 +43,5 @@ next-env.d.ts
 # Coding Workspace
 .vscode
 extra
+/src/app/dev
+/src/app/api/dev

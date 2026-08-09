@@ -1,4 +1,5 @@
 import { z } from 'zod';
+import { objectIdSchema } from './schema';
 
 export const TopicValidationSchema = z.object({
     name: z
@@ -43,10 +44,6 @@ export const TopicValidationPUTSchema = z.object({
     })
 });
 
-// * Reusable check for a valid MongoDB ObjectId string (24 hex characters).
-// * Kept dependency-light (no `mongoose` import) since this file may run in
-// * contexts where pulling in the full driver isn't desirable.
-const objectIdSchema = z.string().regex(/^[a-f\d]{24}$/i, 'Must be a valid Mongo ObjectId.');
 
 /**
  * ! PUT /api/topics request body schema

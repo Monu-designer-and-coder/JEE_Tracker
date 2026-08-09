@@ -1,9 +1,10 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import dbConn from "@/lib/dbConn";
-import ChapterModel, { currentChapterStatus } from "@/model/chapters.model";
+import ChapterModel from "@/model/chapters.model";
 import { CHAPTER_COMPLETION_SEQUENCE } from "@/config/constants";
 import { chapterStatusUpdateSchema } from '@/schema/studyTask.schema';
 import { NextResponse } from "next/server";
+import { eCurrentChapterStatus } from "@/types/model/chapter.model.types";
 
 // * The 9-tag sequence, split into the 3 "inProgress" rounds it represents.
 const ROUND_1_TAGS = CHAPTER_COMPLETION_SEQUENCE.slice(0, 4); // theory, shortNotes, PYQ_Mains, PYQ_Advanced
@@ -24,7 +25,7 @@ function getCompletedRound(chapter: Record<string, any>): 0 | 1 | 2 | 3 {
 
 // *=====================================================================
 // * PUT /api/study-task/chapter-status
-// * Every currentChapterStatus transition lives behind one `type` switch,
+// * Every eCurrentChapterStatus transition lives behind one `type` switch,
 // * mirroring the style of the existing /api/system route.
 // *=====================================================================
 export async function PUT(request: Request) {
@@ -46,10 +47,10 @@ export async function PUT(request: Request) {
 		// * pending -> upNext
 		// *-------------------------------------------------------------
 		if (type === "markAsUpcoming") {
-			if (chapter.currentChapterStatus !== currentChapterStatus.Pending) {
+			if (chapter.currentChapterStatus !== eCurrentChapterStatus.Pending) {
 				return NextResponse.json({ error: 'Chapter must be "pending" to be marked upcoming' }, { status: 409 });
 			}
-			chapter.currentChapterStatus = currentChapterStatus.UpNext;
+			chapter.currentChapterStatus = eCurrentChapterStatus.UpNext;
 			await chapter.save();
 			return NextResponse.json(chapter, { status: 200 });
 		}
@@ -59,14 +60,14 @@ export async function PUT(request: Request) {
 		// * (both land in the same place, so one action covers both)
 		// *-------------------------------------------------------------
 		if (type === "markAsInProgress") {
-			const validFromStates: string[] = [currentChapterStatus.UpNext, currentChapterStatus.UnFinished];
+			const validFromStates: string[] = [eCurrentChapterStatus.UpNext, eCurrentChapterStatus.UnFinished];
 			if (!validFromStates.includes(chapter.currentChapterStatus)) {
 				return NextResponse.json(
 					{ error: 'Chapter must be "upNext" or "unFinished" to start progress' },
 					{ status: 409 },
 				);
 			}
-			chapter.currentChapterStatus = currentChapterStatus.InProgress;
+			chapter.currentChapterStatus = eCurrentChapterStatus.InProgress;
 			await chapter.save();
 			return NextResponse.json(chapter, { status: 200 });
 		}
@@ -77,7 +78,7 @@ export async function PUT(request: Request) {
 		// * ! Blocked entirely until round 1 (the first 4 tags) is complete.
 		// *-------------------------------------------------------------
 		if (type === "markAsUnfinished") {
-			if (chapter.currentChapterStatus !== currentChapterStatus.InProgress) {
+			if (chapter.currentChapterStatus !== eCurrentChapterStatus.InProgress) {
 				return NextResponse.json({ error: 'Chapter must be "inProgress" for this transition' }, { status: 409 });
 			}
 
@@ -91,9 +92,9 @@ export async function PUT(request: Request) {
 
 			if (round === 3) {
 				// * Final round complete — the spec says "done, not unFinished".
-				chapter.currentChapterStatus = currentChapterStatus.Done;
+				chapter.currentChapterStatus = eCurrentChapterStatus.Done;
 			} else {
-				chapter.currentChapterStatus = currentChapterStatus.UnFinished;
+				chapter.currentChapterStatus = eCurrentChapterStatus.UnFinished;
 				// ! First time this fires (round 1), also flip the chapter's own
 				// ! `done` flag — its own pre-validate hook re-checks the min-4
 				// ! requirement, so this is always safe to set at round >= 1.
@@ -110,7 +111,7 @@ export async function PUT(request: Request) {
 		// * final round; this stays as an explicit fallback).
 		// *-------------------------------------------------------------
 		if (type === "markAsDone") {
-			if (chapter.currentChapterStatus !== currentChapterStatus.UnFinished) {
+			if (chapter.currentChapterStatus !== eCurrentChapterStatus.UnFinished) {
 				return NextResponse.json({ error: 'Chapter must be "unFinished" to be marked done' }, { status: 409 });
 			}
 			const round = getCompletedRound(chapter.toObject());
@@ -120,7 +121,7 @@ export async function PUT(request: Request) {
 					{ status: 400 },
 				);
 			}
-			chapter.currentChapterStatus = currentChapterStatus.Done;
+			chapter.currentChapterStatus = eCurrentChapterStatus.Done;
 			await chapter.save();
 			return NextResponse.json(chapter, { status: 200 });
 		}

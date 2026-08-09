@@ -1,9 +1,14 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import { NextResponse } from 'next/server';
-import SubjectModel, { ISubjectDocument } from '@/model/subject.model';
+import SubjectModel from '@/model/subject.model';
 import dbConn from '@/lib/dbConn';
 import { CreateSubjectSchema, UpdateSubjectSchema } from '@/schema/subject.schema';
 import { GetSubjectResponse } from '@/types/res/GetResponse.types';
+import { ApiResponse } from '@/config/backend/ApiResponse.config';
+import { iApiResponse } from '@/types/backend/apiResponse.types';
+import { ZodSafeParseResult } from 'zod';
+import { subjectSubjectType } from '@/types/schema/subject.schema.types';
+import { iSubjectResponse } from '@/types/res/subject.res.types';
 
 /**
  * * Create a new subject
@@ -11,32 +16,36 @@ import { GetSubjectResponse } from '@/types/res/GetResponse.types';
  */
 export async function POST(request: Request) {
 	try {
-		await dbConn();
 		const payload = await request.json();
 
 		if (!payload) {
 			// ! Bad Request: Missing body
-			return NextResponse.json({ error: 'Request body is missing' }, { status: 400 });
+			return NextResponse.json<iApiResponse>(ApiResponse(false, "Missing Payload Data"), { status: 400 });
 		}
 
 		// * Validate payload
-		const validationResult = CreateSubjectSchema.safeParse(payload);
+		const validationResult: ZodSafeParseResult<subjectSubjectType> = CreateSubjectSchema.safeParse(payload);
 		if (!validationResult.success) {
 			// ! Return detailed validation errors
-			return NextResponse.json(
-				{ errors: validationResult.error.format() },
+			return NextResponse.json<iApiResponse>(
+				ApiResponse(false, validationResult.error.message, validationResult),
 				{ status: 400 }
 			);
 		}
 
+		await dbConn();
+
 		const newSubject = await SubjectModel.create(validationResult.data);
-		return NextResponse.json<ISubjectDocument>(newSubject, { status: 201 });
+		return NextResponse.json<iApiResponse<iSubjectResponse>>(ApiResponse(true, `Successfully Created the document of ${validationResult.data.name}`, {
+			_id: newSubject._id,
+			name: newSubject.name,
+		}), { status: 201 });
 	} catch (error: any) {
 		// ! Handle potential duplicate key errors (MongoDB code 11000)
 		if (error.code === 11000) {
-			return NextResponse.json({ error: 'Subject already exists' }, { status: 409 });
+			return NextResponse.json<iApiResponse>(ApiResponse(false, "subject with the name already exist.", error), { status: 409 });
 		}
-		return NextResponse.json({ error: error.message || 'Internal Server Error' }, { status: 500 });
+		return NextResponse.json(ApiResponse<iApiResponse>(false, error.message || 'Internal Server Error', error), { status: 500 });
 	}
 }
 
@@ -136,20 +145,3 @@ export async function DELETE(request: Request) {
 		return NextResponse.json({ error: error.message || 'Internal Server Error' }, { status: 500 });
 	}
 }
-
-// ! IMPROVEMENTS IMPLEMENTED:
-// * 1. Replaced .aggregate() with .find().lean() in GET for significantly faster data retrieval.
-// * 2. Added Zod schema validation to the PUT route to prevent malformed data insertion.
-// * 3. Wrapped all route handlers in try-catch blocks to prevent unhandled promise rejections.
-// * 4. Standardized variable names (e.g., requestBody -> payload) and response formats.
-// * 5. Added runValidators: true to findByIdAndUpdate to enforce mongoose schema rules on PUT.
-// * 6. Handled MongoDB duplicate key error (11000) explicitly in the POST route.
-
-// ! PERFORMANCE OPTIMIZATIONS MAINTAINED:
-// * 1. Database connection logic (dbConn) is called optimally before query execution.
-// * 2. .lean() is now used across GET, PUT, and DELETE routes to bypass Mongoose hydration overhead.
-
-// ! FUTURE IMPROVEMENTS:
-// TODO: Add caching headers (e.g., Cache-Control) or utilize Next.js unstable_cache for the GET list route.
-// TODO: Implement pagination using the mongooseAggregatePaginate plugin if the subject list grows massive.
-// TODO: Implement Role-Based Access Control (RBAC) middleware to protect POST, PUT, and DELETE routes.

@@ -21,7 +21,6 @@ import { FcDataSheet, FcEditImage } from 'react-icons/fc';
 import { Button } from '../ui/button';
 import Link from 'next/link';
 import { cn } from '@/lib/utils';
-import { syllabusDetailedDataChapter } from '@/types/res/syllabusDataResponse.types';
 import { Switch } from '../ui/switch';
 import { Label } from '../ui/label';
 import {
@@ -69,19 +68,20 @@ import { Controller, useForm } from 'react-hook-form';
 import z from 'zod';
 import { Field, FieldDescription, FieldError, FieldLabel } from '../ui/field';
 import { Input } from '../ui/input';
+import { iDetailedChapterResponse } from '@/types/res/chapter.res.types';
 
 export const ChapterModularUI = ({
 	className,
 	chapterDetails,
 }: {
 	className?: string;
-	chapterDetails: syllabusDetailedDataChapter;
+	chapterDetails: iDetailedChapterResponse;
 }) => {
 	// ! HYDRATION & STATE MANAGEMENT
 	// * Use a single 'mounted' state to prevent React hydration mismatch errors on time-based UI
 	const [isMounted, setIsMounted] = useState(false);
 	const [chapter, setChapter] =
-		useState<syllabusDetailedDataChapter>(chapterDetails);
+		useState<iDetailedChapterResponse>(chapterDetails);
 
 	// * Memoized Axios Configuration - Performance optimization
 	const axiosChapterFormConfigHook = useMemo(
@@ -374,7 +374,7 @@ export const ChapterModularUI = ({
 			case 'done':
 				setChapter((prev) => {
 					const newTopicsList = prev.topicsList.map((item) => {
-						if (item._id == topicId) {
+						if (String(item._id) == topicId) {
 							dataToUpdate.done = !item.done;
 
 							dataToUpdate.theory = undefined;
@@ -413,7 +413,7 @@ export const ChapterModularUI = ({
 			case 'theory':
 				setChapter((prev) => {
 					const newTopicsList = prev.topicsList.map((item) => {
-						if (item._id == topicId) {
+						if (String(item._id) == topicId) {
 							dataToUpdate.theory = !item.theory;
 
 							dataToUpdate.done = undefined;
@@ -454,7 +454,7 @@ export const ChapterModularUI = ({
 				setChapter((prev) => ({
 					...prev,
 					topicsList: prev.topicsList.map((item) => {
-						if (item._id == topicId) {
+						if (String(item._id) == topicId) {
 							dataToUpdate.inTextQuestions = !item.inTextQuestions;
 
 							dataToUpdate.done = undefined;
@@ -483,7 +483,7 @@ export const ChapterModularUI = ({
 				setChapter((prev) => ({
 					...prev,
 					topicsList: prev.topicsList.map((item) => {
-						if (item._id == topicId) {
+						if (String(item._id) == topicId) {
 							dataToUpdate.inClassQuestions = !item.inClassQuestions;
 
 							dataToUpdate.done = undefined;
@@ -524,7 +524,10 @@ export const ChapterModularUI = ({
 			<CardHeader>
 				<CardTitle className='flex items-center gap-3 capitalize'>
 					<FcDataSheet />
-					<Button variant={'ghost'} className='text-lg font-badge capitalize' asChild>
+					<Button
+						variant={'ghost'}
+						className='text-lg font-badge capitalize'
+						asChild>
 						<Link href={'/system/'}>{chapter.name}</Link>
 					</Button>
 				</CardTitle>
@@ -887,7 +890,7 @@ export const ChapterModularUI = ({
 							</DialogHeader>
 							<AddTopicModalForm
 								className='bg-primary/5'
-								chapterId={chapter._id}
+								chapterId={String(chapter._id)}
 							/>
 							<DialogFooter showCloseButton></DialogFooter>
 						</DialogContent>
@@ -909,14 +912,14 @@ export const ChapterModularUI = ({
 						</TableHeader>
 						<TableBody>
 							{chapter.topicsList.map((topic) => (
-								<TableRow key={topic._id}>
+								<TableRow key={String(topic._id)}>
 									<TableCell>{topic.seqNumber}</TableCell>
 									<TableCell className='capitalize'>{topic.name}</TableCell>
 									<TableCell>
 										{' '}
 										<Checkbox
 											onClick={() => {
-												updateTopicTags('theory', topic._id);
+												updateTopicTags('theory', String(topic._id));
 											}}
 											checked={topic.theory}
 										/>{' '}
@@ -925,7 +928,7 @@ export const ChapterModularUI = ({
 										{' '}
 										<Checkbox
 											onClick={() => {
-												updateTopicTags('inTextQuestions', topic._id);
+												updateTopicTags('inTextQuestions', String(topic._id));
 											}}
 											checked={topic.inTextQuestions}
 										/>{' '}
@@ -934,7 +937,7 @@ export const ChapterModularUI = ({
 										{' '}
 										<Checkbox
 											onClick={() => {
-												updateTopicTags('inClassQuestions', topic._id);
+												updateTopicTags('inClassQuestions', String(topic._id));
 											}}
 											checked={topic.inClassQuestions}
 										/>{' '}
@@ -943,7 +946,7 @@ export const ChapterModularUI = ({
 										{' '}
 										<Checkbox
 											onClick={() => {
-												updateTopicTags('done', topic._id);
+												updateTopicTags('done', String(topic._id));
 											}}
 											checked={topic.done}
 										/>{' '}

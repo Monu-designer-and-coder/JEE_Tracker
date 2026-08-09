@@ -1,9 +1,14 @@
-import dbConn from "@/lib/dbConn";
-import ChapterModel from "@/model/chapters.model";
-import { finalResultData, syllabusDetailedData, syllabusDetailedDataChapter } from "@/types/res/syllabusDataResponse.types";
-import { NextResponse } from "next/server";
-
-
+import { ApiResponse } from '@/config/backend/ApiResponse.config';
+import dbConn from '@/lib/dbConn';
+import ChapterModel from '@/model/chapters.model';
+import { getSyllabusDetailsPipeline } from '@/pipelines/syllabus.pipe';
+import { iApiResponse } from '@/types/backend/apiResponse.types';
+import { iDetailedChapterResponse } from '@/types/res/chapter.res.types';
+import {
+	iExtendedSyllabusDetails,
+	iSyllabusDetails,
+} from '@/types/res/syllabus.res.types';
+import { NextResponse } from 'next/server';
 
 /**
  * ! Retrieve topic(s)
@@ -12,187 +17,56 @@ import { NextResponse } from "next/server";
  * @desc Fetches all topics, or a specific topic by ID
  */
 export async function GET() {
-    await dbConn();
+	await dbConn();
 
-    // * CASE 1: Get all topics
-    const topicsList:syllabusDetailedData[] = await ChapterModel.aggregate([
-        {
-            $lookup: {
-                from: "subjects",
-                localField: "subject",
-                foreignField: "_id",
-                as: "subjectDetails",
-                pipeline: [
-                    {
-                        $project: {
-                            _id: 1,
-                            name: 1
-                        }
-                    }
-                ]
-            }
-        },
-        {
-            $addFields: {
-                subjectDetails: {
-                    $first: "$subjectDetails"
-                }
-            }
-        },
-        {
-            $sort: {
-                subject: 1,
-                seqNumber: 1
-            }
-        },
-        {
-            $lookup: {
-                from: "topics",
-                localField: "_id",
-                foreignField: "chapter",
-                as: "topicsList",
-                pipeline: [
-                    {
-                        $project: {
-                            _id: 1,
-                            name: 1,
-                            seqNumber: 1,
-                            done: 1,
-                            theory: 1,
-                            inTextQuestions: 1,
-                            inClassQuestions: 1
-                        }
-                    },
-                    {
-                        $sort: {
-                            chapter: 1,
-                            seqNumber: 1
-                        }
-                    }
-                ]
-            }
-        },
-        {
-            $addFields: {
-                totalTopics: {
-                    $size: "$topicsList"
-                },
-            }
-        },
-        {
-            $group: {
-                _id: "$subject",
-                name: {
-                    $first: "$subjectDetails.name"
-                },
-                totalChapters: {
-                    $sum: 1
-                },
-                completedChapters: {
-                    $sum: {
-                        $cond: [{ $eq: ["$done", true] }, 1, 0]
-                    }
-                },
-                completedTheory: {
-                    $sum: {
-                        $cond: [
-                            { $eq: ["$theory", true] },
-                            1,
-                            0
-                        ]
-                    }
-                },
-                completedMainsPYQs: {
-                    $sum: {
-                        $cond: [
-                            { $eq: ["$PYQ_Mains", true] },
-                            1,
-                            0
-                        ]
-                    }
-                },
-                completedAdvancedPYQs: {
-                    $sum: {
-                        $cond: [
-                            { $eq: ["$PYQ_Advanced", true] },
-                            1,
-                            0
-                        ]
-                    }
-                },
-                chapterList: {
-                    $push: {
-                        _id: "$_id",
-                        seqNumber: "$seqNumber",
-                        name: "$name",
-                        done: "$done",
-                        theory: "$theory",
-                        shortNotes: "$shortNotes",
-                        mindMap: "$mindMap",
-                        DPP1: "$DPP1",
-                        DPP2: "$DPP2",
-                        Module: "$Module",
-                        PYQ_Mains: "$PYQ_Mains",
-                        PYQ_Advanced: "$PYQ_Advanced",
-                        Book: "$Book",
-                        totalTopics: "$totalTopics",
-                        subject: "$subjectDetails",
-                        topicsList: "$topicsList",
-                        currentChapterStatus: "$currentChapterStatus"
-                    }
-                }
-            }
-        },
-        {
-            $project: {
-                _id: 1,
-                name: 1,
-                totalChapters: 1,
-                completedMainsPYQs: 1,
-                completedAdvancedPYQs: 1,
-                completedChapters: 1,
-                completedTheory: 1,
-                chapterList: 1
-            }
-        }
-    ]);
+	// * CASE 1: Get all topics
+	const topicsList: iSyllabusDetails[] = await ChapterModel.aggregate(
+		getSyllabusDetailsPipeline,
+	);
 
-    const ReturnData = topicsList.map((item: syllabusDetailedData) => {
+	const ReturnData: iExtendedSyllabusDetails[] = topicsList.map(
+		(item: iSyllabusDetails) => {
+			const percentChaptersCompleted =
+				(item.completedChapters * 100) / item.totalChapters;
+			const percentTheoryCompleted =
+				(item.completedTheory * 100) / item.totalChapters;
+			const percentPYQsSolved =
+				((item.completedAdvancedPYQs + item.completedMainsPYQs) * 50) /
+				item.totalChapters;
 
-        const percentChaptersCompleted = item.completedChapters * 100 / item.totalChapters
-        const percentTheoryCompleted = item.completedTheory * 100 / item.totalChapters
-        const percentPYQsSolved = (item.completedAdvancedPYQs + item.completedMainsPYQs) * 50 / item.totalChapters
+			item.chapterList = item.chapterList.map((chapter) => {
+				const totalTopicsCompleted = chapter.topicsList.filter(
+					(topic) => topic.done,
+				).length;
+				const totalTopicsCompletedPercentage =
+					(totalTopicsCompleted * 100) / chapter.totalTopics;
+				const totalTopicsTheoryCompleted = chapter.topicsList.filter(
+					(topic) => topic.theory,
+				).length;
+				const totalTopicsTheoryCompletedPercentage =
+					(totalTopicsTheoryCompleted * 100) / chapter.totalTopics;
+				const modifiedChapterList: iDetailedChapterResponse = {
+					...chapter,
+					totalTopicsCompleted,
+					totalTopicsCompletedPercentage,
+					totalTopicsTheoryCompleted,
+					totalTopicsTheoryCompletedPercentage,
+				};
+				return modifiedChapterList;
+			});
 
-        item.chapterList = item.chapterList.map(chapter => {
-            const totalTopicsCompleted = chapter.topicsList.filter(topic => topic.done).length
-            const totalTopicsCompletedPercentage = totalTopicsCompleted * 100 / chapter.totalTopics
-            const totalTopicsTheoryCompleted = chapter.topicsList.filter(topic => topic.theory).length
-            const totalTopicsTheoryCompletedPercentage = totalTopicsTheoryCompleted * 100 / chapter.totalTopics
-            const modifiedChapterList: syllabusDetailedDataChapter = {
-                ...chapter,
-                totalTopicsCompleted,
-                totalTopicsCompletedPercentage,
-                totalTopicsTheoryCompleted,
-                totalTopicsTheoryCompletedPercentage,
-            }
-            return modifiedChapterList
-        })
+			const finalItem: iExtendedSyllabusDetails = {
+				...item,
+				percentChaptersCompleted,
+				percentTheoryCompleted,
+				percentPYQsSolved,
+			};
 
+			return finalItem;
+		},
+	);
 
-        const finalItem: finalResultData = {
-            ...item,
-            percentChaptersCompleted,
-            percentTheoryCompleted,
-            percentPYQsSolved,
-        }
-
-        return finalItem;
-
-    })
-
-    return NextResponse.json(ReturnData);
-
+	return NextResponse.json<iApiResponse<iExtendedSyllabusDetails[]>>(
+		ApiResponse(true, 'fetched Detailed Syllabus Data', ReturnData),
+	);
 }
-
-
-

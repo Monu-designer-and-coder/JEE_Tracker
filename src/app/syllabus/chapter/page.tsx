@@ -7,7 +7,6 @@ import {
 	Card,
 	CardAction,
 	CardContent,
-	CardDescription,
 	CardHeader,
 	CardTitle,
 } from '@/components/ui/card';
@@ -19,23 +18,8 @@ import {
 	SelectValue,
 } from '@/components/ui/select';
 import { Skeleton } from '@/components/ui/skeleton';
-import {
-	Table,
-	TableBody,
-	TableCaption,
-	TableCell,
-	TableHead,
-	TableHeader,
-	TableRow,
-} from '@/components/ui/table';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { axiosConfig } from '@/config/axios.config';
 import { cn } from '@/lib/utils';
-import { getSubjectWiseChapterResponse } from '@/types/res/chapterResponse.types';
-import {
-	subjectsChaptersList,
-	syllabusDetailedDataChapter,
-} from '@/types/res/syllabusDataResponse.types';
 import axios, { AxiosResponse } from 'axios';
 import Link from 'next/link';
 import { useEffect, useState } from 'react';
@@ -45,6 +29,9 @@ import {
 	NativeSelect,
 	NativeSelectOption,
 } from '@/components/ui/native-select';
+import { iApiResponse } from '@/types/backend/apiResponse.types';
+import { iChapterList } from '@/types/res/chapterList.types';
+import { iDetailedChapterResponse } from '@/types/res/chapter.res.types';
 
 export default function SyllabusHomePage() {
 	const subjectList = [
@@ -68,8 +55,8 @@ export default function SyllabusHomePage() {
 	const [isLoading, setIsLoading] = useState<boolean>(true);
 
 	const [selectedChapterData, setSelectedChapterData] =
-		useState<syllabusDetailedDataChapter>({
-			_id: 'chapter_id',
+		useState<iDetailedChapterResponse>({
+			_id: '6a25121bf37357e395a82f16',
 			seqNumber: 0,
 			name: 'Select A Chapter',
 			done: false,
@@ -83,7 +70,10 @@ export default function SyllabusHomePage() {
 			PYQ_Advanced: false,
 			Book: false,
 			totalTopics: 0,
-			subject: { _id: 'subject_id', name: 'Please Select Some Subject' },
+			subject: {
+				_id: '6a25121bf37357e395a82f16',
+				name: 'Please Select Some Subject',
+			},
 			topicsList: [],
 			currentChapterStatus: 'pending',
 			totalTopicsCompleted: 0,
@@ -95,7 +85,7 @@ export default function SyllabusHomePage() {
 	const [selectedChapter, setSelectedChapter] = useState<string>(
 		String('6a25121bf37357e395a82f10'),
 	);
-	const [chaptersList, setChaptersList] = useState<subjectsChaptersList[]>([]);
+	const [chaptersList, setChaptersList] = useState<iChapterList[]>([]);
 	const [selectedSubject, setSelectedSubject] = useState<string>(
 		String('6a25121bf37357e395a82f10'),
 	);
@@ -114,17 +104,19 @@ export default function SyllabusHomePage() {
 					'get',
 				),
 			)
-			.then((response: AxiosResponse<subjectsChaptersList[]>) => {
-				setChaptersList(response.data);
+			.then((response: AxiosResponse<iApiResponse<iChapterList[]>>) => {
+				setChaptersList(response.data.data);
 			})
 			.catch(() => {});
 	}, [selectedSubject]);
 	useEffect(() => {
 		axios
 			.request(axiosConfig(`syllabus/chapter?id=${selectedChapter}`, 'get'))
-			.then((response: AxiosResponse<syllabusDetailedDataChapter>) => {
-				setSelectedChapterData(response.data);
-			})
+			.then(
+				(response: AxiosResponse<iApiResponse<iDetailedChapterResponse>>) => {
+					setSelectedChapterData(response.data.data);
+				},
+			)
 			.catch(() => {});
 	}, [selectedChapter]);
 
@@ -193,8 +185,8 @@ export default function SyllabusHomePage() {
 												}}>
 												{chaptersList.map((selectedChapterFromTheList) => (
 													<NativeSelectOption
-														key={selectedChapterFromTheList._id}
-														value={selectedChapterFromTheList._id}>
+														key={String(selectedChapterFromTheList._id)}
+														value={String(selectedChapterFromTheList._id)}>
 														{selectedChapterFromTheList.name}
 													</NativeSelectOption>
 												))}
@@ -226,7 +218,10 @@ export default function SyllabusHomePage() {
 												disabled={selectedChapterData.seqNumber - 2 < 0}
 												onClick={() => {
 													setSelectedChapter(
-														chaptersList[selectedChapterData.seqNumber - 2]._id,
+														String(
+															chaptersList[selectedChapterData.seqNumber - 2]
+																._id,
+														),
 													);
 												}}>
 												{' '}
@@ -249,7 +244,9 @@ export default function SyllabusHomePage() {
 												}
 												onClick={() => {
 													setSelectedChapter(
-														chaptersList[selectedChapterData.seqNumber]._id,
+														String(
+															chaptersList[selectedChapterData.seqNumber]._id,
+														),
 													);
 												}}>
 												{' '}
@@ -268,178 +265,5 @@ export default function SyllabusHomePage() {
 				)}
 			</section>
 		</main>
-	);
-}
-
-// eslint-disable-next-line @typescript-eslint/no-unused-vars
-function TabsOfChapter_OldLayout() {
-	const [chapterList, setChapterList] = useState<
-		getSubjectWiseChapterResponse[]
-	>([
-		{
-			_id: 'loading',
-			name: 'loading',
-			chapterList: [
-				{
-					_id: '_id',
-					seqNumber: 0,
-					name: 'loading',
-					done: false,
-					theory: false,
-					shortNotes: false,
-					mindMap: false,
-					DPP1: false,
-					DPP2: false,
-					Module: false,
-					PYQ_Mains: false,
-					PYQ_Advanced: false,
-					Book: false,
-				},
-			],
-		},
-	]);
-
-	useEffect(() => {
-		axios
-			.request(axiosConfig('syllabus/chapter?type=subjectWise', 'get'))
-			.then((response: AxiosResponse<getSubjectWiseChapterResponse[]>) => {
-				setChapterList(response.data);
-			});
-	}, []);
-
-	return (
-		<Tabs
-			orientation='horizontal'
-			defaultValue='defaultTab'
-			className='w-full my-4'>
-			<TabsList variant='line'>
-				<TabsTrigger value='defaultTab' disabled>
-					Default
-				</TabsTrigger>
-				{chapterList.map((subject) => (
-					<TabsTrigger
-						className='capitalize'
-						key={subject._id}
-						value={subject.name}>
-						{subject.name}
-					</TabsTrigger>
-				))}
-			</TabsList>
-			<TabsContent value={'defaultTab'}>
-				<Card>
-					<CardHeader>
-						<CardTitle className='text-2xl font-bold bg-linear-to-r from-chart-1 to-primary bg-clip-text text-transparent capitalize'>
-							Select Some Subject
-						</CardTitle>
-						<CardDescription className='text-secondary-foreground'>
-							-------------------------------------------
-						</CardDescription>
-					</CardHeader>
-				</Card>
-			</TabsContent>
-			{chapterList.map((subject) => (
-				<TabsContent key={subject._id} value={subject.name}>
-					<Card className='w-full'>
-						<CardHeader>
-							<CardTitle className='text-2xl font-bold bg-linear-to-r from-chart-1 to-primary bg-clip-text text-transparent capitalize'>
-								{subject.name}
-							</CardTitle>
-							<CardDescription className='text-secondary-foreground'>
-								List of all the chapters of the subject {subject.name}
-							</CardDescription>
-						</CardHeader>
-						<CardContent>
-							<Table className=''>
-								<TableCaption>A list of your chapters.</TableCaption>
-								<TableHeader>
-									<TableRow>
-										<TableHead className='capitalize text-xs'>S.No:</TableHead>
-										<TableHead className='capitalize text-xs'>
-											Chapter Name
-										</TableHead>
-										<TableHead className='capitalize text-xs'>done</TableHead>
-										<TableHead className='capitalize text-xs'>theory</TableHead>
-										<TableHead className='capitalize text-xs'>
-											shortNotes
-										</TableHead>
-										<TableHead className='capitalize text-xs'>
-											mindMap
-										</TableHead>
-										<TableHead className='capitalize text-xs'>DPP1</TableHead>
-										<TableHead className='capitalize text-xs'>DPP2</TableHead>
-										<TableHead className='capitalize text-xs'>Module</TableHead>
-										<TableHead className='capitalize text-xs'>
-											PYQ_Mains
-										</TableHead>
-										<TableHead className='capitalize text-xs'>
-											PYQ_Advanced
-										</TableHead>
-										<TableHead className='capitalize text-xs'>Book</TableHead>
-									</TableRow>
-								</TableHeader>
-								<TableBody>
-									{subject.chapterList.map((chapter) => (
-										<TableRow key={chapter.seqNumber + '-' + chapter.name}>
-											<TableCell>{chapter.seqNumber}</TableCell>
-											<TableCell className='text-xs'>{chapter.name}</TableCell>
-											<TableCell
-												className={cn(
-													'border',
-													chapter.done ? 'bg-green-600' : 'bg-red-600',
-												)}></TableCell>
-											<TableCell
-												className={cn(
-													'border',
-													chapter.theory ? 'bg-green-600' : 'bg-red-600',
-												)}></TableCell>
-											<TableCell
-												className={cn(
-													'border',
-													chapter.shortNotes ? 'bg-green-600' : 'bg-red-600',
-												)}></TableCell>
-											<TableCell
-												className={cn(
-													'border',
-													chapter.mindMap ? 'bg-green-600' : 'bg-red-600',
-												)}></TableCell>
-											<TableCell
-												className={cn(
-													'border',
-													chapter.DPP1 ? 'bg-green-600' : 'bg-red-600',
-												)}></TableCell>
-											<TableCell
-												className={cn(
-													'border',
-													chapter.DPP2 ? 'bg-green-600' : 'bg-red-600',
-												)}></TableCell>
-											<TableCell
-												className={cn(
-													'border',
-													chapter.Module ? 'bg-green-600' : 'bg-red-600',
-												)}></TableCell>
-											<TableCell
-												className={cn(
-													'border',
-													chapter.PYQ_Mains ? 'bg-green-600' : 'bg-red-600',
-												)}></TableCell>
-											<TableCell
-												className={cn(
-													'border',
-													chapter.PYQ_Advanced ? 'bg-green-600' : 'bg-red-600',
-												)}></TableCell>
-											<TableCell
-												className={cn(
-													'border',
-													chapter.Book ? 'bg-green-600' : 'bg-red-600',
-												)}></TableCell>
-										</TableRow>
-									))}
-								</TableBody>
-							</Table>
-						</CardContent>
-					</Card>
-				</TabsContent>
-			))}
-		</Tabs>
 	);
 }

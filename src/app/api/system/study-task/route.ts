@@ -1,11 +1,12 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import dbConn from "@/lib/dbConn";
 import StudyTaskModel, { studyTaskOptionsChapterTags, studyTaskOptionsTopicTags } from "@/model/study-task.model";
-import ChapterModel, { currentChapterStatus } from "@/model/chapters.model";
+import ChapterModel from "@/model/chapters.model";
 import TopicModel from "@/model/topics.model";
 import { NextResponse } from "next/server";
 import { createStudyTaskSchema } from "@/schema/studyTask.schema";
 import { studyTaskListItem } from "@/types/res/studyTaskResponse.types";
+import { eCurrentChapterStatus } from '@/types/model/chapter.model.types';
 
 // *=====================================================================
 // * POST /api/study-task
@@ -29,13 +30,13 @@ export async function POST(request: Request) {
     if (refType === "chapter") {
       // * Pull only what's needed: the owning subject, current status, and the tag itself.
       const chapterDoc = await ChapterModel.findById(refId)
-        .select(`subject currentChapterStatus ${tag}`)
+        .select(`subject eCurrentChapterStatus ${tag}`)
         .lean<any>();
       if (!chapterDoc) {
         return NextResponse.json({ error: "Chapter not found for the given refId" }, { status: 404 });
       }
       // ! Study-tasks only make sense for chapters actively being worked on.
-      if (chapterDoc.currentChapterStatus !== currentChapterStatus.InProgress) {
+      if (chapterDoc.eCurrentChapterStatus !== eCurrentChapterStatus.InProgress) {
         return NextResponse.json({ error: "Chapter is not currently inProgress" }, { status: 409 });
       }
       if (chapterDoc[tag] === true) {

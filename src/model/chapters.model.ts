@@ -1,36 +1,6 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
-import mongoose, { Schema, Document, Types } from 'mongoose';
-
-/**
- * ! Chapter Model Interface
- * Represents a curriculum chapter linked to a subject.
- */
-
-export enum currentChapterStatus {
-    Pending = 'pending', //? first stage
-    UpNext = 'upNext', //? second stage
-    InProgress = 'inProgress', //? third stage
-    UnFinished = 'unFinished', //? fourth stage
-    Done = 'done', //? fifth stage
-}
-
-export interface ChapterModelInterface extends Document {
-    name: string;
-    subject: Types.ObjectId;
-    seqNumber: number;
-    done: boolean;
-    theory: boolean;
-    shortNotes: boolean;
-    mindMap: boolean;
-    DPP1: boolean;
-    DPP2: boolean;
-    Module: boolean;
-    PYQ_Mains: boolean;
-    PYQ_Advanced: boolean;
-    Book: boolean;
-    currentChapterStatus: currentChapterStatus;
-}
-
+import { eCurrentChapterStatus, iChapterModel } from '@/types/model/chapter.model.types';
+import mongoose, { Schema } from 'mongoose';
 
 // * SHARED CONSTANTS: Defined once and reused by both the document-level and
 // * query-level validation hooks so the "done" business rule can never drift
@@ -39,18 +9,18 @@ export interface ChapterModelInterface extends Document {
 const RESOURCE_FIELD_NAMES = [
     'theory',
     'shortNotes',
+    'PYQ_Mains',
+    'PYQ_Advanced',
     'mindMap',
     'DPP1',
     'DPP2',
     'Module',
-    'PYQ_Mains',
-    'PYQ_Advanced',
     'Book',
 ] as const;
 
 const MIN_REQUIRED_RESOURCES = 4;
 
-const ChapterSchema = new Schema<ChapterModelInterface>(
+const ChapterSchema = new Schema<iChapterModel>(
     {
         // * Chapter display name
         name: {
@@ -86,8 +56,8 @@ const ChapterSchema = new Schema<ChapterModelInterface>(
         Book: { type: Boolean, default: false },
         currentChapterStatus: {
             type: String,
-            enum: Object.values(currentChapterStatus),
-            default: currentChapterStatus.Pending
+            enum: Object.values(eCurrentChapterStatus),
+            default: eCurrentChapterStatus.Pending
         }
     },
     { timestamps: true },
@@ -141,7 +111,7 @@ ChapterSchema.pre('validate', function () {
  * ! written straight to the DB with zero validation.
  */
 const runUpdateValidations = async function (
-    this: mongoose.Query<ChapterModelInterface | null, ChapterModelInterface>,
+    this: mongoose.Query<iChapterModel | null, iChapterModel>,
 ) {
     const rawUpdate = this.getUpdate() as any;
     if (!rawUpdate) return;
@@ -204,7 +174,7 @@ ChapterSchema.pre('updateMany', runUpdateValidations);
 // * just makes failures readable instead of a raw MongoDB E11000 error.
 ChapterSchema.pre('save', async function () {
     if (this.isModified('seqNumber') || this.isNew) {
-        const Model = this.constructor as mongoose.Model<ChapterModelInterface>;
+        const Model = this.constructor as mongoose.Model<iChapterModel>;
         const duplicate = await Model.findOne({
             subject: this.subject,
             seqNumber: this.seqNumber,
@@ -226,37 +196,7 @@ ChapterSchema.pre('save', async function () {
 // ? whatever hooks were attached on the FIRST load — your edits won't take
 // ? effect until a full restart clears `mongoose.models`.
 const ChapterModel =
-    (mongoose.models.Chapter as mongoose.Model<ChapterModelInterface>) ||
-    mongoose.model<ChapterModelInterface>('Chapter', ChapterSchema);
+    (mongoose.models.Chapter as mongoose.Model<iChapterModel>) ||
+    mongoose.model<iChapterModel>('Chapter', ChapterSchema);
 
 export default ChapterModel;
-
-// ! IMPROVEMENTS IMPLEMENTED:
-// * 1. Fixed the actual bug: update-pipeline (array-style) updates were silently
-// *    skipping all "done" validation because `typeof [] === 'object'` passed
-// *    the old object-spread logic without ever finding the real $set values.
-// * 2. Unified the "done" business rule into a single `assertDoneRequirementsMet`
-// *    helper, reused by both the document hook and the query hook — removes the
-// *    4-vs-5 threshold mismatch that existed between the two error messages.
-// * 3. Made the compound index `unique: true` so seqNumber collisions are caught
-// *    by the database itself, closing the race-condition window the old
-// *    application-only check left open.
-// * 4. Added Better-Comments-style annotations throughout (!, *, ?, TODO) for
-// *    faster visual scanning of critical logic vs informational notes.
-
-// ! PERFORMANCE OPTIMIZATIONS MAINTAINED:
-// * 1. Early-exit guard in the query hook still skips the extra DB lookup
-// *    entirely when an update doesn't touch any validated field.
-// * 2. The DB lookup now uses `.select(...)` + `.lean()` to fetch only the
-// *    9 boolean fields needed as plain JS objects, instead of hydrating a
-// *    full Mongoose document with every field and method attached.
-// * 3. Compound index on { subject, seqNumber } still services both the
-// *    duplicate check and any subject-scoped sorted queries.
-
-// ! FUTURE IMPROVEMENTS:
-// TODO: Loop over every matched _id for `updateMany` instead of validating
-//       against only the first match returned by the filter.
-// TODO: Add a virtual or populate method to compute total/completed child
-//       Topics for a chapter directly from the model.
-// TODO: Add a cascade-delete (or restrict) hook for child Topics when a
-//       Chapter document is removed.

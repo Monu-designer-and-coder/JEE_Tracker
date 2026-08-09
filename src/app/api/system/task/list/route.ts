@@ -1,6 +1,7 @@
 import { CHAPTER_COMPLETION_SEQUENCE } from "@/config/constants";
 import dbConn from "@/lib/dbConn";
-import ChapterModel, { currentChapterStatus } from "@/model/chapters.model";
+import ChapterModel from "@/model/chapters.model";
+import { eCurrentChapterStatus } from "@/types/model/chapter.model.types";
 import { detailedListOfChaptersInSystem, inProgressChaptersCurrentTaskList, inProgressChaptersTaskList } from "@/types/res/SystemResponse.types";
 import { NextResponse } from "next/server";
 
@@ -11,7 +12,7 @@ export async function GET() {
     const inProgressChapterList: detailedListOfChaptersInSystem[] = await ChapterModel.aggregate([
       {
         $match: {
-          currentChapterStatus: currentChapterStatus.InProgress
+          eCurrentChapterStatus: eCurrentChapterStatus.InProgress
         }
       },
       {
@@ -142,7 +143,7 @@ export async function GET() {
           topicsLeft: 1,
           topicsCompletedPercent: 1,
           topicsLeftPercent: 1,
-          currentChapterStatus: 1,
+          eCurrentChapterStatus: 1,
           subjectDetails: 1
         }
       }

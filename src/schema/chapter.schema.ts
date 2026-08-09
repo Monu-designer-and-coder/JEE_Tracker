@@ -1,4 +1,5 @@
 import { z } from 'zod';
+import { objectIdSchema } from './schema';
 
 export const chapterValidationSchema = z.object({
     name: z
@@ -57,11 +58,7 @@ export const chapterValidationSchemaBackend = z.object({
     PYQ_Advanced: z.boolean().optional(),
     Book: z.boolean().optional(),
 });
-// * Reusable check for a valid MongoDB ObjectId string (24 hex characters).
-// * Kept dependency-light (no `mongoose` import) since this file may run in
-// * contexts where pulling in the full driver isn't desirable.
-const objectIdSchema = z.string().regex(/^[a-f\d]{24}$/i, 'Must be a valid Mongo ObjectId.');
- 
+
 /**
  * ! PUT /api/chapters request body schema
  * @desc Validates a partial chapter update — `_id` identifies the target
@@ -100,26 +97,3 @@ export const chapterValidationPUTSchemaBackend = z.object({
             message: 'At least one field must be provided to update.',
         }),
 });
- 
-// ! IMPROVEMENTS IMPLEMENTED:
-// * 1. Added a reusable `objectIdSchema` and applied it to both `_id` and `subject`,
-// *    so malformed ids fail fast here with a clear 400 instead of surfacing later
-// *    as a raw Mongoose `CastError`.
-// * 2. Fixed a copy-paste bug in the `name` field's error message — it previously
-// *    referenced "subject Length" (wrong field) and contained a typo, "al least".
-// * 3. Replaced `.transform(Number)` with `z.coerce.number().int().min(0, ...)` on
-// *    `seqNumber` for stricter, more descriptive validation (also rejects negatives
-// *    and non-integers, which `transform(Number)` alone would silently accept/NaN on).
-// * 4. Added a `.refine()` guard rejecting an empty `data` object, preventing a
-// *    confusing downstream MongoDB error for a client mistake that's cheap to catch here.
- 
-// ! PERFORMANCE OPTIMIZATIONS MAINTAINED:
-// * 1. Validation remains fully synchronous and dependency-light — no `mongoose`
-// *    import needed just to check ObjectId shape.
- 
-// ! FUTURE IMPROVEMENTS:
-// TODO: Extract `objectIdSchema` into a shared validation utils file and reuse it
-//       across the chapter/topic/subject validation schemas instead of redefining it.
-// TODO: True `seqNumber` uniqueness can't be verified from this file alone — it
-//       still relies on the database-level unique index plus the PUT route's
-//       E11000 error handling to catch conflicts.

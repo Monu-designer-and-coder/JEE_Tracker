@@ -7,12 +7,10 @@ import {
 	CardHeader,
 	CardTitle,
 } from '@/components/ui/card';
-import { finalResultData } from '@/types/res/syllabusDataResponse.types';
 import axios, { AxiosResponse } from 'axios';
 import { useEffect, useState } from 'react';
 import { CardContent } from '@/components/ui/card';
 import { Skeleton } from '@/components/ui/skeleton';
-import { CurrentTaskSubjectStudySessionController } from '@/components/module/current-task.module';
 import {
 	ChartConfig,
 	ChartContainer,
@@ -24,6 +22,8 @@ import {
 import { Bar, BarChart, CartesianGrid, XAxis } from 'recharts';
 import { Badge } from '@/components/ui/badge';
 import { Progress } from '@/components/ui/progress';
+import { iApiResponse } from '@/types/backend/apiResponse.types';
+import { iExtendedSyllabusDetails } from '@/types/res/syllabus.res.types';
 
 export default function SyllabusHomePage() {
 	interface iChartData {
@@ -40,7 +40,9 @@ export default function SyllabusHomePage() {
 	const [isMounted, setIsMounted] = useState(false);
 	const [isLoading, setIsLoading] = useState<boolean>(true);
 
-	const [syllabusData, setSyllabusData] = useState<finalResultData[]>([]);
+	const [syllabusData, setSyllabusData] = useState<iExtendedSyllabusDetails[]>(
+		[],
+	);
 	const [chartData, setChartData] = useState<iChartData[]>([]);
 
 	const chartConfig = {
@@ -71,9 +73,11 @@ export default function SyllabusHomePage() {
 		setIsMounted(true);
 		setIsLoading(false);
 
-		axios.get('/api/syllabus').then((res: AxiosResponse<finalResultData[]>) => {
-			setSyllabusData(res.data);
-		});
+		axios
+			.get('/api/syllabus')
+			.then((res: AxiosResponse<iApiResponse<iExtendedSyllabusDetails[]>>) => {
+				setSyllabusData(res.data.data);
+			});
 	}, []);
 
 	useEffect(() => {
@@ -162,8 +166,9 @@ export default function SyllabusHomePage() {
 								</ChartContainer>
 							</CardContent>
 						</Card>
-						<CurrentTaskSubjectStudySessionController className='w-full col-span-4' />
-						<Card size='sm' className='col-span-8 border border-primary/50 bg-primary/10'>
+						<Card
+							size='sm'
+							className='col-span-12 border border-primary/50 bg-primary/10'>
 							<CardHeader>
 								<CardTitle>Topics Details:</CardTitle>
 							</CardHeader>
@@ -193,7 +198,7 @@ export default function SyllabusHomePage() {
 										totalTopicsInTheSubject;
 									return (
 										<div
-											key={subject._id}
+											key={String(subject._id)}
 											className='w-full rounded-full border border-primary/30  px-10 py-6 space-y-4 flex items-center justify-center gap-2'>
 											<div className='w-1/2'>
 												<div className='flex justify-between items-end text-xs font-medium'>

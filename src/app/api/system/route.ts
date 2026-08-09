@@ -1,9 +1,10 @@
 import dbConn from "@/lib/dbConn";
-import ChapterModel, { currentChapterStatus } from "@/model/chapters.model";
+import ChapterModel from "@/model/chapters.model";
 import { systemPUTRequestSchema } from "@/schema/system.schema";
 import { syllabusDetailedDataChapter } from "@/types/res/syllabusDataResponse.types";
 import { getPendingChapter, getPendingChapterSubjectWiseList } from "@/types/res/SystemResponse.types";
 import { NextResponse } from "next/server";
+import { eCurrentChapterStatus } from '@/types/model/chapter.model.types';
 
 export async function GET(request: Request) {
     await dbConn();
@@ -45,7 +46,7 @@ export async function GET(request: Request) {
                 },
                 {
                     $match: {
-                        currentChapterStatus: currentChapterStatus.Pending
+                        eCurrentChapterStatus: eCurrentChapterStatus.Pending
                     }
                 },
                 {
@@ -101,7 +102,7 @@ export async function GET(request: Request) {
                 },
                 {
                     $match: {
-                        currentChapterStatus: currentChapterStatus.UnFinished
+                        eCurrentChapterStatus: eCurrentChapterStatus.UnFinished
                     }
                 },
                 {
@@ -128,7 +129,7 @@ export async function GET(request: Request) {
             const ReturnData: getPendingChapter[] = await ChapterModel.aggregate([
                 {
                     $match: {
-                        currentChapterStatus: currentChapterStatus.UpNext
+                        eCurrentChapterStatus: eCurrentChapterStatus.UpNext
                     }
                 },
                 {
@@ -150,7 +151,7 @@ export async function GET(request: Request) {
             const ReturnData: getPendingChapter[] = await ChapterModel.aggregate([
                 {
                     $match: {
-                        currentChapterStatus: currentChapterStatus.Done
+                        eCurrentChapterStatus: eCurrentChapterStatus.Done
                     }
                 },
                 {
@@ -172,7 +173,7 @@ export async function GET(request: Request) {
         const ReturnData: syllabusDetailedDataChapter[] = await ChapterModel.aggregate([
             {
                 $match: {
-                    currentChapterStatus: currentChapterStatus.InProgress
+                    eCurrentChapterStatus: eCurrentChapterStatus.InProgress
                 }
             },
             {
@@ -261,7 +262,7 @@ export async function GET(request: Request) {
                     totalTopics: 1,
                     subject: 1,
                     topicsList: 1,
-                    currentChapterStatus: 1
+                    eCurrentChapterStatus: 1
                 }
             },
             {
@@ -351,7 +352,7 @@ export async function PUT(request: Request) {
         if (validationResult.data.type === "addChapterToSystem" && validationResult.data._id) {
             const updatedChapterRecord = await ChapterModel.findByIdAndUpdate(
                 validationResult.data._id,
-                { currentChapterStatus: currentChapterStatus.InProgress },
+                { eCurrentChapterStatus: eCurrentChapterStatus.InProgress },
             ).lean();
 
             if (!updatedChapterRecord) {
@@ -363,7 +364,7 @@ export async function PUT(request: Request) {
         if (validationResult.data.type === "markChapterAsUnfinished" && validationResult.data._id) {
             const updatedChapterRecord = await ChapterModel.findByIdAndUpdate(
                 validationResult.data._id,
-                { currentChapterStatus: currentChapterStatus.UnFinished },
+                { eCurrentChapterStatus: eCurrentChapterStatus.UnFinished },
             ).lean();
 
             if (!updatedChapterRecord) {
@@ -375,7 +376,7 @@ export async function PUT(request: Request) {
         if (validationResult.data.type === "markChapterAsUpComing" && validationResult.data._id) {
             const updatedChapterRecord = await ChapterModel.findByIdAndUpdate(
                 validationResult.data._id,
-                { currentChapterStatus: currentChapterStatus.UpNext },
+                { eCurrentChapterStatus: eCurrentChapterStatus.UpNext },
             ).lean();
 
             if (!updatedChapterRecord) {

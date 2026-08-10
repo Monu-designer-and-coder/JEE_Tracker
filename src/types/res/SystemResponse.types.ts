@@ -1,6 +1,6 @@
-import { currentChapterStatus } from "@/model/chapters.model";
 import { getTopicResponse } from "./topicsOrganized.types";
 import { GetSubjectResponse } from "./GetResponse.types";
+import { eCurrentChapterStatus } from '@/types/model/chapter.model.types';
 
 export interface getPendingChapter {
     _id: string;
@@ -31,7 +31,7 @@ export interface detailedListOfChaptersInSystem extends getPendingChapter {
     topicsLeft: number;
     topicsCompletedPercent: number;
     topicsLeftPercent: number;
-    currentChapterStatus: currentChapterStatus;
+    currentChapterStatus: eCurrentChapterStatus;
     subjectDetails: GetSubjectResponse;
 }
 

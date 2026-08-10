@@ -13,10 +13,6 @@ import {
 import { Skeleton } from '@/components/ui/skeleton';
 import { axiosConfig } from '@/config/axios.config';
 import { chapterStatusUpdateSchema } from '@/schema/studyTask.schema';
-import {
-	getPendingChapter,
-	getPendingChapterSubjectWiseList,
-} from '@/types/res/SystemResponse.types';
 import axios, { AxiosResponse } from 'axios';
 // * 1. Third-party & React imports
 import { useState, useEffect, useMemo } from 'react';
@@ -24,7 +20,6 @@ import { FcRight } from 'react-icons/fc';
 import z from 'zod';
 import { Badge } from '@/components/ui/badge';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { syllabusDetailedDataChapter } from '@/types/res/syllabusDataResponse.types';
 import {
 	Carousel,
 	CarouselContent,
@@ -34,14 +29,18 @@ import {
 } from '@/components/ui/carousel';
 import { ChapterModularUI } from '@/components/module/chapter.module';
 import Fade from 'embla-carousel-fade';
+import { interleaveArrays } from '@/lib/helpers';
+import { iApiResponse } from '@/types/backend/apiResponse.types';
+import { iSubjectWiseChaptersListByChapterStatus } from '@/types/res/system.res.types';
+import { iDetailedChapterResponse } from '@/types/res/chapter.res.types';
 
 export default function Home() {
 	// ! HYDRATION & STATE MANAGEMENT
 	// * Use a single 'mounted' state to prevent React hydration mismatch errors on time-based UI
 	const [isMounted, setIsMounted] = useState(false);
 
-	const [pendingChapterSubjectWiseList, setPendingChapterSubjectWiseList] =
-		useState<getPendingChapterSubjectWiseList[]>([
+	const [pendingChapterList, setPendingChapterList] =
+		useState<iSubjectWiseChaptersListByChapterStatus[]>([
 			{
 				_id: 'loading',
 				name: 'loading',
@@ -55,59 +54,88 @@ export default function Home() {
 			},
 		]);
 	const [InProgressChaptersList, setInProgressChaptersList] = useState<
-		syllabusDetailedDataChapter[]
+		iDetailedChapterResponse[]
 	>([]);
 	const [upcomingChaptersList, setUpcomingChaptersList] = useState<
-		getPendingChapter[]
-	>([
-		{
-			_id: '_id',
-			seqNumber: 0,
-			name: 'loading',
-		},
-	]);
+		iSubjectWiseChaptersListByChapterStatus[]
+	>([]);
 	const [unfinishedChaptersList, setUnfinishedChaptersList] = useState<
-		getPendingChapterSubjectWiseList[]
+		iSubjectWiseChaptersListByChapterStatus[]
 	>([]);
 	const [completedChaptersList, setCompletedChaptersList] = useState<
-		getPendingChapter[]
-	>([
-		{
-			_id: '_id',
-			seqNumber: 0,
-			name: 'loading',
-		},
-	]);
+		iSubjectWiseChaptersListByChapterStatus[]
+	>([]);
+
+	function fetchInprogressChapters() {
+		axios
+			.request(axiosConfig('system', 'get'))
+			.then(
+				(response: AxiosResponse<iApiResponse<iDetailedChapterResponse[]>>) => {
+					setInProgressChaptersList(response.data.data);
+				},
+			);
+	}
+	function fetchUpComingChapters() {
+		axios
+			.request(axiosConfig('system?type=getUpcomingList', 'get'))
+			.then(
+				(
+					response: AxiosResponse<
+						iApiResponse<iSubjectWiseChaptersListByChapterStatus[]>
+					>,
+				) => {
+					setUpcomingChaptersList(response.data.data);
+				},
+			);
+	}
+	function fetchUnfinishedChapters() {
+		axios
+			.request(axiosConfig('system?type=getUnfinishedList', 'get'))
+			.then(
+				(
+					response: AxiosResponse<
+						iApiResponse<iSubjectWiseChaptersListByChapterStatus[]>
+					>,
+				) => {
+					setUnfinishedChaptersList(response.data.data);
+				},
+			);
+	}
+	function fetchCompletedChapters() {
+		axios
+			.request(axiosConfig('system?type=getCompletedList', 'get'))
+			.then(
+				(
+					response: AxiosResponse<
+						iApiResponse<iSubjectWiseChaptersListByChapterStatus[]>
+					>,
+				) => {
+					setCompletedChaptersList(response.data.data);
+				},
+			);
+	}
+	function fetchPendingChapters() {
+		axios
+			.request(axiosConfig('system?type=getPendingList', 'get'))
+			.then(
+				(
+					response: AxiosResponse<
+						iApiResponse<iSubjectWiseChaptersListByChapterStatus[]>
+					>,
+				) => {
+					setPendingChapterList(response.data.data);
+				},
+			);
+	}
 
 	// ! SIDE EFFECTS
 	useEffect(() => {
 		setIsMounted(true);
-
-		axios
-			.request(axiosConfig('system?type=getPendingList', 'get'))
-			.then((response: AxiosResponse<getPendingChapterSubjectWiseList[]>) => {
-				setPendingChapterSubjectWiseList(response.data);
-			});
-		axios
-			.request(axiosConfig('system?type=getUpcomingList', 'get'))
-			.then((response: AxiosResponse<getPendingChapter[]>) => {
-				setUpcomingChaptersList(response.data);
-			});
-		axios
-			.request(axiosConfig('system', 'get'))
-			.then((response: AxiosResponse<syllabusDetailedDataChapter[]>) => {
-				setInProgressChaptersList(response.data);
-			});
-		axios
-			.request(axiosConfig('system?type=getUnfinishedList', 'get'))
-			.then((response: AxiosResponse<getPendingChapterSubjectWiseList[]>) => {
-				setUnfinishedChaptersList(response.data);
-			});
-		axios
-			.request(axiosConfig('system?type=getCompletedList', 'get'))
-			.then((response: AxiosResponse<getPendingChapter[]>) => {
-				setCompletedChaptersList(response.data);
-			});
+		fetchInprogressChapters();
+		fetchUpComingChapters();
+		fetchUnfinishedChapters();
+		fetchCompletedChapters();
+		fetchPendingChapters();
 	}, []);
 
 	// * Memoized Axios Configuration - Performance optimization
@@ -130,16 +158,8 @@ export default function Home() {
 			data,
 		};
 		await axios.request(config);
-		axios
-			.request(axiosConfig('system?type=getPendingList', 'get'))
-			.then((response: AxiosResponse<getPendingChapterSubjectWiseList[]>) => {
-				setPendingChapterSubjectWiseList(response.data);
-			});
-		axios
-			.request(axiosConfig('system?type=getUpcomingList', 'get'))
-			.then((response: AxiosResponse<getPendingChapter[]>) => {
-				setUpcomingChaptersList(response.data);
-			});
+		fetchUpComingChapters();
+		fetchPendingChapters();
 	}
 	async function markChapterInProgress(chapterId: string) {
 		type markChapterUpcomingType = z.infer<typeof chapterStatusUpdateSchema>;
@@ -152,16 +172,8 @@ export default function Home() {
 			data,
 		};
 		await axios.request(config);
-		axios
-			.request(axiosConfig('system', 'get'))
-			.then((response: AxiosResponse<syllabusDetailedDataChapter[]>) => {
-				setInProgressChaptersList(response.data);
-			});
-		axios
-			.request(axiosConfig('system?type=getUpcomingList', 'get'))
-			.then((response: AxiosResponse<getPendingChapter[]>) => {
-				setUpcomingChaptersList(response.data);
-			});
+		fetchInprogressChapters();
+		fetchUpComingChapters();
 	}
 
 	// ! HYDRATION FALLBACK
@@ -191,7 +203,7 @@ export default function Home() {
 							Pending Chapters
 							<Badge>
 								{
-									pendingChapterSubjectWiseList
+									pendingChapterList
 										.map((subject) => subject.chapterList)
 										.flat().length
 								}
@@ -200,7 +212,7 @@ export default function Home() {
 					</CardHeader>
 					<CardContent className='gap-2 flex flex-col'>
 						{interleaveArrays(
-							pendingChapterSubjectWiseList.map(
+							pendingChapterList.map(
 								(subject) => subject.chapterList,
 							),
 						).map((chapter, index) => (
@@ -229,11 +241,20 @@ export default function Home() {
 					<Card className='w-full h-1/2 overflow-scroll scroll-smooth no-scrollbar'>
 						<CardHeader>
 							<CardTitle>
-								Up coming Chapters <Badge>{upcomingChaptersList.length}</Badge>
+								Up coming Chapters{' '}
+								<Badge>
+									{
+										upcomingChaptersList
+											.map((subject) => subject.chapterList)
+											.flat().length
+									}
+								</Badge>
 							</CardTitle>
 						</CardHeader>
 						<CardContent className='gap-2 flex flex-col'>
-							{upcomingChaptersList.map((chapter, index) => (
+							{interleaveArrays(
+								upcomingChaptersList.map((subject) => subject.chapterList),
+							).map((chapter, index) => (
 								<Item key={chapter._id} variant={'outline'}>
 									<ItemMedia variant='icon'>
 										{index + 1}
@@ -264,7 +285,7 @@ export default function Home() {
 						</CardHeader>
 						<CardContent className='gap-2 flex flex-col'>
 							{InProgressChaptersList.map((chapter, index) => (
-								<Item key={chapter._id} variant={'outline'}>
+								<Item key={String(chapter._id)} variant={'outline'}>
 									<ItemMedia variant='icon'>
 										{index + 1}
 										<FcRight />
@@ -315,11 +336,20 @@ export default function Home() {
 				<Card className='col-span-12 row-span-2 overflow-scroll scroll-smooth no-scrollbar'>
 					<CardHeader>
 						<CardTitle>
-							Completed Chapters<Badge>{completedChaptersList.length}</Badge>
+							Completed Chapters
+							<Badge>
+								{
+									completedChaptersList
+										.map((subject) => subject.chapterList)
+										.flat().length
+								}
+							</Badge>
 						</CardTitle>
 					</CardHeader>
 					<CardContent className='gap-2 flex flex-col'>
-						{completedChaptersList.map((chapter, index) => (
+						{interleaveArrays(
+							completedChaptersList.map((subject) => subject.chapterList),
+						).map((chapter, index) => (
 							<Item key={chapter._id} variant={'outline'}>
 								<ItemMedia variant='icon'>
 									{index + 1} <FcRight />
@@ -337,10 +367,10 @@ export default function Home() {
 			</TabsContent>
 			<TabsContent value='currentChapters' className='py-4'>
 				<Container className='w-[95%] mx-auto	'>
-					<Carousel plugins={[Fade(),]}>
+					<Carousel plugins={[Fade()]}>
 						<CarouselContent>
 							{InProgressChaptersList.map((chapter) => (
-								<CarouselItem key={chapter._id}>
+								<CarouselItem key={String(chapter._id)}>
 									<ChapterModularUI
 										chapterDetails={chapter}
 										className='w-full h-full'
@@ -355,34 +385,4 @@ export default function Home() {
 			</TabsContent>
 		</Tabs>
 	);
-}
-
-function interleaveArrays<T>(arrays: T[][]): T[] {
-	let totalElements = 0;
-	let maxLength = 0;
-
-	// 1. Calculate dimensions to pre-allocate memory and find the longest array
-	for (let i = 0; i < arrays.length; i++) {
-		const len = arrays[i].length;
-		totalElements += len;
-		if (len > maxLength) {
-			maxLength = len;
-		}
-	}
-
-	// 2. Pre-allocate the result array for maximum performance
-	const result = new Array<T>(totalElements);
-	let currentIndex = 0;
-
-	// 3. Loop column-by-column, then row-by-row
-	for (let col = 0; col < maxLength; col++) {
-		for (let row = 0; row < arrays.length; row++) {
-			// Only read if the current array actually has an element at this column index
-			if (col < arrays[row].length) {
-				result[currentIndex++] = arrays[row][col];
-			}
-		}
-	}
-
-	return result;
 }

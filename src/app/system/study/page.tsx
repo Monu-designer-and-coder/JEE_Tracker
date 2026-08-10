@@ -10,7 +10,6 @@ import {
 } from '@/components/ui/card';
 import { Skeleton } from '@/components/ui/skeleton';
 import { axiosConfig } from '@/config/axios.config';
-import { syllabusDetailedDataChapter } from '@/types/res/syllabusDataResponse.types';
 import axios, { AxiosResponse } from 'axios';
 import { useEffect, useMemo, useState } from 'react';
 import { CardTitle } from '@/components/ui/card';
@@ -30,9 +29,6 @@ import {
 import {
 	chapterStatusUpdateSchema,
 	createStudyTaskSchema,
-	studyTaskOptions,
-	studyTaskOptionsChapterTags,
-	studyTaskOptionsTopicTags,
 } from '@/schema/studyTask.schema';
 import z from 'zod';
 import { toast } from 'react-toastify';
@@ -44,8 +40,15 @@ import {
 	DialogTitle,
 	DialogTrigger,
 } from '@/components/ui/dialog';
-import { studyTaskListItem } from '@/types/res/studyTaskResponse.types';
 import { AggregatePaginateResult } from 'mongoose';
+import {
+	eStudyTaskOptions,
+	eStudyTaskOptionsChapterTags,
+	eStudyTaskOptionsTopicTags,
+} from '@/types/model/study-task.model.types';
+import { iApiResponse } from '@/types/backend/apiResponse.types';
+import { iStudyTaskListItem } from '@/types/res/system.res.types';
+import { iDetailedChapterResponse } from '@/types/res/chapter.res.types';
 
 export default function Page() {
 	// ! HYDRATION & STATE MANAGEMENT
@@ -53,10 +56,10 @@ export default function Page() {
 	const [isMounted, setIsMounted] = useState(false);
 
 	const [InProgressChaptersList, setInProgressChaptersList] = useState<
-		syllabusDetailedDataChapter[]
+		iDetailedChapterResponse[]
 	>([]);
 	const [CurrentTaskList, setCurrentTaskList] = useState<
-		AggregatePaginateResult<studyTaskListItem>
+		AggregatePaginateResult<iStudyTaskListItem>
 	>({
 		docs: [],
 		totalDocs: 0,
@@ -89,18 +92,22 @@ export default function Page() {
 	function fetchTaskLists() {
 		axios
 			.request(axiosConfig('system', 'get'))
-			.then((response: AxiosResponse<syllabusDetailedDataChapter[]>) => {
-				setInProgressChaptersList(response.data);
-			});
+			.then(
+				(response: AxiosResponse<iApiResponse<iDetailedChapterResponse[]>>) => {
+					setInProgressChaptersList(response.data.data);
+				},
+			);
 	}
 	function fetchCurrentTasksList() {
 		axios
 			.request(axiosConfig('system/study-task', 'get'))
 			.then(
 				(
-					response: AxiosResponse<AggregatePaginateResult<studyTaskListItem>>,
+					response: AxiosResponse<
+						iApiResponse<AggregatePaginateResult<iStudyTaskListItem>>
+					>,
 				) => {
-					setCurrentTaskList(response.data);
+					setCurrentTaskList(response.data.data);
 				},
 			);
 	}
@@ -129,9 +136,9 @@ export default function Page() {
 			});
 	}
 	async function handleCreateStudyTask(
-		refType: studyTaskOptions,
+		refType: eStudyTaskOptions,
 		refId: string,
-		tag: studyTaskOptionsTopicTags | studyTaskOptionsChapterTags,
+		tag: eStudyTaskOptionsTopicTags | eStudyTaskOptionsChapterTags,
 	) {
 		type createStudyTaskSchemaType = z.infer<typeof createStudyTaskSchema>;
 		const data: createStudyTaskSchemaType = {
@@ -187,7 +194,7 @@ export default function Page() {
 				<CardContent className='flex flex-col gap-1'>
 					<Container className='flex gap-2'>
 						{InProgressChaptersList.map((chapter, index) => (
-							<Item key={chapter._id} variant={'outline'}>
+							<Item key={String(chapter._id)} variant={'outline'}>
 								<ItemMedia variant='icon'>
 									{index + 1}
 									<FcRight />
@@ -199,7 +206,7 @@ export default function Page() {
 									<Button
 										size={'sm'}
 										onClick={() => {
-											handleMarkAsUnfinished(chapter._id);
+											handleMarkAsUnfinished(String(chapter._id));
 										}}>
 										Mark Unfinished
 									</Button>
@@ -230,7 +237,7 @@ export default function Page() {
 			<Container className='w-full grid grid-cols-2 h-[70%] gap-4 overflow-scroll no-scrollbar'>
 				{InProgressChaptersList.map((chapter) => {
 					return (
-						<Card key={chapter._id} className='w-full'>
+						<Card key={String(chapter._id)} className='w-full'>
 							<CardHeader>
 								<CardTitle className='uppercase'>{chapter.name}</CardTitle>
 								<CardDescription>
@@ -245,7 +252,7 @@ export default function Page() {
 										{chapter.topicsList
 											.filter((topic) => !topic.done)
 											.map((filteredTopic, index) => (
-												<Item key={filteredTopic._id}>
+												<Item key={String(filteredTopic._id)}>
 													<ItemContent>
 														<ItemTitle className='capitalize'>
 															{filteredTopic.name}
@@ -261,7 +268,7 @@ export default function Page() {
 																			CurrentTaskList.docs.filter(
 																				(task) =>
 																					String(task.refDetails.chapter) ==
-																					String(chapter._id),
+																					String(String(chapter._id)),
 																			).length,
 																		)
 																	}
@@ -284,14 +291,14 @@ export default function Page() {
 																		(tag) => !filteredTopic[tag],
 																	).map((tag, index) => (
 																		<Button
-																			key={filteredTopic._id + tag}
+																			key={String(filteredTopic._id) + tag}
 																			disabled={
 																				Boolean(index) ||
 																				Boolean(
 																					CurrentTaskList.docs.filter(
 																						(task) =>
 																							String(task.refDetails.chapter) ==
-																							String(chapter._id),
+																							String(String(chapter._id)),
 																					).length,
 																				)
 																			}
@@ -299,13 +306,13 @@ export default function Page() {
 																			size={'sm'}
 																			onClick={() => {
 																				handleCreateStudyTask(
-																					studyTaskOptions.Topic,
-																					filteredTopic._id,
+																					eStudyTaskOptions.Topic,
+																					String(filteredTopic._id),
 																					tag === 'theory'
-																						? studyTaskOptionsTopicTags.Theory
+																						? eStudyTaskOptionsTopicTags.Theory
 																						: tag === 'inClassQuestions'
-																							? studyTaskOptionsTopicTags.InClassQuestions
-																							: studyTaskOptionsTopicTags.InTextQuestions,
+																							? eStudyTaskOptionsTopicTags.InClassQuestions
+																							: eStudyTaskOptionsTopicTags.InTextQuestions,
 																				);
 																			}}>
 																			{tag}
@@ -329,7 +336,7 @@ export default function Page() {
 										{CHAPTER_COMPLETION_SEQUENCE.filter(
 											(tag) => !chapter[tag],
 										).map((tag, index) => (
-											<Item key={chapter._id + tag}>
+											<Item key={String(chapter._id) + tag}>
 												<ItemContent>
 													<ItemTitle className='capitalize'>{tag}</ItemTitle>
 												</ItemContent>
@@ -353,25 +360,25 @@ export default function Page() {
 														size={'sm'}
 														onClick={() => {
 															handleCreateStudyTask(
-																studyTaskOptions.Chapter,
-																chapter._id,
+																eStudyTaskOptions.Chapter,
+																String(chapter._id),
 																tag === 'theory'
-																	? studyTaskOptionsChapterTags.Theory
+																	? eStudyTaskOptionsChapterTags.Theory
 																	: tag === 'shortNotes'
-																		? studyTaskOptionsChapterTags.ShortNotes
+																		? eStudyTaskOptionsChapterTags.ShortNotes
 																		: tag === 'PYQ_Advanced'
-																			? studyTaskOptionsChapterTags.PYQ_Advanced
+																			? eStudyTaskOptionsChapterTags.PYQ_Advanced
 																			: tag === 'PYQ_Mains'
-																				? studyTaskOptionsChapterTags.PYQ_Mains
+																				? eStudyTaskOptionsChapterTags.PYQ_Mains
 																				: tag === 'Book'
-																					? studyTaskOptionsChapterTags.Book
+																					? eStudyTaskOptionsChapterTags.Book
 																					: tag === 'DPP1'
-																						? studyTaskOptionsChapterTags.DPP1
+																						? eStudyTaskOptionsChapterTags.DPP1
 																						: tag === 'DPP2'
-																							? studyTaskOptionsChapterTags.DPP2
+																							? eStudyTaskOptionsChapterTags.DPP2
 																							: tag === 'Module'
-																								? studyTaskOptionsChapterTags.Module
-																								: studyTaskOptionsChapterTags.mindMap,
+																								? eStudyTaskOptionsChapterTags.Module
+																								: eStudyTaskOptionsChapterTags.mindMap,
 															);
 														}}>
 														Start

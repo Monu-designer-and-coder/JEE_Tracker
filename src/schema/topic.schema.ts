@@ -29,7 +29,7 @@ export const TopicBackendValidationSchema = z.object({
 });
 
 export const TopicValidationPUTSchema = z.object({
-    _id: z.string(),
+    _id: objectIdSchema,
     data: z.object({
         name: z
             .string()
@@ -52,7 +52,7 @@ export const TopicValidationPUTSchema = z.object({
  */
 
 export const TopicValidationPUTSchemaBackend = z.object({
-    _id: z.string(),
+    _id: objectIdSchema,
     data: z.object({
         name: z
             .string()

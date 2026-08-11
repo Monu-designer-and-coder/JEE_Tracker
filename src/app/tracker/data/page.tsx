@@ -16,10 +16,8 @@ import {
 	CardTitle,
 } from '@/components/ui/card';
 import { axiosConfig } from '@/config/axios.config';
-import { getSubjectStreakByDateResponse } from '@/types/res/subjectStreak.types';
 import { cn } from '@/lib/utils';
 import Link from 'next/link';
-import { GetSubjectResponse } from '@/types/res/GetResponse.types';
 import { Skeleton } from '@/components/ui/skeleton';
 import { FcLink, FcOpenedFolder } from 'react-icons/fc';
 import { Container } from '@/components/base/Container.base.component';
@@ -32,17 +30,10 @@ import {
 	DialogTitle,
 	DialogTrigger,
 } from '@/components/ui/dialog';
+import { iApiResponse } from '@/types/backend/apiResponse.types';
+import { AggregatePaginateResult } from 'mongoose';
+import { iDailyRecordDocument, iExtendedDetailedSubjectStreakDocumentResponse } from '@/types/res/subjectStreak.res';
 
-// * Standardized structural definitions describing expected paginated envelopes
-interface PaginatedAPIResponseEnvelope<T> {
-	data: T[];
-	pagination: {
-		page: number;
-		limit: number;
-		totalItems: number;
-		hasMore: boolean;
-	};
-}
 
 // * ==========================================================================
 // * Main Component: Tracker Dashboard
@@ -50,7 +41,7 @@ interface PaginatedAPIResponseEnvelope<T> {
 export default function Tracker() {
 	// * State Management
 	const [subjectStreaks, setSubjectStreaks] = useState<
-		getSubjectStreakByDateResponse[]
+		iDailyRecordDocument[]
 	>([]);
 	const [isLoading, setIsLoading] = useState<boolean>(true);
 
@@ -70,7 +61,7 @@ export default function Tracker() {
 	// * Recursively syncs all structural pagination loops in the background with zero visible UI changes
 	const fetchTodayStreaksIncremental = async (
 		targetPageNumber: number,
-		accumulatedData: getSubjectStreakByDateResponse[],
+		accumulatedData: iDailyRecordDocument[],
 	) => {
 		try {
 			if (targetPageNumber === 1) {
@@ -78,15 +69,15 @@ export default function Tracker() {
 			}
 
 			const serviceResponse: AxiosResponse<
-				PaginatedAPIResponseEnvelope<getSubjectStreakByDateResponse>
+				iApiResponse<AggregatePaginateResult<iDailyRecordDocument>>
 			> = await axios.request(
 				axiosConfig(
-					`subjectStreak?type=byDate&page=${targetPageNumber}&limit=50`,
+					`subjectStreak?type=byDate&page=${targetPageNumber}&limit=8`,
 					'get',
 				),
 			);
 
-			const networkExtractedArray = serviceResponse.data.data || [];
+			const networkExtractedArray = serviceResponse.data.data.docs || [];
 			const dynamicCompositeData = [
 				...accumulatedData,
 				...networkExtractedArray,
@@ -107,15 +98,15 @@ export default function Tracker() {
 			const normalizedMap = new Map(
 				dynamicCompositeData.map((item) => [
 					item._id,
-					{ _id: formatDateToLocalTimeFormat(item._id), details: item.details },
+					{ _id: formatDateToLocalTimeFormat(String(item._id)), details: item.details },
 				]),
 			);
-			const consolidatedFinalArray: getSubjectStreakByDateResponse[] =
+			const consolidatedFinalArray: iDailyRecordDocument[] =
 				Array.from(normalizedMap.values());
 
 			setSubjectStreaks(consolidatedFinalArray);
 
-			if (serviceResponse.data.pagination?.hasMore) {
+			if (serviceResponse.data.data.hasNextPage) {
 				await fetchTodayStreaksIncremental(
 					targetPageNumber + 1,
 					consolidatedFinalArray,
@@ -136,13 +127,7 @@ export default function Tracker() {
 	// * ==========================================================================
 
 	function calculateDailyTotals(
-		entry: {
-			_id: string;
-			subject: GetSubjectResponse;
-			questionsDone: number;
-			timeStudied: number;
-			date: Date;
-		}[],
+		entry: iExtendedDetailedSubjectStreakDocumentResponse[],
 	) {
 		const totals = entry.reduce(
 			(acc, current) => {

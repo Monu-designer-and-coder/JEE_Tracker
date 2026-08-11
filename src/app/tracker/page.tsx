@@ -21,7 +21,6 @@ import {
 	TooltipTrigger,
 } from '@/components/ui/tooltip';
 import { axiosConfig } from '@/config/axios.config';
-import { getSubjectStreakTodayResponse } from '@/types/res/subjectStreak.types';
 import { useAppDispatch, useAppSelector } from '@/hooks/actions';
 import { IconTimeDuration10, IconTimeDurationOff } from '@tabler/icons-react';
 import { endStudySession, startStudySession } from '@/reducers/streak.slice';
@@ -47,19 +46,13 @@ import { MissionCountdownCard } from '@/components/module/mission-countdown.modu
 import { formatDate, formatMilliseconds } from '@/lib/helpers';
 import { Skeleton } from '@/components/ui/skeleton';
 import { FcLink } from 'react-icons/fc';
+import {
+	iExtendedDetailedSubjectStreakDocumentResponse,
+	iPeakDetail,
+} from '@/types/res/subjectStreak.res';
+import { iApiResponse } from '@/types/backend/apiResponse.types';
 
-// * Standardized structural definitions describing expected paginated envelopes
-export interface PaginatedAPIResponseEnvelope<T> {
-	data: T[];
-	pagination: {
-		page: number;
-		limit: number;
-		totalItems: number;
-		hasMore: boolean;
-	};
-}
-
-export interface frontendGetSubjectStreakTodayResponse extends getSubjectStreakTodayResponse {
+export interface frontendGetSubjectStreakTodayResponse extends iExtendedDetailedSubjectStreakDocumentResponse {
 	hours?: string;
 	minutes?: string;
 }
@@ -123,32 +116,7 @@ export default function Tracker() {
 		},
 	});
 
-	const [allTimePeak, setAllTimePeak] = useState<{
-		peakTimeStudiedDay: {
-			totalQuestions: number;
-			totalTime: number;
-			date: Date | string;
-		}[];
-		peakQuestionsDoneDay: {
-			totalQuestions: number;
-			totalTime: number;
-			date: Date | string;
-		}[];
-		bestOverallDay: {
-			totalQuestions: number;
-			totalTime: number;
-			averageScore: number;
-			date: Date | string;
-		}[];
-		subjectWisePeaks: {
-			_id: string;
-			bestDate: Date | string;
-			peakQuestions: number;
-			peakTime: number;
-			peakAverageScore: number;
-			subjectName: string;
-		}[];
-	}>({
+	const [allTimePeak, setAllTimePeak] = useState<iPeakDetail>({
 		peakTimeStudiedDay: [],
 		peakQuestionsDoneDay: [],
 		bestOverallDay: [],
@@ -161,7 +129,7 @@ export default function Tracker() {
 		// * React renders 10x less frequently while maintaining visually
 
 		setIsMounted(true);
-		fetchTodayStreaksIncremental(1, []);
+		fetchTodayStreaks();
 		const initialStateOfStudySession = {
 			isStudySessionActive: false,
 			subjectDetails: {
@@ -181,7 +149,9 @@ export default function Tracker() {
 		}
 		axios
 			.request(axiosConfig('subjectStreak/data?type=peak', 'get'))
-			.then((res) => setAllTimePeak(res.data));
+			.then((res: AxiosResponse<iApiResponse<iPeakDetail>>) =>
+				setAllTimePeak(res.data.data),
+			);
 	}, []);
 
 	useEffect(() => {
@@ -243,48 +213,19 @@ export default function Tracker() {
 	// * ==========================================================================
 
 	// * Recursively syncs all structural pagination loops in the background with zero visible UI changes
-	const fetchTodayStreaksIncremental = async (
-		targetPageNumber: number,
-		accumulatedData: getSubjectStreakTodayResponse[],
-	) => {
+	const fetchTodayStreaks = async () => {
 		try {
-			if (targetPageNumber === 1) {
-				setIsLoading(true);
-			}
-
 			const serviceResponse: AxiosResponse<
-				PaginatedAPIResponseEnvelope<getSubjectStreakTodayResponse>
-			> = await axios.request(
-				axiosConfig(
-					`subjectStreak?type=today&page=${targetPageNumber}&limit=50`,
-					'get',
-				),
-			);
+				iApiResponse<iExtendedDetailedSubjectStreakDocumentResponse[]>
+			> = await axios.request(axiosConfig(`subjectStreak?type=today`, 'get'));
+			const frontendGetSubjectStreakTodayResponseArray =
+				serviceResponse.data.data.map((item) => ({
+					...item,
+					hours: '0',
+					minutes: '0',
+				}));
 
-			const networkExtractedArray = serviceResponse.data.data || [];
-			const dynamicCompositeData = [
-				...accumulatedData,
-				...networkExtractedArray,
-			];
-
-			// * Standardize duplicate values out by mapping entries to a unique tracking table map
-			const normalizedMap = new Map(
-				dynamicCompositeData.map((item) => [
-					item._id,
-					{ ...item, hours: '0', minutes: '0' },
-				]),
-			);
-			const consolidatedFinalArray: frontendGetSubjectStreakTodayResponse[] =
-				Array.from(normalizedMap.values());
-
-			setSubjectStreaks(consolidatedFinalArray);
-
-			if (serviceResponse.data.pagination?.hasMore) {
-				await fetchTodayStreaksIncremental(
-					targetPageNumber + 1,
-					consolidatedFinalArray,
-				);
-			}
+			setSubjectStreaks(frontendGetSubjectStreakTodayResponseArray);
 		} catch (error) {
 			console.error(
 				'Failed processing underlying incremental data streams:',
@@ -293,11 +234,6 @@ export default function Tracker() {
 		} finally {
 			setIsLoading(false);
 		}
-	};
-
-	// * Standardized single retrieval interface fallback mirroring original structure definitions
-	const fetchTodayStreaks = async () => {
-		await fetchTodayStreaksIncremental(1, []);
 	};
 
 	// * Increment question streak with Optimistic UI updates for faster UX
@@ -327,7 +263,7 @@ export default function Tracker() {
 
 			// * Optionally re-sync with server to ensure data consistency
 			const response: AxiosResponse<
-				PaginatedAPIResponseEnvelope<getSubjectStreakTodayResponse>
+				iApiResponse<iExtendedDetailedSubjectStreakDocumentResponse[]>
 			> = await axios.request(
 				axiosConfig(`subjectStreak?type=today&subjectId=${subjectId}`, 'get'),
 			);
@@ -401,7 +337,7 @@ export default function Tracker() {
 
 				// * Optionally re-sync with server to ensure data consistency
 				const response: AxiosResponse<
-					PaginatedAPIResponseEnvelope<getSubjectStreakTodayResponse>
+					iApiResponse<iExtendedDetailedSubjectStreakDocumentResponse[]>
 				> = await axios.request(
 					axiosConfig(`subjectStreak?type=today&subjectId=${subjectId}`, 'get'),
 				);
@@ -456,7 +392,7 @@ export default function Tracker() {
 		} else {
 			try {
 				// * Execute the background API call
-				const putResponse = await axios.request(
+				await axios.request(
 					axiosConfig(
 						'subjectStreak',
 						'put',
@@ -468,11 +404,9 @@ export default function Tracker() {
 						},
 					),
 				);
-
-				console.log(putResponse);
 				// * Optionally re-sync with server to ensure data consistency
 				const response: AxiosResponse<
-					PaginatedAPIResponseEnvelope<getSubjectStreakTodayResponse>
+					iApiResponse<iExtendedDetailedSubjectStreakDocumentResponse[]>
 				> = await axios.request(
 					axiosConfig(
 						`subjectStreak?type=today&subjectId=${submittedDocument.subject._id}`,
@@ -658,7 +592,7 @@ export default function Tracker() {
 																allTimePeak?.subjectWisePeaks?.map(
 																	(subject) => (
 																		<div
-																			key={subject._id}
+																			key={String(subject._id)}
 																			className='my-5 gap-4'>
 																			<CardBlockUI
 																				cardBlockUIContentList={[
@@ -828,7 +762,7 @@ export default function Tracker() {
 										{subjectStreaks.map((item, index) => (
 											<Card
 												size='sm'
-												key={item._id}
+												key={String(item._id)}
 												className='group/card relative overflow-hidden rounded-4xl border h-full py-1 px-2 text-center border-primary/30 w-full'>
 												<CardHeader className='relative z-10 pb-2'>
 													<Tooltip>
@@ -850,7 +784,7 @@ export default function Tracker() {
 																	Active Streak
 																</p>
 																<p className='text-base font-medium text-foreground'>
-																	{formatDate(item.date)}
+																	{formatDate(String(item.date))}
 																</p>
 															</div>
 														</TooltipContent>
@@ -869,8 +803,8 @@ export default function Tracker() {
 													<button
 														onClick={() =>
 															incrementQuestionStreak(
-																item._id,
-																item.subject._id,
+																String(item._id),
+																String(item.subject._id),
 															)
 														}
 														className='group/btn relative flex w-full flex-col items-center justify-center overflow-hidden rounded-4xl border border-primary/30 py-1 text-center  transition-all duration-300 hover:-translate-y-1 hover:bg-primary/10 hover:border-primary/10'
@@ -970,8 +904,8 @@ export default function Tracker() {
 														}
 														onClick={() => {
 															studySessionToggle(
-																item._id,
-																item.subject._id,
+																String(item._id),
+																String(item.subject._id),
 																item.subject.name,
 															);
 														}}
@@ -1015,15 +949,3 @@ export default function Tracker() {
 	);
 }
 
-// ! IMPROVEMENTS IMPLEMENTED:
-// * 1. Implemented a data stream synchronization loop (`fetchTodayStreaksIncremental`) providing backend pagination compatibility without changing the UI/UX.
-// * 2. Extended data extraction methods to intercept both standard and paginated response layouts to prevent application logic crashes.
-// * 3. Enforced functional duplicate control patterns using JavaScript Map structures to protect runtime datasets against duplication overlapping.
-// * 4. Structured fully defined inline type boundaries describing paginated network transport wrappers.
-
-// ! PERFORMANCE OPTIMIZATIONS MAINTAINED:
-// * 1. Optimistic UI processing handles state mutation updates instantly ahead of API confirmations.
-// * 2. Preserved the hydration check mechanism (`isMounted`) to protect client layout parsing sequences from breaking.
-
-// ! FUTURE IMPROVEMENTS:
-// TODO: Replace the background loop strategy with a modern UI component like infinite scroll lists or standard button controls if datasets scale excessively.

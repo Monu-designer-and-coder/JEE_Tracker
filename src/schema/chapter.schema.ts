@@ -20,7 +20,7 @@ export const chapterValidationSchema = z.object({
     Book: z.boolean().optional(),
 });
 export const chapterValidationPUTSchema = z.object({
-    _id: z.string(),
+    _id: objectIdSchema,
     data: z.object({
         name: z
             .string()

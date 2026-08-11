@@ -5,43 +5,43 @@ import mongooseAggregatePaginate from 'mongoose-aggregate-paginate-v2';
  * * SubjectStreak Model Interface
  */
 export interface ISubjectStreakDocument extends Document {
-    date: Date;
-    questionsDone: number;
-    timeStudied: number;
-    subject: Types.ObjectId;
-    createdAt?: Date;
-    updatedAt?: Date;
+	date: Date;
+	questionsDone: number;
+	timeStudied: number;
+	subject: Types.ObjectId;
+	createdAt?: Date;
+	updatedAt?: Date;
 }
 
 const SubjectStreakSchema = new Schema<ISubjectStreakDocument>(
-    {
-        // * Target date tracking the milestone activity
-        date: {
-            type: Date,
-            required: [true, 'Date is required'],
-            index: true, // * High performance optimization for date range matching
-        },
-        // * Number of targeted tracking questions completed
-        questionsDone: {
-            type: Number,
-            default: 0,
-            min: [0, 'Completed questions cannot be negative'],
-        },
-        // * Time Studied for the subject
-        timeStudied: {
-            type: Number,
-            default: 0,
-            min: [0, 'Studied Time cannot be negative'],
-        },
-        // * Reference tracking map identifier to Subject model
-        subject: {
-            type: Schema.Types.ObjectId,
-            ref: 'Subject',
-            required: [true, 'Subject reference mapping ID is required'],
-            index: true, // * Compound/single index fallback for query target acceleration
-        },
-    },
-    { timestamps: true }
+	{
+		// * Target date tracking the milestone activity
+		date: {
+			type: Date,
+			required: [true, 'Date is required'],
+			index: true, // * High performance optimization for date range matching
+		},
+		// * Number of targeted tracking questions completed
+		questionsDone: {
+			type: Number,
+			default: 0,
+			min: [0, 'Completed questions cannot be negative'],
+		},
+		// * Time Studied for the subject
+		timeStudied: {
+			type: Number,
+			default: 0,
+			min: [0, 'Studied Time cannot be negative'],
+		},
+		// * Reference tracking map identifier to Subject model
+		subject: {
+			type: Schema.Types.ObjectId,
+			ref: 'Subject',
+			required: [true, 'Subject reference mapping ID is required'],
+			index: true, // * Compound/single index fallback for query target acceleration
+		},
+	},
+	{ timestamps: true },
 );
 
 // * Attach pagination plugin for aggregated queries
@@ -49,8 +49,12 @@ SubjectStreakSchema.plugin(mongooseAggregatePaginate);
 
 // * Safeguard singleton implementation for Next.js hot-reloads
 const SubjectStreakModel =
-    (mongoose.models.SubjectStreak as mongoose.Model<ISubjectStreakDocument>) ||
-    mongoose.model<ISubjectStreakDocument>('SubjectStreak', SubjectStreakSchema);
+	(mongoose.models
+		.SubjectStreak as mongoose.AggregatePaginateModel<ISubjectStreakDocument>) ||
+	mongoose.model<
+		ISubjectStreakDocument,
+		mongoose.AggregatePaginateModel<ISubjectStreakDocument>
+	>('SubjectStreak', SubjectStreakSchema);
 
 export default SubjectStreakModel;
 

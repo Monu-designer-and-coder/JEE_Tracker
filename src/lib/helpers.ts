@@ -14,6 +14,47 @@ export const formatDate = (dateText: string) => {
 	}).format(date);
 };
 
+// 2. The wrapper function combining both the exact date and the relative diff
+export const getDaysAgoText = (dateText: string) => {
+  if (!dateText) {
+    return { assignDate: '', value: '', className: '' };
+  }
+
+  // Get the exact formatted date string (e.g., "Thu, 13 Aug 2026")
+  const assignDate = formatDate(dateText);
+
+  // Calculate the difference logic
+  const targetDate = new Date(dateText);
+  const today = new Date();
+
+  targetDate.setHours(0, 0, 0, 0);
+  today.setHours(0, 0, 0, 0);
+
+  const diffInMs = targetDate.getTime() - today.getTime();
+  const diffInDays = Math.round(diffInMs / (1000 * 60 * 60 * 24));
+
+  const rtf = new Intl.RelativeTimeFormat('en-IN', { numeric: 'auto' });
+  const value = rtf.format(diffInDays, 'day');
+
+  let className = '';
+  if (diffInDays >= 0) {
+    className = 'text-progressive-1';
+  } else if (diffInDays === -1) {
+    className = 'text-informative-1';
+  } else if (diffInDays === -2) {
+    className = 'text-cautionary-1';
+  } else {
+    className = 'text-destructive-1';
+  }
+
+  // Return the combined object
+  return { 
+    assignDate, // "Thu, 13 Aug 2026"
+    value,      // "today", "yesterday", "2 days ago", etc.
+    className   // "text-progressive-1", etc.
+  };
+};
+
 export function formatMilliseconds(ms: number): string {
 	const totalSeconds = Math.floor(ms / 1000);
 	const seconds = totalSeconds % 60;

@@ -28,7 +28,7 @@ export default function Layout({
 		<section className='h-full relative w-full'>
 			<main
 				className={cn(
-					'mx-auto w-[95%] h-full border rounded-4xl border-primary/70 bg-primary/5',
+					'mx-auto w-[95%] h-full border rounded-4xl border-primary/70 bg-primary/5 overflow-scroll no-scrollbar',
 				)}>
 				{children}
 			</main>

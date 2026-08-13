@@ -63,56 +63,60 @@ export const subjectWiseRecordPipeline: PipelineStage[] = [
 	},
 ];
 
-const absoluteStartTimeToday = new Date();
-absoluteStartTimeToday.setHours(0, 0, 0, 0);
 
-const absoluteEndTimeToday = new Date(absoluteStartTimeToday);
-absoluteEndTimeToday.setHours(23, 59, 59, 999);
 
-export const todaysRecordPipeline: PipelineStage[] = [
-	{
-		$match: {
-			date: {
-				$gte: absoluteStartTimeToday,
-				$lte: absoluteEndTimeToday,
-			},
-		},
-	},
-	{
-		$lookup: {
-			from: 'subjects',
-			localField: 'subject',
-			foreignField: '_id',
-			as: 'subject',
-			pipeline: [
-				{
-					$project: {
-						_id: 1,
-						name: 1,
-					},
+export function todaysRecordPipeline(
+	absoluteStartTimeToday: Date,
+	absoluteEndTimeToday: Date,
+): PipelineStage[] {
+	return [
+		{
+			$match: {
+				date: {
+					$gte: absoluteStartTimeToday,
+					$lte: absoluteEndTimeToday,
 				},
-			],
-		},
-	},
-	{
-		$addFields: {
-			subject: {
-				$first: '$subject',
 			},
 		},
-	},
-	{
-		$project: {
-			_id: 1,
-			date: 1,
-			questionsDone: 1,
-			subject: 1,
-			timeStudied: 1,
+		{
+			$lookup: {
+				from: 'subjects',
+				localField: 'subject',
+				foreignField: '_id',
+				as: 'subject',
+				pipeline: [
+					{
+						$project: {
+							_id: 1,
+							name: 1,
+						},
+					},
+				],
+			},
 		},
-	},
-];
+		{
+			$addFields: {
+				subject: {
+					$first: '$subject',
+				},
+			},
+		},
+		{
+			$project: {
+				_id: 1,
+				date: 1,
+				questionsDone: 1,
+				subject: 1,
+				timeStudied: 1,
+			},
+		},
+	];
+}
+
 export function todaysRecordBySubjectPipeline(
 	subjectId: Types.ObjectId,
+	absoluteStartTimeToday: Date,
+	absoluteEndTimeToday: Date,
 ): PipelineStage[] {
 	return [
 		{

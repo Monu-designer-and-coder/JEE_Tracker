@@ -26,6 +26,10 @@ const Header: React.FC<HeaderProps> = ({ className = '' }) => {
 			link: '/',
 		},
 		{
+			name: 'Dashboard',
+			link: '/dashboard',
+		},
+		{
 			name: 'Tracker',
 			link: '/tracker',
 		},
@@ -46,7 +50,7 @@ const Header: React.FC<HeaderProps> = ({ className = '' }) => {
 	const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
 
 	return (
-		<header className={cn('relative w-full', className)}>
+		<header className={cn('relative w-full bg-primary/10', className)}>
 			<Navbar>
 				{/* Desktop Navigation */}
 				<NavBody>

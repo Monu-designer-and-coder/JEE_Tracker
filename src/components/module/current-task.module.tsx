@@ -251,7 +251,19 @@ export const CurrentTaskCard02 = ({ className }: { className?: string }) => {
 export const CurrentTaskCard03 = ({ className }: { className?: string }) => {
 	// ! Hydration Safety Pattern: Prevents mismatches between SSR and Client rendering
 	const [isMounted, setIsMounted] = useState<boolean>(false);
-
+	const [currentTime, setCurrentTime] = useState(
+		new Intl.DateTimeFormat('en-IN', {
+			hour: '2-digit',
+			minute: '2-digit',
+			second: '2-digit',
+			weekday: 'long',
+			day: '2-digit',
+			month: 'long',
+			year: 'numeric',
+			hourCycle: 'h23',
+		}).format(new Date()),
+	);
+	
 	const [CurrentTaskList, setCurrentTaskList] = useState<
 		AggregatePaginateResult<iStudyTaskListItem>
 	>({
@@ -267,19 +279,6 @@ export const CurrentTaskCard03 = ({ className }: { className?: string }) => {
 		nextPage: null,
 	});
 
-	const [currentTime, setCurrentTime] = useState(
-		new Intl.DateTimeFormat('en-IN', {
-			hour: '2-digit',
-			minute: '2-digit',
-			second: '2-digit',
-			weekday: 'long',
-			day: '2-digit',
-			month: 'long',
-			year: 'numeric',
-			hourCycle: 'h23',
-		}).format(new Date()),
-	);
-
 	const handleSessionsAxiosConfigHook = useMemo(
 		() =>
 			axiosConfig('system/study-task/session', 'put', {
@@ -293,7 +292,9 @@ export const CurrentTaskCard03 = ({ className }: { className?: string }) => {
 			.request(axiosConfig('system/study-task', 'get'))
 			.then(
 				(
-					response: AxiosResponse<iApiResponse<AggregatePaginateResult<iStudyTaskListItem>>>,
+					response: AxiosResponse<
+						iApiResponse<AggregatePaginateResult<iStudyTaskListItem>>
+					>,
 				) => {
 					setCurrentTaskList(response.data.data);
 				},
@@ -380,8 +381,8 @@ export const CurrentTaskCard03 = ({ className }: { className?: string }) => {
 					</Button>
 				</CardAction>
 			</CardHeader>
-			<CardContent>
-				<div className='flex items-center justify-center my-4 w-11/12 mx-auto'>
+			<CardContent className='h-full'>
+				<div className='flex items-center justify-center my-4 w-11/12 mx-auto overflow-scroll no-scrollbar'>
 					<CardBlockUI
 						className='grid-cols-1'
 						cardBlockUIContentList={[

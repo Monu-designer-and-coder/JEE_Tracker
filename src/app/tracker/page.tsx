@@ -71,18 +71,19 @@ export default function Tracker() {
 	// ! STATE DECLARATIONS
 
 	// * Redux State
-	const currentStudySession = useAppSelector((state) => state.studySession);
+	// ! Hydration Safety Pattern: Prevents mismatches between SSR and Client rendering
+	const [isMounted, setIsMounted] = useState<boolean>(false);
 
+	const [isLoading, setIsLoading] = useState<boolean>(true);
+	
+	const currentStudySession = useAppSelector((state) => state.studySession);
 	// * State Management
 	const [subjectStreaks, setSubjectStreaks] = useState<
 		frontendGetSubjectStreakTodayResponse[]
 	>([]);
-	const [isLoading, setIsLoading] = useState<boolean>(true);
 
 	const [liveTimestamp, setLiveTimestamp] = useState<number>(0);
 
-	// ! Hydration Safety Pattern: Prevents mismatches between SSR and Client rendering
-	const [isMounted, setIsMounted] = useState<boolean>(false);
 
 	const [todaysProgressData, setTodaysProgressData] = useState<{
 		totalQuestionsDone: number;

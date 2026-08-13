@@ -115,12 +115,20 @@ export async function GET(request: Request) {
 		}
 
 		if (queryParamType === 'today') {
+			const absoluteStartTimeToday = new Date();
+			absoluteStartTimeToday.setHours(0, 0, 0, 0);
+
+			const absoluteEndTimeToday = new Date(absoluteStartTimeToday);
+			absoluteEndTimeToday.setHours(23, 59, 59, 999);
+
 			const queryParamSubjectId = searchParams.get('subjectId');
 
 			// * Optimize database scans using inline matches utilizing indexed date targets
 			if (!queryParamSubjectId) {
 				let todayTrackedActivities: iExtendedDetailedSubjectStreakDocumentResponse[] =
-					await SubjectStreakModel.aggregate(todaysRecordPipeline);
+					await SubjectStreakModel.aggregate(
+						todaysRecordPipeline(absoluteStartTimeToday, absoluteEndTimeToday),
+					);
 
 				// * Safe programmatic fallbacks if database initialization routine checks trigger false
 				if (!todayTrackedActivities.length) {
@@ -141,8 +149,12 @@ export async function GET(request: Request) {
 
 						await SubjectStreakModel.insertMany(operationsPayload);
 
-						todayTrackedActivities =
-							await SubjectStreakModel.aggregate(todaysRecordPipeline);
+						todayTrackedActivities = await SubjectStreakModel.aggregate(
+							todaysRecordPipeline(
+								absoluteStartTimeToday,
+								absoluteEndTimeToday,
+							),
+						);
 					}
 				}
 
@@ -154,7 +166,13 @@ export async function GET(request: Request) {
 			}
 
 			const subjectFilteredEvents = await SubjectStreakModel.aggregate(
-				todaysRecordBySubjectPipeline(new Types.ObjectId(queryParamSubjectId)),
+				todaysRecordBySubjectPipeline(
+					new Types.ObjectId(
+						queryParamSubjectId,
+					),
+					absoluteStartTimeToday,
+					absoluteEndTimeToday,
+				),
 			);
 
 			if (!subjectFilteredEvents.length) {
@@ -171,7 +189,11 @@ export async function GET(request: Request) {
 					const postCreationQuery: iExtendedDetailedSubjectStreakDocumentResponse[] =
 						await SubjectStreakModel.aggregate(
 							todaysRecordBySubjectPipeline(
-								new Types.ObjectId(singleCreatedInstance._id),
+								new Types.ObjectId(
+									singleCreatedInstance._id,
+								),
+								absoluteStartTimeToday,
+								absoluteEndTimeToday,
 							),
 						);
 

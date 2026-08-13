@@ -121,10 +121,10 @@ export default function RootLayout({
 						storageKey='app-theme' // * Custom storage key for theme persistence
 					>
 						{/* ? Header with consistent height */}
-						<Header className='h-[20%] shrink-0' />{' '}
+						<Header className='h-[5.8vh] shrink-0' />{' '}
 						{/* * Changed from vh to fixed height for consistency */}
 						{/* ? Main content area with proper spacing */}
-						<main className='h-[79%] overflow-hidden'>
+						<main className='h-[94.2vh] overflow-hidden'>
 							{' '}
 							{children}
 							<ToastContainer

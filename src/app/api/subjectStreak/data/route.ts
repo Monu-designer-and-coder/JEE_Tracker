@@ -10,7 +10,7 @@ import { iApiResponse } from '@/types/backend/apiResponse.types';
 import {
 	iDetailedPeakDetail,
 	iPeakDetail,
-} from '@/types/res/subjectStreak.res';
+} from '@/types/res/subjectStreak.res.types';
 import { NextResponse } from 'next/server';
 
 export async function GET(request: Request) {

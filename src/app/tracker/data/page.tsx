@@ -32,7 +32,7 @@ import {
 } from '@/components/ui/dialog';
 import { iApiResponse } from '@/types/backend/apiResponse.types';
 import { AggregatePaginateResult } from 'mongoose';
-import { iDailyRecordDocument, iExtendedDetailedSubjectStreakDocumentResponse } from '@/types/res/subjectStreak.res';
+import { iDailyRecordDocument, iExtendedDetailedSubjectStreakDocumentResponse } from '@/types/res/subjectStreak.res.types';
 
 
 // * ==========================================================================

@@ -25,7 +25,7 @@ import {
 	iDailyRecordDocument,
 	iExtendedDetailedSubjectStreakDocumentResponse,
 	iSubjectWiseRecordDocument,
-} from '@/types/res/subjectStreak.res';
+} from '@/types/res/subjectStreak.res.types';
 
 export async function POST(request: Request) {
 	const payload = await request.json();

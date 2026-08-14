@@ -49,7 +49,7 @@ import { FcLink } from 'react-icons/fc';
 import {
 	iExtendedDetailedSubjectStreakDocumentResponse,
 	iPeakDetail,
-} from '@/types/res/subjectStreak.res';
+} from '@/types/res/subjectStreak.res.types';
 import { iApiResponse } from '@/types/backend/apiResponse.types';
 
 export interface frontendGetSubjectStreakTodayResponse extends iExtendedDetailedSubjectStreakDocumentResponse {

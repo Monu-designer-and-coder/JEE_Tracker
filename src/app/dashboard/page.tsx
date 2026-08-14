@@ -21,7 +21,7 @@ import { iApiResponse } from '@/types/backend/apiResponse.types';
 import {
 	iDailyRecordDocument,
 	iExtendedDetailedSubjectStreakDocumentResponse,
-} from '@/types/res/subjectStreak.res';
+} from '@/types/res/subjectStreak.res.types';
 import { iStudyTaskListItem } from '@/types/res/system.res.types';
 import {
 	tChapterStatusUpdateSchema,

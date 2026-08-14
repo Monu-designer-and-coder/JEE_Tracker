@@ -32,8 +32,11 @@
 	--color-border: var(--border);
 	--color-destructive: var(--destructive);
 	--color-destructive-1: oklch(0.577 0.245 27.325);
+	--color-progressive: oklch(88.052% 0.26109 141.284);
 	--color-progressive-1: oklch(70.404% 0.20541 141.294);
+	--color-informative: oklch(63.663% 0.17864 264.426);
 	--color-informative-1: oklch(54.384% 0.17868 264.084);
+	--color-cautionary: oklch(85.821% 0.13438 84.778);
 	--color-cautionary-1: oklch(81.804% 0.15592 80.653);
 	--color-accent-foreground: var(--accent-foreground);
 	--color-accent: var(--accent);
@@ -87,7 +90,7 @@
 	--muted-foreground: oklch(0.56 0.021 213.5);
 	--accent: oklch(0.963 0.002 197.1);
 	--accent-foreground: oklch(0.218 0.008 223.9);
-	--destructive: oklch(0.577 0.245 27.325);
+	--destructive: oklch(78.537% 0.12131 16.992);
 	--progressive: oklch(70.404% 0.20541 141.294);
 	--informative: oklch(54.384% 0.17868 264.084);
 	--cautionary: oklch(81.804% 0.15592 80.653);
@@ -161,5 +164,5 @@
 }
 
 * {
-	@apply [&::-webkit-scrollbar]:w-0.5 [&::-webkit-scrollbar-thumb]:bg-mist-700 dark:[&::-webkit-scrollbar-thumb]:bg-mist-300;
+	@apply [&::-webkit-scrollbar]:w-0.5 [&::-webkit-scrollbar-thumb]:bg-mist-700 dark:[&::-webkit-scrollbar-thumb]:bg-mist-300 no-scrollbar;
 }

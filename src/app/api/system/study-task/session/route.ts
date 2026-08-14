@@ -131,6 +131,13 @@ export async function PUT(request: Request) {
 			if (refType === 'chapter') {
 				await ChapterModel.findByIdAndUpdate(refId, { [tag]: true });
 			} else {
+				if (tag === 'inTextQuestions' || tag === "inClassQuestions") {
+					await TopicModel.findByIdAndUpdate(refId, {
+						[tag]: true,
+						done: true,
+					});
+					return;
+				}
 				await TopicModel.findByIdAndUpdate(refId, { [tag]: true });
 			}
 

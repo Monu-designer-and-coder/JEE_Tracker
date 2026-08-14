@@ -16,36 +16,78 @@ import {
 } from '@/components/ui/chart';
 import axios, { AxiosResponse } from 'axios';
 import { AggregatePaginateResult } from 'mongoose';
+
 import { iApiResponse } from '@/types/backend/apiResponse.types';
 import {
 	iDailyRecordDocument,
 	iExtendedDetailedSubjectStreakDocumentResponse,
 } from '@/types/res/subjectStreak.res';
+import { iStudyTaskListItem } from '@/types/res/system.res.types';
+import {
+	tChapterStatusUpdateSchema,
+	tCreateStudyTaskSchema,
+	tSessionActionSchema,
+} from '@/types/schema/system.schema.types';
+
 import { axiosConfig } from '@/config/axios.config';
 import { RefObject, useEffect, useMemo, useRef, useState } from 'react';
-import { formatDate, formatMilliseconds, getDaysAgoText } from '@/lib/helpers';
+import {
+	formatDate,
+	formatMilliseconds,
+	formatTime,
+	getDaysAgoText,
+} from '@/lib/helpers';
 import { Skeleton } from '@/components/ui/skeleton';
 
 import { Bar, BarChart, CartesianGrid, XAxis } from 'recharts';
 import { cn } from '@/lib/utils';
 import { MissionCountdownCard } from '@/components/module/mission-countdown.module';
 import { Badge } from '@/components/ui/badge';
-import { iStudyTaskListItem } from '@/types/res/system.res.types';
 import { toast } from 'react-toastify';
-import { tSessionActionSchema } from '@/types/schema/system.schema.types';
 import { Button } from '@/components/ui/button';
 import {
 	Table,
 	TableBody,
 	TableCaption,
 	TableCell,
+	TableFooter,
 	TableHead,
 	TableHeader,
 	TableRow,
 } from '@/components/ui/table';
 import { useAppDispatch, useAppSelector } from '@/hooks/actions';
 import { endStudySession, startStudySession } from '@/reducers/streak.slice';
-import { STORAGE_KEYS } from '@/config/constants';
+import {
+	CALCULATE_PERCENT_TARGET_ACHIEVED,
+	calculateDayScore,
+	CHAPTER_COMPLETION_SEQUENCE,
+	DAILY_STUDY_TARGETS,
+	STORAGE_KEYS,
+	TOPIC_COMPLETION_SEQUENCE,
+} from '@/config/constants';
+import { WEEKLY_STUDY_TARGETS } from './../../config/constants';
+import { iDetailedChapterResponse } from '@/types/res/chapter.res.types';
+import {
+	eStudyTaskOptions,
+	eStudyTaskOptionsChapterTags,
+	eStudyTaskOptionsTopicTags,
+} from '@/types/model/study-task.model.types';
+import {
+	Item,
+	ItemActions,
+	ItemContent,
+	ItemMedia,
+	ItemTitle,
+} from '@/components/ui/item';
+import { FcRight } from 'react-icons/fc';
+import {
+	Dialog,
+	DialogContent,
+	DialogDescription,
+	DialogHeader,
+	DialogTitle,
+	DialogTrigger,
+} from '@/components/ui/dialog';
 
 const timeFormatter = new Intl.DateTimeFormat('en-IN', {
 	hour: '2-digit',
@@ -61,6 +103,17 @@ const dateFormatter = new Intl.DateTimeFormat('en-IN', {
 	year: 'numeric',
 });
 
+function getColorsClassAsPerPercentage(percentage: number) {
+	if (percentage >= 90)
+		return 'bg-progressive-1 text-progressive dark:bg-progressive dark:text-progressive-1';
+	if (90 > percentage && percentage >= 70)
+		return 'bg-informative-1 text-informative dark:bg-informative dark:text-informative-1';
+	if (70 > percentage && percentage >= 50)
+		return 'dark:bg-cautionary bg-cautionary-1 dark:text-cautionary-1 text-cautionary';
+	if (50 > percentage)
+		return 'dark:bg-destructive bg-destructive-1 dark:text-destructive-1 text-destructive';
+}
+
 const Dashboard = () => {
 	// ! HOOKS
 	/**
@@ -70,6 +123,39 @@ const Dashboard = () => {
 	const dispatch = useAppDispatch();
 
 	const [isMounted, setIsMounted] = useState<boolean>(false);
+
+	const [todaySessionsList, setTodaySessionsList] = useState<
+		AggregatePaginateResult<iStudyTaskListItem>
+	>({
+		docs: [],
+		totalDocs: 0,
+		limit: 20,
+		page: 1,
+		totalPages: 1,
+		pagingCounter: 1,
+		hasPrevPage: false,
+		hasNextPage: false,
+		prevPage: null,
+		nextPage: null,
+	});
+	const [todayCompletedTaskList, setTodayTaskList] = useState<
+		AggregatePaginateResult<iStudyTaskListItem>
+	>({
+		docs: [],
+		totalDocs: 0,
+		limit: 20,
+		page: 1,
+		totalPages: 1,
+		pagingCounter: 1,
+		hasPrevPage: false,
+		hasNextPage: false,
+		prevPage: null,
+		nextPage: null,
+	});
+
+	const [InProgressChaptersList, setInProgressChaptersList] = useState<
+		iDetailedChapterResponse[]
+	>([]);
 
 	const [CurrentTaskList, setCurrentTaskList] = useState<
 		AggregatePaginateResult<iStudyTaskListItem>
@@ -155,6 +241,21 @@ const Dashboard = () => {
 		[],
 	);
 
+	const markChapterStatusAxiosConfigHook = useMemo(
+		() =>
+			axiosConfig('system/study-task/chapter-status', 'put', {
+				'Content-Type': 'application/json',
+			}),
+		[],
+	);
+	const createStudyTaskAxiosConfigHook = useMemo(
+		() =>
+			axiosConfig('system/study-task/', 'post', {
+				'Content-Type': 'application/json',
+			}),
+		[],
+	);
+
 	function fetchCurrentTasksList() {
 		axios
 			.request(axiosConfig('system/study-task', 'get'))
@@ -166,7 +267,48 @@ const Dashboard = () => {
 				) => {
 					setCurrentTaskList(response.data.data);
 				},
+			)
+			.catch((error) => console.log({ error }));
+	}
+
+	function fetchChaptersInProgressLists() {
+		axios
+			.request(axiosConfig('system', 'get'))
+			.then(
+				(response: AxiosResponse<iApiResponse<iDetailedChapterResponse[]>>) => {
+					setInProgressChaptersList(response.data.data);
+				},
 			);
+	}
+
+	function fetchTodayTasksList() {
+		axios
+			.request(axiosConfig('system/today', 'get'))
+			.then(
+				(
+					response: AxiosResponse<
+						iApiResponse<AggregatePaginateResult<iStudyTaskListItem>>
+					>,
+				) => {
+					setTodayTaskList(response.data.data);
+				},
+			)
+			.catch((error) => console.log({ error }));
+	}
+
+	function fetchTodaySessionsList() {
+		axios
+			.request(axiosConfig('system/today?type=sessions', 'get'))
+			.then(
+				(
+					response: AxiosResponse<
+						iApiResponse<AggregatePaginateResult<iStudyTaskListItem>>
+					>,
+				) => {
+					setTodaySessionsList(response.data.data);
+				},
+			)
+			.catch((error) => console.log({ error }));
 	}
 
 	function handleSessionsOperations(
@@ -195,6 +337,56 @@ const Dashboard = () => {
 			});
 	}
 
+	async function handleMarkAsUnfinished(chapterId: string) {
+		const data: tChapterStatusUpdateSchema = {
+			chapterId,
+			type: 'markAsUnfinished',
+		};
+		const config = {
+			...markChapterStatusAxiosConfigHook,
+			data,
+		};
+		axios
+			.request(config)
+			.then(() => {
+				toast.success('marked as unfinished');
+			})
+			.catch((err) => {
+				console.log({ err });
+				toast.error(err?.response?.data?.error || 'failed');
+			})
+			.finally(() => {
+				fetchChaptersInProgressLists();
+			});
+	}
+	async function handleCreateStudyTask(
+		refType: eStudyTaskOptions,
+		refId: string,
+		tag: eStudyTaskOptionsTopicTags | eStudyTaskOptionsChapterTags,
+	) {
+		const data: tCreateStudyTaskSchema = {
+			refType,
+			refId,
+			tag,
+		};
+		const config = {
+			...createStudyTaskAxiosConfigHook,
+			data,
+		};
+		axios
+			.request(config)
+			.then(() => {
+				toast.success('created Task');
+			})
+			.catch((err) => {
+				console.log({ err });
+				toast.error(err?.response?.data?.error || 'failed');
+			})
+			.finally(() => {
+				fetchCurrentTasksList();
+			});
+	}
+
 	useEffect(() => {
 		const syncTime = () => setNow(new Date());
 
@@ -202,6 +394,10 @@ const Dashboard = () => {
 		fetchCurrentTasksList();
 		fetchTodayStreaks();
 		fetchStudyTrackerChartData();
+		fetchTodayTasksList();
+		fetchTodaySessionsList();
+		fetchChaptersInProgressLists();
+
 		syncTime(); //* Set initial time on mount
 
 		const initialStateOfStudySession = {
@@ -363,7 +559,7 @@ const Dashboard = () => {
 		).getTime();
 
 		if (
-			subjectStreaks[0]?.date.getTime() ||
+			new Date(subjectStreaks[0]?.date).getTime() ||
 			(new Date().getTime() < todayMidnight && !hasFired2359.current.fired)
 		) {
 			fetchTodayStreaks();
@@ -564,13 +760,13 @@ const Dashboard = () => {
 			/>
 			<MissionCountdownCard className='w-full col-span-6 row-span-4 rounded-4xl px-3 bg-primary/5' />
 			<TimeBlock className='w-full col-span-2 row-span-4 rounded-4xl px-3' />
-			<Card className='w-full col-span-6 row-span-6 bg-primary/10 rounded-4xl py-4 px-3'>
+			<Card className='w-full col-span-6 row-span-5 bg-primary/10 rounded-4xl py-4 px-3'>
 				<CardHeader>
 					<CardTitle className='font-heading text-xl'>
 						List of Tasks to Complete.
 					</CardTitle>
 				</CardHeader>
-				<CardContent>
+				<CardContent className='overflow-scroll no-scrollbar'>
 					<Table className='w-full h-full'>
 						<TableCaption>List of Tasks to Complete</TableCaption>
 						<TableHeader>
@@ -686,10 +882,158 @@ const Dashboard = () => {
 					</Table>
 				</CardContent>
 			</Card>
+			<Card className='w-full col-span-6 row-span-3 row-start-10 col-start-1 bg-transparent border border-primary rounded-4xl py-4 px-3'>
+				<CardHeader>
+					<CardTitle className='font-heading text-xl'>Today</CardTitle>
+				</CardHeader>
+				<CardContent className='overflow-scroll no-scrollbar grid grid-cols-12 w-full h-full gap-2'>
+					<div className='col-span-7 h-full w-full border border-primary/10 rounded-4xl p-2'>
+						<h3>Todays Tasks Done</h3>
+						<Table>
+							<TableCaption>Todays Tasks Done</TableCaption>
+							<TableHeader>
+								<TableRow>
+									<TableHead>Subject</TableHead>
+									<TableHead>Task</TableHead>
+									<TableHead>Completed At</TableHead>
+								</TableRow>
+							</TableHeader>
+							<TableBody>
+								{todayCompletedTaskList.docs.map((task) => (
+									<TableRow key={String(task._id)}>
+										<TableCell className='capitalize'>
+											{String(task.subjectDetails.name)}
+										</TableCell>
+										<TableCell className='capitalize'>
+											{task.refDetails.name + '-' + task.studyTask.tag}
+										</TableCell>
+										<TableCell className='capitalize'>
+											{formatTime(String(task?.completionDate || ''))}
+										</TableCell>
+									</TableRow>
+								))}
+							</TableBody>
+						</Table>
+					</div>
+					<div className='col-span-5 h-full w-full border border-primary/10 rounded-4xl'>
+						<Table>
+							<TableCaption>Todays Study</TableCaption>
+							<TableHeader>
+								<TableRow>
+									<TableHead>Subject</TableHead>
+									<TableHead>Time Studied</TableHead>
+									<TableHead>Questions Done</TableHead>
+									<TableHead>Score</TableHead>
+								</TableRow>
+							</TableHeader>
+							<TableBody>
+								<TableRow>
+									<TableCell>Physics</TableCell>
+									<TableCell>
+										{formatMilliseconds(
+											todaysProgressData.physics.totalTimeStudiedMs,
+										)}
+									</TableCell>
+									<TableCell>
+										{todaysProgressData.physics.totalQuestionsDone.toLocaleString()}
+									</TableCell>
+									<TableCell>
+										{calculateDayScore(
+											todaysProgressData.physics.totalQuestionsDone,
+											todaysProgressData.physics.totalTimeStudiedMs,
+										).toLocaleString()}
+									</TableCell>
+								</TableRow>
+								<TableRow>
+									<TableCell>Chemistry</TableCell>
+									<TableCell>
+										{formatMilliseconds(
+											todaysProgressData.chemistry.totalTimeStudiedMs,
+										)}
+									</TableCell>
+									<TableCell>
+										{todaysProgressData.chemistry.totalQuestionsDone.toLocaleString()}
+									</TableCell>
+									<TableCell>
+										{calculateDayScore(
+											todaysProgressData.chemistry.totalQuestionsDone,
+											todaysProgressData.chemistry.totalTimeStudiedMs,
+										).toLocaleString()}
+									</TableCell>
+								</TableRow>
+								<TableRow>
+									<TableCell>Mathematics</TableCell>
+									<TableCell>
+										{formatMilliseconds(
+											todaysProgressData.mathematics.totalTimeStudiedMs,
+										)}
+									</TableCell>
+									<TableCell>
+										{todaysProgressData.mathematics.totalQuestionsDone.toLocaleString()}
+									</TableCell>
+									<TableCell>
+										{calculateDayScore(
+											todaysProgressData.mathematics.totalQuestionsDone,
+											todaysProgressData.mathematics.totalTimeStudiedMs,
+										).toLocaleString()}
+									</TableCell>
+								</TableRow>
+							</TableBody>
+							<TableFooter>
+								<TableRow>
+									<TableCell className='bg-primary/5 text-primary'>
+										Total
+									</TableCell>
+									<TableCell
+										className={cn(
+											getColorsClassAsPerPercentage(
+												(todaysProgressData.totalTimeStudiedMs * 100) /
+													DAILY_STUDY_TARGETS.timeStudied,
+											),
+										)}>
+										{formatMilliseconds(todaysProgressData.totalTimeStudiedMs)}
+									</TableCell>
+									<TableCell
+										className={cn(
+											getColorsClassAsPerPercentage(
+												(todaysProgressData.totalQuestionsDone * 100) /
+													DAILY_STUDY_TARGETS.questionsDone,
+											),
+										)}>
+										{todaysProgressData.totalQuestionsDone.toLocaleString()}
+									</TableCell>
+									<TableCell
+										className={cn(
+											getColorsClassAsPerPercentage(
+												(calculateDayScore(
+													todaysProgressData.totalQuestionsDone,
+													todaysProgressData.totalTimeStudiedMs,
+												) *
+													100) /
+													DAILY_STUDY_TARGETS.score,
+											),
+										)}>
+										{calculateDayScore(
+											todaysProgressData.totalQuestionsDone,
+											todaysProgressData.totalTimeStudiedMs,
+										).toLocaleString()}
+									</TableCell>
+								</TableRow>
+							</TableFooter>
+						</Table>
+					</div>
+				</CardContent>
+			</Card>
 			<div className='w-full col-span-2 row-span-4 rounded-4xl px-3 bg-primary/5 py-2 flex flex-col gap-4 items-center justify-center'>
 				<Button
 					variant={'outline'}
-					className='bg-transparent w-[70%] aspect-square rounded-full h-auto border border-primary flex items-center justify-evenly text-8xl font-clock cursor-pointer'
+					className={cn(
+						'bg-transparent w-[70%] aspect-square rounded-full h-auto border border-primary flex items-center justify-evenly text-8xl font-clock cursor-pointer',
+						getColorsClassAsPerPercentage(
+							(todaysProgressData.totalQuestionsDone * 100) /
+								DAILY_STUDY_TARGETS.questionsDone,
+						),
+					)}
 					disabled={!currentStudySession.isStudySessionActive}
 					onClick={() => {
 						incrementQuestionStreak(
@@ -722,6 +1066,226 @@ const Dashboard = () => {
 								liveTimestamp + todaysProgressData.totalTimeStudiedMs,
 							)
 						: formatMilliseconds(todaysProgressData.totalTimeStudiedMs)}
+				</CardContent>
+			</Card>
+			<Card className='w-full col-span-2 row-span-2 col-start-7 row-star-11 rounded-4xl border border-primary bg-primary/5'>
+				<CardHeader>
+					<CardTitle className='font-heading text-xl'>
+						Today Study Sessions:
+						<Badge>
+							{todaySessionsList.docs
+								.map((_) => _.workingSessions)
+								.flat()
+								.length.toLocaleString()}
+						</Badge>
+					</CardTitle>
+				</CardHeader>
+				<CardContent className='font-clock  overflow-scroll no-scrollbar w-full h-full'>
+					<Table>
+						<TableCaption>Brief Session Details:</TableCaption>
+						<TableHeader>
+							<TableRow>
+								<TableHead>S.No.</TableHead>
+								<TableHead>Subject</TableHead>
+								<TableHead>TotalTime</TableHead>
+							</TableRow>
+						</TableHeader>
+						<TableBody>
+							{todaySessionsList.docs
+								.map((_) =>
+									_.workingSessions.map((__) => ({
+										...__,
+										_id: _._id,
+										subjectDetails: _.subjectDetails,
+									})),
+								)
+								.flat()
+								.map((task, index) => (
+									<TableRow key={String(task._id)}>
+										<TableCell>{index + 1}</TableCell>
+										<TableCell className='capitalize'>
+											{task.subjectDetails.name}
+										</TableCell>
+										<TableCell>{formatMilliseconds(task.totalTime)}</TableCell>
+									</TableRow>
+								))}
+						</TableBody>
+					</Table>
+				</CardContent>
+			</Card>
+			<Card className='w-full col-span-6 row-span-8 row-start-5 col-start-9 bg-transparent border border-primary rounded-4xl py-4 px-3'>
+				<CardHeader>
+					<CardTitle>Study-System:</CardTitle>
+				</CardHeader>
+				<CardContent className='h-full w-full flex flex-col items-center justify-center gap-2'>
+					<Card size='sm' className='w-full h-full rounded-4xl'>
+						<CardHeader>
+							<CardTitle>Chapters InProgress</CardTitle>
+						</CardHeader>
+						<CardContent className='flex flex-wrap gap-2 overflow-scroll no-scrollbar'>
+							{InProgressChaptersList.map((chapter, index) => (
+								<Item key={String(chapter._id)} variant={'outline'}>
+									<ItemMedia variant='icon'>
+										{index + 1}
+										<FcRight />
+									</ItemMedia>
+									<ItemContent>
+										<ItemTitle>{chapter.name}</ItemTitle>
+									</ItemContent>
+									<ItemActions>
+										<Button
+											size={'sm'}
+											onClick={() => {
+												handleMarkAsUnfinished(String(chapter._id));
+											}}>
+											Mark Unfinished
+										</Button>
+									</ItemActions>
+								</Item>
+							))}
+						</CardContent>
+					</Card>
+					<Card size='sm' className='w-full h-full rounded-4xl'>
+						<CardHeader>
+							<CardTitle>Chapters&apos; Tasks</CardTitle>
+						</CardHeader>
+						<CardContent className='overflow-scroll no-scrollbar flex flex-wrap gap-2'>
+							{InProgressChaptersList.map((chapter, index) => {
+								if (!chapter.topicsList.filter((topic) => !topic.done).length) {
+									const tag = CHAPTER_COMPLETION_SEQUENCE.filter(
+										(tag) => !chapter[tag],
+									)[0];
+									return (
+										<Item variant={'outline'} key={String(chapter._id)}>
+											<ItemMedia variant='icon'>
+												{index + 1}
+												<FcRight />
+											</ItemMedia>
+											<ItemContent>
+												<ItemTitle className='capitalize'>Complete {chapter.name}&apos; {tag}</ItemTitle>
+											</ItemContent>
+											<ItemActions>
+												<Button
+													disabled={
+														Boolean(
+															chapter.totalTopics -
+															chapter.totalTopicsCompleted,
+														) ||
+														Boolean(
+															CurrentTaskList.docs.filter(
+																(task) =>
+																	String(task.subjectDetails._id) ==
+																	String(chapter.subject._id),
+															).length,
+														)
+													}
+													variant={'outline'}
+													size={'sm'}
+													onClick={() => {
+														handleCreateStudyTask(
+															eStudyTaskOptions.Chapter,
+															String(chapter._id),
+															tag === 'theory'
+																? eStudyTaskOptionsChapterTags.Theory
+																: tag === 'shortNotes'
+																	? eStudyTaskOptionsChapterTags.ShortNotes
+																	: tag === 'PYQ_Advanced'
+																		? eStudyTaskOptionsChapterTags.PYQ_Advanced
+																		: tag === 'PYQ_Mains'
+																			? eStudyTaskOptionsChapterTags.PYQ_Mains
+																			: tag === 'Book'
+																				? eStudyTaskOptionsChapterTags.Book
+																				: tag === 'DPP1'
+																					? eStudyTaskOptionsChapterTags.DPP1
+																					: tag === 'DPP2'
+																						? eStudyTaskOptionsChapterTags.DPP2
+																						: tag === 'Module'
+																							? eStudyTaskOptionsChapterTags.Module
+																							: eStudyTaskOptionsChapterTags.mindMap,
+														);
+													}}>
+													Start
+												</Button>
+											</ItemActions>
+										</Item>
+									);
+								}
+								const topic = chapter.topicsList.filter(
+									(topic) => !topic.done,
+								)[0];
+								return (
+									<Item variant={'outline'} key={String(topic._id)}>
+										<ItemMedia variant='icon'>
+											{index + 1}
+											<FcRight />
+										</ItemMedia>
+										<ItemContent>
+											<ItemTitle className='capitalize'>Complete {chapter.name}&apos; Topic- {topic.name}</ItemTitle>
+										</ItemContent>
+										<ItemActions>
+											<Dialog>
+												<DialogTrigger asChild>
+													<Button
+														disabled={Boolean(
+															CurrentTaskList.docs.filter(
+																(task) =>
+																	String(task.refDetails.chapter) ==
+																	String(String(chapter._id)),
+															).length,
+														)}
+														variant={'outline'}
+														size={'sm'}>
+														Start
+													</Button>
+												</DialogTrigger>
+												<DialogContent>
+													<DialogHeader>
+														<DialogTitle>{topic.name}</DialogTitle>
+														<DialogDescription>
+															Make this topic the current task.
+														</DialogDescription>
+													</DialogHeader>
+													<div className='flex w-full gap-2 items-center justify-center'>
+														{TOPIC_COMPLETION_SEQUENCE.filter(
+															(tag) => !topic[tag],
+														).map((tag, index) => (
+															<Button
+																key={String(topic._id) + tag}
+																disabled={
+																	Boolean(index) ||
+																	Boolean(
+																		CurrentTaskList.docs.filter(
+																			(task) =>
+																				String(task.refDetails.chapter) ==
+																				String(String(chapter._id)),
+																		).length,
+																	)
+																}
+																variant={'outline'}
+																size={'sm'}
+																onClick={() => {
+																	handleCreateStudyTask(
+																		eStudyTaskOptions.Topic,
+																		String(topic._id),
+																		tag === 'theory'
+																			? eStudyTaskOptionsTopicTags.Theory
+																			: tag === 'inClassQuestions'
+																				? eStudyTaskOptionsTopicTags.InClassQuestions
+																				: eStudyTaskOptionsTopicTags.InTextQuestions,
+																	);
+																}}>
+																{tag}
+															</Button>
+														))}
+													</div>
+												</DialogContent>
+											</Dialog>
+										</ItemActions>
+									</Item>
+								);
+							})}
+						</CardContent>
+					</Card>
 				</CardContent>
 			</Card>
 		</div>
@@ -825,9 +1389,9 @@ function StudyTrackerDisplay({
 
 	return (
 		<Card className={cn(className)}>
-			<CardHeader className='flex flex-col items-stretch border-b p-0! sm:flex-row'>
+			<CardHeader className='flex items-stretch border-b p-0!'>
 				<div className='flex flex-1 flex-col justify-center gap-1 px-6 pt-4 pb-3 sm:py-0!'>
-					<CardTitle>Past 7 Days</CardTitle>
+					<CardTitle>Today and Past 7 Days</CardTitle>
 					<CardDescription>Showing Total Study this week</CardDescription>
 				</div>
 				<div className='flex'>
@@ -837,33 +1401,69 @@ function StudyTrackerDisplay({
 							<button
 								key={chart}
 								data-active={activeChart === chart}
-								className='relative z-30 flex flex-1 flex-col justify-center gap-1 border-t px-6 py-4 text-left even:border-l data-[active=true]:bg-muted/50 sm:border-t-0 sm:border-l sm:px-8 sm:py-6'
+								className={cn(
+									'relative z-30 flex flex-1 flex-col justify-center gap-1 border-t px-6 py-4 text-left even:border-l data-[active=true]:opacity-100 opacity-50 sm:border-t-0 sm:border-l sm:px-8 sm:py-6',
+									chart === 'questionsDone'
+										? getColorsClassAsPerPercentage(
+												CALCULATE_PERCENT_TARGET_ACHIEVED('w8', {
+													score: total.score,
+													timeStudied: total.totalTimeStudied,
+													questionsDone: total.questionsDone,
+												}).questionsDone,
+											)
+										: chart === 'totalTimeStudied'
+											? getColorsClassAsPerPercentage(
+													CALCULATE_PERCENT_TARGET_ACHIEVED('w8', {
+														score: total.score,
+														timeStudied: total.totalTimeStudied,
+														questionsDone: total.questionsDone,
+													}).timeStudied,
+												)
+											: getColorsClassAsPerPercentage(
+													CALCULATE_PERCENT_TARGET_ACHIEVED('w8', {
+														score: total.score,
+														timeStudied: total.totalTimeStudied,
+														questionsDone: total.questionsDone,
+													}).score,
+												),
+								)}
 								onClick={() => setActiveChart(chart)}>
-								<span className='text-xs text-muted-foreground'>
+								<span className='text-xs text-white'>
 									{chartConfig[chart].label}
 								</span>
-								<span className='text-lg leading-none font-bold'>
-									{chart === 'totalTimeStudied'
-										? formatMilliseconds(total.totalTimeStudied)
-										: total[key as keyof typeof total].toLocaleString()}
-								</span>
-								<Badge>
+								{chart === 'totalTimeStudied' ? (
+									<span className={cn('text-lg leading-none font-bold')}>
+										{formatMilliseconds(total.totalTimeStudied)}
+									</span>
+								) : chart === 'questionsDone' ? (
+									<span className={cn('text-lg leading-none font-bold')}>
+										{total.questionsDone.toLocaleString()}
+									</span>
+								) : (
+									<span className={cn('text-lg leading-none font-bold')}>
+										{total.score.toLocaleString()}
+									</span>
+								)}
+
+								<Badge variant={'secondary'}>
 									Target:{' '}
 									{chart === 'questionsDone'
-										? 400
+										? WEEKLY_STUDY_TARGETS.weekly_8D.questionsDone
 										: chart === 'totalTimeStudied'
-											? formatMilliseconds(172800000)
-											: 2864}
+											? formatMilliseconds(
+													WEEKLY_STUDY_TARGETS.weekly_8D.timeStudied,
+												)
+											: WEEKLY_STUDY_TARGETS.weekly_8D.score}
 								</Badge>
 							</button>
 						);
 					})}
 				</div>
 			</CardHeader>
-			<CardContent className='px-2 sm:p-6'>
+			<CardContent className='px-4'>
 				<ChartContainer
 					config={chartConfig}
-					className='aspect-auto h-62.5 w-full'>
+					className='aspect-auto h-59 w-full'>
 					<BarChart
 						accessibilityLayer
 						data={chartDataToDisplay}

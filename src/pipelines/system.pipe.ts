@@ -209,6 +209,191 @@ export const inProgressChaptersDetailedListPipeline: PipelineStage[] = [
 	},
 ];
 
+export function TodaysStudyTaskListPipeline(
+	type: 'completedTasks' | 'sessions',
+	today: { absoluteStartTimeToday: Date; absoluteEndTimeToday: Date },
+): PipelineStage[] {
+	if (type === 'sessions') {
+		return [
+			// 1. Initial Match: Only documents with at least one session and no currently active session
+			{
+				$match: {
+					'workingSessions.0': { $exists: true },
+					activeSessionStartedAt: null, // Replaces your complex `isSessionActive: false` check
+				},
+			},
+
+			// 2. Flatten the sessions array
+			{ $unwind: '$workingSessions' },
+
+			// 3. Date Filter: Keep only the sessions within the targeted time range
+			{
+				$match: {
+					'workingSessions.start': { $gte: today.absoluteStartTimeToday },
+					'workingSessions.end': { $lte: today.absoluteEndTimeToday },
+				},
+			},
+
+			// 4. Group: Rebuild the document and sum the time (only for the matched sessions)
+			{
+				$group: {
+					_id: '$_id',
+					assignDate: { $first: '$assignDate' },
+					completionDate: { $first: '$completionDate' },
+					done: { $first: '$done' },
+					subject: { $first: '$subject' },
+					studyTask: { $first: '$studyTask' },
+					activeSessionStartedAt: { $first: '$activeSessionStartedAt' },
+					workingSessions: { $push: '$workingSessions' },
+					totalTimeSpent: { $sum: '$workingSessions.totalTime' }, // * ms
+				},
+			},
+
+			// 5. Lookups: Done only once, and only on documents that made it through the filters
+			{
+				$lookup: {
+					from: 'subjects',
+					localField: 'subject',
+					foreignField: '_id',
+					as: 'subjectDetails',
+					pipeline: [{ $project: { _id: 1, name: 1 } }],
+				},
+			},
+			{
+				$lookup: {
+					from: 'chapters',
+					localField: 'studyTask._id',
+					foreignField: '_id',
+					as: 'chapterDetails',
+					pipeline: [{ $project: { _id: 1, name: 1, chapter: '$_id' } }],
+				},
+			},
+			{
+				$lookup: {
+					from: 'topics',
+					localField: 'studyTask._id',
+					foreignField: '_id',
+					as: 'topicDetails',
+					pipeline: [{ $project: { _id: 1, name: 1, chapter: 1 } }],
+				},
+			},
+
+			// 6. Resolve Fields: Flatten the lookup arrays and set booleans
+			{
+				$addFields: {
+					subjectDetails: { $first: '$subjectDetails' },
+					refDetails: {
+						$cond: [
+							{ $eq: ['$studyTask.enum', 'chapter'] },
+							{ $first: '$chapterDetails' },
+							{ $first: '$topicDetails' },
+						],
+					},
+					isSessionActive: {
+						$cond: [
+							{ $ifNull: ['$activeSessionStartedAt', false] },
+							true,
+							false,
+						],
+					},
+				},
+			},
+
+			// 7. Final Projection: Strictly matching your `iStudyTaskListItem` interface
+			{
+				$project: {
+					_id: 1,
+					assignDate: 1,
+					completionDate: 1, // Will be included if it exists
+					done: 1,
+					subjectDetails: 1,
+					studyTask: 1,
+					refDetails: 1,
+					totalTimeSpent: 1,
+					isSessionActive: 1,
+					workingSessions: {
+						start: 1,
+						end: 1,
+						totalTime: 1,
+					},
+				},
+			},
+
+			// 8. Sort
+			{ $sort: { assignDate: 1 } },
+		];
+	}
+	return [
+		{
+			$match: {
+				done: true,
+				completionDate: {
+					$gte: today.absoluteStartTimeToday,
+					$lte: today.absoluteEndTimeToday,
+				},
+			},
+		},
+		{
+			$lookup: {
+				from: 'subjects',
+				localField: 'subject',
+				foreignField: '_id',
+				as: 'subjectDetails',
+				pipeline: [{ $project: { _id: 1, name: 1 } }],
+			},
+		},
+		// ? Two parallel lookups — exactly one resolves, based on studyTask.enum
+		{
+			$lookup: {
+				from: 'chapters',
+				localField: 'studyTask._id',
+				foreignField: '_id',
+				as: 'chapterDetails',
+				pipeline: [{ $project: { _id: 1, name: 1, chapter: '$_id' } }],
+			},
+		},
+		{
+			$lookup: {
+				from: 'topics',
+				localField: 'studyTask._id',
+				foreignField: '_id',
+				as: 'topicDetails',
+				pipeline: [{ $project: { _id: 1, name: 1, chapter: 1 } }],
+			},
+		},
+		{
+			$addFields: {
+				subjectDetails: { $first: '$subjectDetails' },
+				refDetails: {
+					$cond: [
+						{ $eq: ['$studyTask.enum', 'chapter'] },
+						{ $first: '$chapterDetails' },
+						{ $first: '$topicDetails' },
+					],
+				},
+				totalTimeSpent: { $sum: '$workingSessions.totalTime' }, // * ms
+				isSessionActive: {
+					$cond: [{ $ifNull: ['$activeSessionStartedAt', false] }, true, false],
+				},
+			},
+		},
+		{
+			$project: {
+				_id: 1,
+				assignDate: 1,
+				completionDate: 1,
+				done: 1,
+				subjectDetails: 1,
+				studyTask: 1,
+				refDetails: 1,
+				totalTimeSpent: 1,
+				isSessionActive: 1,
+				workingSessions: 1,
+			},
+		},
+		{ $sort: { assignDate: 1 } },
+	];
+}
 export function studyTaskListPipeline(isDone: boolean): PipelineStage[] {
 	return [
 		{ $match: { done: isDone } },
@@ -270,6 +455,6 @@ export function studyTaskListPipeline(isDone: boolean): PipelineStage[] {
 				workingSessions: 1,
 			},
 		},
-		{ $sort: { assignDate: -1 } },
+		{ $sort: { assignDate: 1 } },
 	];
 }

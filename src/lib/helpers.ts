@@ -13,46 +13,56 @@ export const formatDate = (dateText: string) => {
 		year: 'numeric',
 	}).format(date);
 };
+export const formatTime = (dateText: string) => {
+	if (!dateText) return '';
+	const date = new Date(dateText);
+	return new Intl.DateTimeFormat('en-IN', {
+		hour: '2-digit',
+		minute: '2-digit',
+		second: '2-digit',
+		hourCycle: 'h23',
+	}).format(date);
+};
 
 // 2. The wrapper function combining both the exact date and the relative diff
 export const getDaysAgoText = (dateText: string) => {
-  if (!dateText) {
-    return { assignDate: '', value: '', className: '' };
-  }
+	if (!dateText) {
+		return { assignDate: '', value: '', className: '' };
+	}
 
-  // Get the exact formatted date string (e.g., "Thu, 13 Aug 2026")
-  const assignDate = formatDate(dateText);
+	// Get the exact formatted date string (e.g., "Thu, 13 Aug 2026")
+	const assignDate = formatDate(dateText);
 
-  // Calculate the difference logic
-  const targetDate = new Date(dateText);
-  const today = new Date();
+	// Calculate the difference logic
+	const targetDate = new Date(dateText);
+	const today = new Date();
 
-  targetDate.setHours(0, 0, 0, 0);
-  today.setHours(0, 0, 0, 0);
+	targetDate.setHours(0, 0, 0, 0);
+	today.setHours(0, 0, 0, 0);
 
-  const diffInMs = targetDate.getTime() - today.getTime();
-  const diffInDays = Math.round(diffInMs / (1000 * 60 * 60 * 24));
+	const diffInMs = targetDate.getTime() - today.getTime();
+	const diffInDays = Math.round(diffInMs / (1000 * 60 * 60 * 24));
 
-  const rtf = new Intl.RelativeTimeFormat('en-IN', { numeric: 'auto' });
-  const value = rtf.format(diffInDays, 'day');
+	const rtf = new Intl.RelativeTimeFormat('en-IN', { numeric: 'auto' });
+	const value = rtf.format(diffInDays, 'day');
 
-  let className = '';
-  if (diffInDays >= 0) {
-    className = 'text-progressive-1';
-  } else if (diffInDays === -1) {
-    className = 'text-informative-1';
-  } else if (diffInDays === -2) {
-    className = 'text-cautionary-1';
-  } else {
-    className = 'text-destructive-1';
-  }
+	let className = '';
+	if (diffInDays >= 0) {
+		className = 'text-progressive-1';
+	} else if (diffInDays === -1) {
+		className = 'text-informative-1';
+	} else if (diffInDays === -2) {
+		className = 'text-cautionary-1';
+	} else {
+		className = 'text-destructive-1';
+	}
 
-  // Return the combined object
-  return { 
-    assignDate, // "Thu, 13 Aug 2026"
-    value,      // "today", "yesterday", "2 days ago", etc.
-    className   // "text-progressive-1", etc.
-  };
+	// Return the combined object
+	return {
+		assignDate, // "Thu, 13 Aug 2026"
+		value, // "today", "yesterday", "2 days ago", etc.
+		className, // "text-progressive-1", etc.
+	};
 };
 
 export function formatMilliseconds(ms: number): string {

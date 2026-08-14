@@ -520,7 +520,7 @@ export const ChapterModularUI = ({
 	}
 
 	return (
-		<Card className={cn('relative my-1', className)}>
+		<Card className={cn('my-1', className)}>
 			<CardHeader>
 				<CardTitle className='flex items-center gap-3 capitalize'>
 					<FcDataSheet />
@@ -561,7 +561,7 @@ export const ChapterModularUI = ({
 					</Button>
 				</CardAction>
 			</CardHeader>
-			<CardContent className='grid grid-cols-12 gap-4'>
+			<CardContent className='grid grid-cols-12 gap-4 overflow-scroll h-full w-full'>
 				{/* Tags  */}
 				<div className='col-span-10 rounded-tl-xl p-3 grid grid-cols-10 gap-2 '>
 					<div
@@ -897,65 +897,73 @@ export const ChapterModularUI = ({
 					</Dialog>
 				</div>
 				{/* Topics  */}
-				<div className='col-span-12 rounded-b-xl p-3'>
-					<Table>
-						<TableCaption>Topics of the chapters</TableCaption>
-						<TableHeader>
-							<TableRow>
-								<TableHead>S.No.</TableHead>
-								<TableHead>Topic Name</TableHead>
-								<TableHead>Theory</TableHead>
-								<TableHead>In-Text Qs</TableHead>
-								<TableHead>In-Class Qs</TableHead>
-								<TableHead>Done</TableHead>
-							</TableRow>
-						</TableHeader>
-						<TableBody>
-							{chapter.topicsList.map((topic) => (
-								<TableRow key={String(topic._id)}>
-									<TableCell>{topic.seqNumber}</TableCell>
-									<TableCell className='capitalize'>{topic.name}</TableCell>
-									<TableCell>
-										{' '}
-										<Checkbox
-											onClick={() => {
-												updateTopicTags('theory', String(topic._id));
-											}}
-											checked={topic.theory}
-										/>{' '}
-									</TableCell>
-									<TableCell>
-										{' '}
-										<Checkbox
-											onClick={() => {
-												updateTopicTags('inTextQuestions', String(topic._id));
-											}}
-											checked={topic.inTextQuestions}
-										/>{' '}
-									</TableCell>
-									<TableCell>
-										{' '}
-										<Checkbox
-											onClick={() => {
-												updateTopicTags('inClassQuestions', String(topic._id));
-											}}
-											checked={topic.inClassQuestions}
-										/>{' '}
-									</TableCell>
-									<TableCell>
-										{' '}
-										<Checkbox
-											onClick={() => {
-												updateTopicTags('done', String(topic._id));
-											}}
-											checked={topic.done}
-										/>{' '}
-									</TableCell>
+				<Card className='col-span-12 w-full'>
+					<CardHeader>
+						<CardTitle>Topics List</CardTitle>
+					</CardHeader>
+					<CardContent className='col-span-12 rounded-b-xl p-3 overflow-scroll h-full w-full'>
+						<Table>
+							<TableCaption>Topics of the chapters</TableCaption>
+							<TableHeader>
+								<TableRow>
+									<TableHead>S.No.</TableHead>
+									<TableHead>Topic Name</TableHead>
+									<TableHead>Theory</TableHead>
+									<TableHead>In-Text Qs</TableHead>
+									<TableHead>In-Class Qs</TableHead>
+									<TableHead>Done</TableHead>
 								</TableRow>
-							))}
-						</TableBody>
-					</Table>
-				</div>
+							</TableHeader>
+							<TableBody>
+								{chapter.topicsList.map((topic) => (
+									<TableRow key={String(topic._id)}>
+										<TableCell>{topic.seqNumber}</TableCell>
+										<TableCell className='capitalize'>{topic.name}</TableCell>
+										<TableCell>
+											{' '}
+											<Checkbox
+												onClick={() => {
+													updateTopicTags('theory', String(topic._id));
+												}}
+												checked={topic.theory}
+											/>{' '}
+										</TableCell>
+										<TableCell>
+											{' '}
+											<Checkbox
+												onClick={() => {
+													updateTopicTags('inTextQuestions', String(topic._id));
+												}}
+												checked={topic.inTextQuestions}
+											/>{' '}
+										</TableCell>
+										<TableCell>
+											{' '}
+											<Checkbox
+												onClick={() => {
+													updateTopicTags(
+														'inClassQuestions',
+														String(topic._id),
+													);
+												}}
+												checked={topic.inClassQuestions}
+											/>{' '}
+										</TableCell>
+										<TableCell>
+											{' '}
+											<Checkbox
+												onClick={() => {
+													updateTopicTags('done', String(topic._id));
+												}}
+												checked={topic.done}
+											/>{' '}
+										</TableCell>
+									</TableRow>
+								))}
+							</TableBody>
+						</Table>
+					</CardContent>
+				</Card>
 			</CardContent>
 		</Card>
 	);

@@ -138,7 +138,7 @@ export default function SyllabusHomePage() {
 						<div className='h-8 w-8 animate-spin rounded-full border-b-2 border-primary' />
 					</div>
 				) : (
-					<section className='w-full h-full grid gap-4'>
+					<section className='w-full h-full flex flex-col gap-4'>
 						<header className='w-full'>
 							<Card className='h-full'>
 								<CardHeader>
@@ -257,10 +257,12 @@ export default function SyllabusHomePage() {
 								</CardContent>
 							</Card>
 						</header>
-						<ChapterModularUI
-							className='w-full'
-							chapterDetails={selectedChapterData}
-						/>
+						<section className='w-full overflow-scroll'>
+							<ChapterModularUI
+								className='w-full h-full overflow-scroll'
+								chapterDetails={selectedChapterData}
+							/>
+						</section>
 					</section>
 				)}
 			</section>

@@ -35,7 +35,7 @@ export default function Layout({
 			<SyllabusNavigator />	
 			<main
 				className={cn(
-					'mx-auto w-[95%] h-full border rounded-4xl border-primary/70 bg-primary/5',
+					'mx-auto py-2 my-2 w-[95%] h-full overflow-scroll border rounded-4xl border-primary/70 bg-primary/5',
 				)}>
 				{children}
 			</main>

@@ -171,11 +171,6 @@ export default function Page() {
 		fetchCurrentTasksList();
 	}, []);
 
-	// ! SIDE EFFECTS
-	useEffect(() => {
-		setIsMounted(true);
-	}, []);
-
 	// ! HYDRATION FALLBACK
 	// * Render a skeleton or empty wrapper before client hydration to ensure exact HTML matching
 	if (!isMounted) {

@@ -45,17 +45,15 @@ export async function POST(request: Request) {
 	if (!validationResult.success) {
 		// ! If validation fails, return detailed error response
 		return NextResponse.json<iApiResponse>(
-			ApiResponse(false, validationResult.error.message, validationResult),
+			ApiResponse(false, validationResult.error.message, { validationResult }),
 			{ status: 400 },
 		);
 	}
 	try {
 		await dbConn();
 
-		const requestBody = await request.json();
-
 		// * Direct creation for brevity
-		const newTopic = await TopicModel.create(requestBody);
+		const newTopic = await TopicModel.create(validationResult.data);
 
 		return NextResponse.json<iApiResponse<iTopicResponse>>(
 			ApiResponse(true, 'created topic successfully', {
@@ -72,8 +70,9 @@ export async function POST(request: Request) {
 	} catch (error) {
 		const errorMessage =
 			error instanceof Error ? error.message : 'An unexpected error occurred';
+		console.log(error);
 		return NextResponse.json<iApiResponse>(
-			ApiResponse(false, errorMessage, error),
+			ApiResponse(false, errorMessage, { error }),
 			{ status: 400 },
 		);
 	}

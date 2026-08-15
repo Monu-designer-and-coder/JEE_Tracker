@@ -14,7 +14,7 @@ import {
 	ChartTooltipContent,
 	type ChartConfig,
 } from '@/components/ui/chart';
-import axios, { AxiosResponse } from 'axios';
+import axios, { AxiosError, AxiosResponse } from 'axios';
 import { AggregatePaginateResult } from 'mongoose';
 
 import { iApiResponse } from '@/types/backend/apiResponse.types';
@@ -334,6 +334,11 @@ const Dashboard = () => {
 			})
 			.finally(() => {
 				fetchCurrentTasksList();
+				if (action === 'done' || action === 'end') {
+					fetchTodayTasksList();
+					fetchTodaySessionsList();
+					fetchChaptersInProgressLists();
+				}
 			});
 	}
 
@@ -351,9 +356,9 @@ const Dashboard = () => {
 			.then(() => {
 				toast.success('marked as unfinished');
 			})
-			.catch((err) => {
+			.catch((err: AxiosError<iApiResponse>) => {
 				console.log({ err });
-				toast.error(err?.response?.data?.error || 'failed');
+				toast.error(err?.response?.data.message || 'failed');
 			})
 			.finally(() => {
 				fetchChaptersInProgressLists();
@@ -563,6 +568,8 @@ const Dashboard = () => {
 			(new Date().getTime() < todayMidnight && !hasFired2359.current.fired)
 		) {
 			fetchTodayStreaks();
+			fetchTodayTasksList();
+			fetchTodaySessionsList();
 		}
 	}, [now?.getDate()]);
 
@@ -753,7 +760,7 @@ const Dashboard = () => {
 	}
 
 	return (
-		<div className='grid w-full bg-background h-full grid-cols-12 grid-rows-12 py-4 px-6 gap-3'>
+		<div className='grid w-full bg-transparent h-full grid-cols-12 grid-rows-12 py-4 px-6 gap-3'>
 			<StudyTrackerDisplay
 				dataToDisplay={dataToDisplay}
 				className='w-full col-span-4 row-span-4 rounded-4xl bg-transparent border border-primary/30'
@@ -812,6 +819,7 @@ const Dashboard = () => {
 											{task.isSessionActive
 												? formatMilliseconds(liveTimestamp)
 												: formatMilliseconds(task.totalTimeSpent)}
+											<Badge>{task.workingSessions.length}</Badge>
 										</TableCell>
 										<TableCell
 											className={cn(
@@ -841,11 +849,7 @@ const Dashboard = () => {
 													size={'lg'}
 													variant={'default'}
 													className='cursor-pointer w-full font-badge'
-													disabled={
-														currentStudySession.isStudySessionActive &&
-														currentStudySession.subjectDetails._id !=
-															subjectStreakDetails.subject._id
-													}
+													disabled={currentStudySession.isStudySessionActive}
 													onClick={() => {
 														handleSessionsOperations(String(task._id), 'start');
 														studySessionToggle(
@@ -862,12 +866,7 @@ const Dashboard = () => {
 											<Button
 												size={'lg'}
 												variant={'default'}
-												disabled={
-													task.isSessionActive ||
-													(currentStudySession.isStudySessionActive &&
-														currentStudySession.subjectDetails._id !=
-															subjectStreakDetails.subject._id)
-												}
+												disabled={currentStudySession.isStudySessionActive}
 												className='cursor-pointer w-full font-badge'
 												onClick={() => {
 													handleSessionsOperations(String(task._id), 'done');
@@ -921,9 +920,22 @@ const Dashboard = () => {
 							<TableHeader>
 								<TableRow>
 									<TableHead>Subject</TableHead>
-									<TableHead>Time Studied</TableHead>
-									<TableHead>Questions Done</TableHead>
-									<TableHead>Score</TableHead>
+									<TableHead className=''>
+										<span>Time Studied</span> <br />
+										<Badge>
+											{formatMilliseconds(DAILY_STUDY_TARGETS.timeStudied)}
+										</Badge>
+									</TableHead>
+									<TableHead className=''>
+										<span>Questions Done</span> <br />
+										<Badge>
+											{DAILY_STUDY_TARGETS.questionsDone.toLocaleString()}
+										</Badge>
+									</TableHead>
+									<TableHead className=''>
+										<span>Score </span> <br />
+										<Badge>{DAILY_STUDY_TARGETS.score.toLocaleString()}</Badge>
+									</TableHead>
 								</TableRow>
 							</TableHeader>
 							<TableBody>
@@ -1100,8 +1112,9 @@ const Dashboard = () => {
 									})),
 								)
 								.flat()
+								.sort((a, b) => b.totalTime - a.totalTime)
 								.map((task, index) => (
-									<TableRow key={String(task._id)}>
+									<TableRow key={String(task._id) + index.toLocaleString()}>
 										<TableCell>{index + 1}</TableCell>
 										<TableCell className='capitalize'>
 											{task.subjectDetails.name}
@@ -1151,7 +1164,7 @@ const Dashboard = () => {
 						</CardHeader>
 						<CardContent className='overflow-scroll no-scrollbar flex flex-wrap gap-2'>
 							{InProgressChaptersList.map((chapter, index) => {
-								if (!chapter.topicsList.filter((topic) => !topic.done).length) {
+								if (!(chapter.totalTopics - chapter.totalTopicsCompleted)) {
 									const tag = CHAPTER_COMPLETION_SEQUENCE.filter(
 										(tag) => !chapter[tag],
 									)[0];
@@ -1162,23 +1175,19 @@ const Dashboard = () => {
 												<FcRight />
 											</ItemMedia>
 											<ItemContent>
-												<ItemTitle className='capitalize'>Complete {chapter.name}&apos; {tag}</ItemTitle>
+												<ItemTitle className='capitalize'>
+													Complete {chapter.name}&apos; {tag}
+												</ItemTitle>
 											</ItemContent>
 											<ItemActions>
 												<Button
-													disabled={
-														Boolean(
-															chapter.totalTopics -
-															chapter.totalTopicsCompleted,
-														) ||
-														Boolean(
-															CurrentTaskList.docs.filter(
-																(task) =>
-																	String(task.subjectDetails._id) ==
-																	String(chapter.subject._id),
-															).length,
-														)
-													}
+													disabled={Boolean(
+														CurrentTaskList.docs.filter(
+															(task) =>
+																String(task.refDetails.chapter) ==
+																String(chapter._id),
+														).length,
+													)}
 													variant={'outline'}
 													size={'sm'}
 													onClick={() => {
@@ -1220,7 +1229,9 @@ const Dashboard = () => {
 											<FcRight />
 										</ItemMedia>
 										<ItemContent>
-											<ItemTitle className='capitalize'>Complete {chapter.name}&apos; Topic- {topic.name}</ItemTitle>
+											<ItemTitle className='capitalize'>
+												Complete {chapter.name}&apos; Topic- {topic.name}
+											</ItemTitle>
 										</ItemContent>
 										<ItemActions>
 											<Dialog>

@@ -51,7 +51,7 @@ import {
 } from '../ui/breadcrumb';
 import { toast } from 'react-toastify';
 import { axiosConfig } from '@/config/axios.config';
-import axios from 'axios';
+import axios, { AxiosResponse } from 'axios';
 import { IoMdAddCircle } from 'react-icons/io';
 import {
 	Dialog,
@@ -69,6 +69,7 @@ import z from 'zod';
 import { Field, FieldDescription, FieldError, FieldLabel } from '../ui/field';
 import { Input } from '../ui/input';
 import { iDetailedChapterResponse } from '@/types/res/chapter.res.types';
+import { iApiResponse } from '@/types/backend/apiResponse.types';
 
 export const ChapterModularUI = ({
 	className,
@@ -1009,16 +1010,16 @@ function AddTopicModalForm({
 					...AddTopicAxiosConfigHook,
 					data: { ...values },
 				};
-				const response = await axios.request(config);
-				console.log(response.data);
-				toast.success('Topic created successfully:');
+				const response: AxiosResponse<iApiResponse> =
+					await axios.request(config);
+				toast.success(response.data.message);
 
 				// * Smart form reset - keep all data except name and increment seqNumber
 				const currentSeqNumber = Number(topicCreateForm.getValues('seqNumber'));
 				topicCreateForm.setValue('name', '');
 				topicCreateForm.setValue('seqNumber', String(currentSeqNumber + 1));
 			} catch (error: any) {
-				const ErrorMessage = error?.response?.data || 'Error';
+				const ErrorMessage = error?.response?.data.message || 'Error';
 				toast.error(ErrorMessage);
 			}
 		},

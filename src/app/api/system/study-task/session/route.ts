@@ -134,6 +134,8 @@ export async function PUT(request: Request) {
 				if (tag === 'inTextQuestions' || tag === "inClassQuestions") {
 					await TopicModel.findByIdAndUpdate(refId, {
 						[tag]: true,
+					});
+					await TopicModel.findByIdAndUpdate(refId, {
 						done: true,
 					});
 					return;

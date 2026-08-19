@@ -106,3 +106,17 @@ export function interleaveArrays<T>(arrays: T[][]): T[] {
 
 	return result;
 }
+
+export function getRandomInt(min: number, max: number): number {
+	const minCeiled = Math.ceil(min);
+	const maxFloored = Math.floor(max);
+	return Math.floor(Math.random() * (maxFloored - minCeiled + 1) + minCeiled);
+}
+
+export function capitalizeWords(str: string) {
+	if (!str) return '';
+	return str
+		.split(' ')
+		.map((word) => word.charAt(0).toUpperCase() + word.slice(1))
+		.join(' ');
+}

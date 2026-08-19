@@ -51,21 +51,21 @@ const Header: React.FC<HeaderProps> = ({ className = '' }) => {
 
 	return (
 		<header className={cn('relative w-full bg-primary/10', className)}>
-			<Navbar>
+			<Navbar className='h-full'>
 				{/* Desktop Navigation */}
-				<NavBody>
+				<NavBody className='overflow-hidden h-full'>
 					<NavbarLogo />
 					<NavItems items={navItems} />
 					<div className='flex items-center gap-4'>
-						<NavbarButton variant='secondary'>
+						<NavbarButton variant='secondary' className=''>
 							<ModeToggle />
 						</NavbarButton>
 					</div>
 				</NavBody>
 
 				{/* Mobile Navigation */}
-				<MobileNav>
-					<MobileNavHeader>
+				<MobileNav className='h-full'>
+					<MobileNavHeader className='h-full'>
 						<NavbarLogo />
 						<MobileNavToggle
 							isOpen={isMobileMenuOpen}

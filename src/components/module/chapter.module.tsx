@@ -432,7 +432,7 @@ export const ChapterModularUI = ({
 					return {
 						...prev,
 						topicsList: newTopicsList,
-						totalTopicsCompleted: newTotalTopicsTheoryCompletedPercentage,
+						totalTopicsTheoryCompleted: newTotalTopicsTheoryCompletedPercentage,
 						totalTopicsTheoryCompletedPercentage:
 							(newTotalTopicsTheoryCompletedPercentage * 100) /
 							prev.totalTopics,

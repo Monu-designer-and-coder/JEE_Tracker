@@ -3,6 +3,7 @@
 
 import {
 	Card,
+	CardAction,
 	CardContent,
 	CardDescription,
 	CardHeader,
@@ -32,10 +33,12 @@ import {
 import { axiosConfig } from '@/config/axios.config';
 import { RefObject, useEffect, useMemo, useRef, useState } from 'react';
 import {
+	capitalizeWords,
 	formatDate,
 	formatMilliseconds,
 	formatTime,
 	getDaysAgoText,
+	getRandomInt,
 } from '@/lib/helpers';
 import { Skeleton } from '@/components/ui/skeleton';
 
@@ -65,7 +68,7 @@ import {
 	STORAGE_KEYS,
 	TOPIC_COMPLETION_SEQUENCE,
 } from '@/config/constants';
-import { WEEKLY_STUDY_TARGETS } from './../../config/constants';
+import { WEEKLY_STUDY_TARGETS } from '@/config/constants';
 import { iDetailedChapterResponse } from '@/types/res/chapter.res.types';
 import {
 	eStudyTaskOptions,
@@ -79,7 +82,7 @@ import {
 	ItemMedia,
 	ItemTitle,
 } from '@/components/ui/item';
-import { FcRight } from 'react-icons/fc';
+import { FcLink, FcOpenedFolder, FcRight } from 'react-icons/fc';
 import {
 	Dialog,
 	DialogContent,
@@ -88,6 +91,9 @@ import {
 	DialogTitle,
 	DialogTrigger,
 } from '@/components/ui/dialog';
+import { Checkbox } from '@/components/ui/checkbox';
+import Link from 'next/link';
+import { SidebarInset, SidebarTrigger } from '@/components/ui/sidebar';
 
 const timeFormatter = new Intl.DateTimeFormat('en-IN', {
 	hour: '2-digit',
@@ -255,6 +261,13 @@ const Dashboard = () => {
 			}),
 		[],
 	);
+	const axiosTopicFormConfigHook = useMemo(
+		() =>
+			axiosConfig('syllabus/topic', 'put', {
+				'Content-Type': 'application/json',
+			}),
+		[],
+	);
 
 	function fetchCurrentTasksList() {
 		axios
@@ -340,6 +353,207 @@ const Dashboard = () => {
 					fetchChaptersInProgressLists();
 				}
 			});
+	}
+
+	function updateTopicTags(
+		tag: 'done' | 'theory' | 'inTextQuestions' | 'inClassQuestions',
+		topicId: string,
+		chapterId: string,
+	) {
+		const dataToUpdate: {
+			done?: boolean;
+			theory?: boolean;
+			inTextQuestions?: boolean;
+			inClassQuestions?: boolean;
+		} = {};
+		switch (tag) {
+			case 'done':
+				setInProgressChaptersList((prev) => {
+					const currentChapters = prev.filter(
+						(chapter) => chapterId === String(chapter._id),
+					);
+					const restChapters = prev.filter(
+						(chapter) => chapterId !== String(chapter._id),
+					);
+					if (currentChapters.length !== 1) return prev;
+
+					const newTopicsList = currentChapters[0].topicsList.map((item) => {
+						if (String(item._id) == topicId) {
+							dataToUpdate.done = !item.done;
+
+							dataToUpdate.theory = undefined;
+							dataToUpdate.inTextQuestions = undefined;
+							dataToUpdate.inClassQuestions = undefined;
+
+							return { ...item, done: !item.done };
+						} else {
+							return item;
+						}
+					});
+					const newTotalTopicsDone = newTopicsList.filter(
+						(topic) => topic.done,
+					).length;
+					return [
+						...restChapters,
+						{
+							...currentChapters[0],
+							topicsList: newTopicsList,
+							totalTopicsCompleted: newTotalTopicsDone,
+							totalTopicsCompletedPercentage:
+								(newTotalTopicsDone * 100) / currentChapters[0].totalTopics,
+						},
+					];
+				});
+				axios
+					.request({
+						...axiosTopicFormConfigHook,
+						data: {
+							_id: topicId,
+							data: dataToUpdate,
+						},
+					})
+					.then(() => {
+						toast.success(`Successfully updated Topic`);
+					});
+				break;
+			case 'theory':
+				setInProgressChaptersList((prev) => {
+					const currentChapters = prev.filter(
+						(chapter) => chapterId === String(chapter._id),
+					);
+					const restChapters = prev.filter(
+						(chapter) => chapterId !== String(chapter._id),
+					);
+					if (currentChapters.length !== 1) return prev;
+
+					const newTopicsList = currentChapters[0].topicsList.map((item) => {
+						if (String(item._id) == topicId) {
+							dataToUpdate.theory = !item.theory;
+
+							dataToUpdate.done = undefined;
+							dataToUpdate.inTextQuestions = undefined;
+							dataToUpdate.inClassQuestions = undefined;
+
+							return { ...item, theory: !item.theory };
+						} else {
+							return item;
+						}
+					});
+					const newTotalTopicsTheoryCompletedPercentage = newTopicsList.filter(
+						(topic) => topic.theory,
+					).length;
+					return [
+						...restChapters,
+						{
+							...currentChapters[0],
+							topicsList: newTopicsList,
+							totalTopicsTheoryCompleted:
+								newTotalTopicsTheoryCompletedPercentage,
+							totalTopicsTheoryCompletedPercentage:
+								(newTotalTopicsTheoryCompletedPercentage * 100) /
+								currentChapters[0].totalTopics,
+						},
+					];
+				});
+				axios
+					.request({
+						...axiosTopicFormConfigHook,
+						data: {
+							_id: topicId,
+							data: dataToUpdate,
+						},
+					})
+					.then(() => {
+						toast.success(`Successfully updated Topic`);
+					});
+				break;
+			case 'inTextQuestions':
+				setInProgressChaptersList((prev) => {
+					const currentChapters = prev.filter(
+						(chapter) => chapterId === String(chapter._id),
+					);
+					const restChapters = prev.filter(
+						(chapter) => chapterId !== String(chapter._id),
+					);
+					if (currentChapters.length !== 1) return prev;
+
+					const newTopicsList = currentChapters[0].topicsList.map((item) => {
+						if (String(item._id) == topicId) {
+							dataToUpdate.inTextQuestions = !item.inTextQuestions;
+
+							dataToUpdate.theory = undefined;
+							dataToUpdate.done = undefined;
+							dataToUpdate.inClassQuestions = undefined;
+
+							return { ...item, inTextQuestions: !item.inTextQuestions };
+						} else {
+							return item;
+						}
+					});
+					return [
+						...restChapters,
+						{
+							...currentChapters[0],
+							topicsList: newTopicsList,
+						},
+					];
+				});
+				axios
+					.request({
+						...axiosTopicFormConfigHook,
+						data: {
+							_id: topicId,
+							data: dataToUpdate,
+						},
+					})
+					.then(() => {
+						toast.success(`Successfully updated Topic`);
+					});
+				break;
+			case 'inClassQuestions':
+				setInProgressChaptersList((prev) => {
+					const currentChapters = prev.filter(
+						(chapter) => chapterId == String(chapter._id),
+					);
+					const restChapters = prev.filter(
+						(chapter) => chapterId !== String(chapter._id),
+					);
+					if (currentChapters.length !== 1) return prev;
+
+					const newTopicsList = currentChapters[0].topicsList.map((item) => {
+						if (String(item._id) == topicId) {
+							dataToUpdate.inClassQuestions = !item.inClassQuestions;
+
+							dataToUpdate.theory = undefined;
+							dataToUpdate.inTextQuestions = undefined;
+							dataToUpdate.done = undefined;
+
+							return { ...item, inClassQuestions: !item.inClassQuestions };
+						} else {
+							return item;
+						}
+					});
+					return [
+						...restChapters,
+						{
+							...currentChapters[0],
+							topicsList: newTopicsList,
+						},
+					];
+				});
+				axios
+					.request({
+						...axiosTopicFormConfigHook,
+						data: {
+							_id: topicId,
+							data: dataToUpdate,
+						},
+					})
+					.then(() => {
+						toast.success(`Successfully updated Topic`);
+					});
+				break;
+		}
 	}
 
 	async function handleMarkAsUnfinished(chapterId: string) {
@@ -759,548 +973,725 @@ const Dashboard = () => {
 		);
 	}
 
-	return (
-		<div className='grid w-full bg-transparent h-full grid-cols-12 grid-rows-12 py-4 px-6 gap-3'>
-			<StudyTrackerDisplay
-				dataToDisplay={dataToDisplay}
-				className='w-full col-span-4 row-span-4 rounded-4xl bg-transparent border border-primary/30'
-			/>
-			<MissionCountdownCard className='w-full col-span-6 row-span-4 rounded-4xl px-3 bg-primary/5' />
-			<TimeBlock className='w-full col-span-2 row-span-4 rounded-4xl px-3' />
-			<Card className='w-full col-span-6 row-span-5 bg-primary/10 rounded-4xl py-4 px-3'>
-				<CardHeader>
-					<CardTitle className='font-heading text-xl'>
-						List of Tasks to Complete.
-					</CardTitle>
-				</CardHeader>
-				<CardContent className='overflow-scroll no-scrollbar'>
-					<Table className='w-full h-full'>
-						<TableCaption>List of Tasks to Complete</TableCaption>
-						<TableHeader>
-							<TableRow>
-								<TableHead>Subject</TableHead>
-								<TableHead>[Chapter/Task]</TableHead>
-								<TableHead>Name</TableHead>
-								<TableHead>Task</TableHead>
-								<TableHead>Total-Time</TableHead>
-								<TableHead>AssignDate</TableHead>
-								<TableHead>Start/End</TableHead>
-								<TableHead>Complete</TableHead>
-							</TableRow>
-						</TableHeader>
-						<TableBody className='overflow-scroll no-scrollbar'>
-							{CurrentTaskList.docs.map((task) => {
-								const subjectStreakDetails = subjectStreaks.filter(
-									(streak) =>
-										String(streak.subject._id) ===
-										String(task.subjectDetails._id),
-								)[0];
-								return (
-									<TableRow key={String(task._id)}>
-										<TableCell className='capitalize text-md font-heading'>
-											{task.subjectDetails.name}
-										</TableCell>
-										<TableCell className='capitalize text-md font-content-primary'>
-											{task.studyTask.enum}
-										</TableCell>
-										<TableCell className='capitalize text-md font-content-primary'>
-											{task.studyTask.tag}
-										</TableCell>
-										<TableCell className='capitalize text-md font-content-primary'>
-											{task.refDetails.name}
-										</TableCell>
-										<TableCell
-											className={cn(
-												'capitalize text-lg font-clock',
-												task.isSessionActive
-													? 'text-progressive-1'
-													: 'text-foreground',
-											)}>
-											{task.isSessionActive
-												? formatMilliseconds(liveTimestamp)
-												: formatMilliseconds(task.totalTimeSpent)}
-											<Badge>{task.workingSessions.length}</Badge>
-										</TableCell>
-										<TableCell
-											className={cn(
-												'capitalize text-lg font-clock',
-												getDaysAgoText(String(task.assignDate)).className,
-											)}>
-											{getDaysAgoText(String(task.assignDate)).value}
-										</TableCell>
-										<TableCell className='capitalize text-md font-content-primary'>
-											{task.isSessionActive ? (
-												<Button
-													size={'lg'}
-													variant={'destructive'}
-													className='cursor-pointer w-full font-badge'
-													onClick={() => {
-														handleSessionsOperations(String(task._id), 'end');
-														studySessionToggle(
-															String(subjectStreakDetails._id),
-															String(subjectStreakDetails.subject._id),
-															subjectStreakDetails.subject.name,
-														);
-													}}>
-													End
-												</Button>
-											) : (
+		return (
+			<SidebarInset className='grid w-full bg-transparent h-full grid-cols-12 grid-rows-12 py-4 px-6 gap-3'>
+				<StudyTrackerDisplay
+					dataToDisplay={dataToDisplay}
+					className='w-full col-span-4 row-span-4 rounded-4xl bg-transparent border border-primary/30'
+				/>
+				<MissionCountdownCard className='w-full col-span-6 row-span-4 rounded-4xl px-3 bg-primary/5' />
+				<TimeBlock className='w-full col-span-2 row-span-4 rounded-4xl px-3' />
+				<Card className='w-full col-span-6 row-span-5 bg-primary/10 rounded-4xl py-4 px-3'>
+					<CardHeader>
+						<CardTitle className='font-heading text-xl'>
+							List of Tasks to Complete.
+						</CardTitle>
+						<CardAction>
+							<Button
+								onClick={() => {
+									const randomTaskFromTodaysTaskList =
+										CurrentTaskList.docs[
+											getRandomInt(0, CurrentTaskList.totalDocs - 1)
+										];
+									toast.info(
+										capitalizeWords(
+											randomTaskFromTodaysTaskList.subjectDetails.name +
+												'-' +
+												randomTaskFromTodaysTaskList.studyTask.enum +
+												'-' +
+												randomTaskFromTodaysTaskList.studyTask.tag +
+												'-' +
+												randomTaskFromTodaysTaskList.refDetails.name,
+										),
+									);
+								}}>
+								Get Random Task.
+							</Button>
+						</CardAction>
+					</CardHeader>
+					<CardContent className='overflow-scroll no-scrollbar'>
+						<Table className='w-full h-full'>
+							<TableCaption>List of Tasks to Complete</TableCaption>
+							<TableHeader>
+								<TableRow>
+									<TableHead>Subject</TableHead>
+									<TableHead>[Chapter/Task]</TableHead>
+									<TableHead>Name</TableHead>
+									<TableHead>Task</TableHead>
+									<TableHead>Total-Time</TableHead>
+									<TableHead>AssignDate</TableHead>
+									<TableHead>Start/End</TableHead>
+									<TableHead>Complete</TableHead>
+								</TableRow>
+							</TableHeader>
+							<TableBody className='overflow-scroll no-scrollbar'>
+								{CurrentTaskList.docs.map((task) => {
+									const subjectStreakDetails = subjectStreaks.filter(
+										(streak) =>
+											String(streak.subject._id) ===
+											String(task.subjectDetails._id),
+									)[0];
+									return (
+										<TableRow key={String(task._id)}>
+											<TableCell className='capitalize text-md font-heading'>
+												{task.subjectDetails.name}
+											</TableCell>
+											<TableCell className='capitalize text-md font-content-primary'>
+												{task.studyTask.enum}
+											</TableCell>
+											<TableCell className='capitalize text-md font-content-primary'>
+												{task.studyTask.tag}
+											</TableCell>
+											<TableCell className='capitalize text-md font-content-primary'>
+												{task.refDetails.name}
+											</TableCell>
+											<TableCell
+												className={cn(
+													'capitalize text-lg font-clock',
+													task.isSessionActive
+														? 'text-progressive-1'
+														: 'text-foreground',
+												)}>
+												{task.isSessionActive
+													? formatMilliseconds(liveTimestamp)
+													: formatMilliseconds(task.totalTimeSpent)}
+												<Badge>{task.workingSessions.length}</Badge>
+											</TableCell>
+											<TableCell
+												className={cn(
+													'capitalize text-lg font-clock',
+													getDaysAgoText(String(task.assignDate)).className,
+												)}>
+												{getDaysAgoText(String(task.assignDate)).value}
+											</TableCell>
+											<TableCell className='capitalize text-md font-content-primary'>
+												{task.isSessionActive ? (
+													<Button
+														size={'lg'}
+														variant={'destructive'}
+														className='cursor-pointer w-full font-badge'
+														onClick={() => {
+															handleSessionsOperations(String(task._id), 'end');
+															studySessionToggle(
+																String(subjectStreakDetails._id),
+																String(subjectStreakDetails.subject._id),
+																subjectStreakDetails.subject.name,
+															);
+														}}>
+														End
+													</Button>
+												) : (
+													<Button
+														size={'lg'}
+														variant={'default'}
+														className='cursor-pointer w-full font-badge'
+														disabled={currentStudySession.isStudySessionActive}
+														onClick={() => {
+															handleSessionsOperations(
+																String(task._id),
+																'start',
+															);
+															studySessionToggle(
+																String(subjectStreakDetails._id),
+																String(subjectStreakDetails.subject._id),
+																subjectStreakDetails.subject.name,
+															);
+														}}>
+														Start
+													</Button>
+												)}
+											</TableCell>
+											<TableCell className='capitalize text-md'>
 												<Button
 													size={'lg'}
 													variant={'default'}
-													className='cursor-pointer w-full font-badge'
 													disabled={currentStudySession.isStudySessionActive}
+													className='cursor-pointer w-full font-badge'
 													onClick={() => {
-														handleSessionsOperations(String(task._id), 'start');
-														studySessionToggle(
-															String(subjectStreakDetails._id),
-															String(subjectStreakDetails.subject._id),
-															subjectStreakDetails.subject.name,
-														);
+														handleSessionsOperations(String(task._id), 'done');
 													}}>
-													Start
+													Done
 												</Button>
+											</TableCell>
+										</TableRow>
+									);
+								})}
+							</TableBody>
+						</Table>
+					</CardContent>
+				</Card>
+				<Card className='w-full col-span-6 row-span-3 row-start-10 col-start-1 bg-transparent border border-primary rounded-4xl py-4 px-3'>
+					<CardHeader>
+						<CardTitle className='font-heading text-xl'>
+							Today{' '}
+							<Badge variant={'secondary'} className='text-xl py-4 px-1'>
+								Goal:{' '}
+								{Math.ceil(
+									(InProgressChaptersList.map(
+										(chapter) => chapter.topicsList.length,
+									).reduce((prev, curr) => (prev += curr), 0) *
+										1.2) /
+										7,
+								)}{' '}
+								Topics A day.
+							</Badge>{' '}
+							<Badge
+								className={cn(
+									'text-xl py-4 px-1',
+									getColorsClassAsPerPercentage(
+										((todayCompletedTaskList.docs.filter(
+											(task) => task.studyTask.enum == 'topic',
+										).length /
+											2) *
+											100) /
+											Math.ceil(
+												(InProgressChaptersList.map(
+													(chapter) => chapter.topicsList.length,
+												).reduce((prev, curr) => (prev += curr), 0) *
+													1.2) /
+													7,
+											),
+									),
+								)}>
+								Todays Progress:{' '}
+								{todayCompletedTaskList.docs.filter(
+									(task) => task.studyTask.enum == 'topic',
+								).length / 2}{' '}
+							</Badge>{' '}
+						</CardTitle>
+					</CardHeader>
+					<CardContent className='overflow-scroll no-scrollbar grid grid-cols-12 w-full h-full gap-2'>
+						<div className='col-span-7 h-full w-full border border-primary/10 rounded-4xl p-2'>
+							<h3>
+								Todays Tasks Done{' '}
+								<Badge>
+									{todayCompletedTaskList.docs.length.toLocaleString()}
+								</Badge>
+							</h3>
+							<Table>
+								<TableCaption>Todays Tasks Done</TableCaption>
+								<TableHeader>
+									<TableRow>
+										<TableHead>Subject</TableHead>
+										<TableHead>Task</TableHead>
+										<TableHead>Completed At</TableHead>
+									</TableRow>
+								</TableHeader>
+								<TableBody>
+									{todayCompletedTaskList.docs.map((task) => (
+										<TableRow key={String(task._id)}>
+											<TableCell className='capitalize'>
+												{String(task.subjectDetails.name)}
+											</TableCell>
+											<TableCell className='capitalize'>
+												{task.refDetails.name + '-' + task.studyTask.tag}
+											</TableCell>
+											<TableCell className='capitalize'>
+												{formatTime(String(task?.completionDate || ''))}
+											</TableCell>
+										</TableRow>
+									))}
+								</TableBody>
+							</Table>
+						</div>
+						<div className='col-span-5 h-full w-full border border-primary/10 rounded-4xl'>
+							<Table>
+								<TableCaption>Todays Study</TableCaption>
+								<TableHeader>
+									<TableRow>
+										<TableHead>Subject</TableHead>
+										<TableHead className=''>
+											<span>Time Studied</span> <br />
+											<Badge>
+												{formatMilliseconds(DAILY_STUDY_TARGETS.timeStudied)}
+											</Badge>
+										</TableHead>
+										<TableHead className=''>
+											<span>Questions Done</span> <br />
+											<Badge>
+												{DAILY_STUDY_TARGETS.questionsDone.toLocaleString()}
+											</Badge>
+										</TableHead>
+										<TableHead className=''>
+											<span>Score </span> <br />
+											<Badge>
+												{DAILY_STUDY_TARGETS.score.toLocaleString()}
+											</Badge>
+										</TableHead>
+									</TableRow>
+								</TableHeader>
+								<TableBody>
+									<TableRow>
+										<TableCell>Physics</TableCell>
+										<TableCell>
+											{formatMilliseconds(
+												todaysProgressData.physics.totalTimeStudiedMs,
 											)}
 										</TableCell>
-										<TableCell className='capitalize text-md'>
-											<Button
-												size={'lg'}
-												variant={'default'}
-												disabled={currentStudySession.isStudySessionActive}
-												className='cursor-pointer w-full font-badge'
-												onClick={() => {
-													handleSessionsOperations(String(task._id), 'done');
-												}}>
-												Done
-											</Button>
+										<TableCell>
+											{todaysProgressData.physics.totalQuestionsDone.toLocaleString()}
+										</TableCell>
+										<TableCell>
+											{calculateDayScore(
+												todaysProgressData.physics.totalQuestionsDone,
+												todaysProgressData.physics.totalTimeStudiedMs,
+											).toLocaleString()}
 										</TableCell>
 									</TableRow>
-								);
-							})}
-						</TableBody>
-					</Table>
-				</CardContent>
-			</Card>
-			<Card className='w-full col-span-6 row-span-3 row-start-10 col-start-1 bg-transparent border border-primary rounded-4xl py-4 px-3'>
-				<CardHeader>
-					<CardTitle className='font-heading text-xl'>Today</CardTitle>
-				</CardHeader>
-				<CardContent className='overflow-scroll no-scrollbar grid grid-cols-12 w-full h-full gap-2'>
-					<div className='col-span-7 h-full w-full border border-primary/10 rounded-4xl p-2'>
-						<h3>Todays Tasks Done</h3>
-						<Table>
-							<TableCaption>Todays Tasks Done</TableCaption>
-							<TableHeader>
-								<TableRow>
-									<TableHead>Subject</TableHead>
-									<TableHead>Task</TableHead>
-									<TableHead>Completed At</TableHead>
-								</TableRow>
-							</TableHeader>
-							<TableBody>
-								{todayCompletedTaskList.docs.map((task) => (
-									<TableRow key={String(task._id)}>
-										<TableCell className='capitalize'>
-											{String(task.subjectDetails.name)}
+									<TableRow>
+										<TableCell>Chemistry</TableCell>
+										<TableCell>
+											{formatMilliseconds(
+												todaysProgressData.chemistry.totalTimeStudiedMs,
+											)}
 										</TableCell>
-										<TableCell className='capitalize'>
-											{task.refDetails.name + '-' + task.studyTask.tag}
+										<TableCell>
+											{todaysProgressData.chemistry.totalQuestionsDone.toLocaleString()}
 										</TableCell>
-										<TableCell className='capitalize'>
-											{formatTime(String(task?.completionDate || ''))}
+										<TableCell>
+											{calculateDayScore(
+												todaysProgressData.chemistry.totalQuestionsDone,
+												todaysProgressData.chemistry.totalTimeStudiedMs,
+											).toLocaleString()}
 										</TableCell>
 									</TableRow>
-								))}
-							</TableBody>
-						</Table>
+									<TableRow>
+										<TableCell>Mathematics</TableCell>
+										<TableCell>
+											{formatMilliseconds(
+												todaysProgressData.mathematics.totalTimeStudiedMs,
+											)}
+										</TableCell>
+										<TableCell>
+											{todaysProgressData.mathematics.totalQuestionsDone.toLocaleString()}
+										</TableCell>
+										<TableCell>
+											{calculateDayScore(
+												todaysProgressData.mathematics.totalQuestionsDone,
+												todaysProgressData.mathematics.totalTimeStudiedMs,
+											).toLocaleString()}
+										</TableCell>
+									</TableRow>
+								</TableBody>
+								<TableFooter>
+									<TableRow>
+										<TableCell className='bg-primary/5 text-primary'>
+											Total
+										</TableCell>
+										<TableCell
+											className={cn(
+												getColorsClassAsPerPercentage(
+													(todaysProgressData.totalTimeStudiedMs * 100) /
+														DAILY_STUDY_TARGETS.timeStudied,
+												),
+											)}>
+											{formatMilliseconds(
+												todaysProgressData.totalTimeStudiedMs,
+											)}
+										</TableCell>
+										<TableCell
+											className={cn(
+												getColorsClassAsPerPercentage(
+													(todaysProgressData.totalQuestionsDone * 100) /
+														DAILY_STUDY_TARGETS.questionsDone,
+												),
+											)}>
+											{todaysProgressData.totalQuestionsDone.toLocaleString()}
+										</TableCell>
+										<TableCell
+											className={cn(
+												getColorsClassAsPerPercentage(
+													(calculateDayScore(
+														todaysProgressData.totalQuestionsDone,
+														todaysProgressData.totalTimeStudiedMs,
+													) *
+														100) /
+														DAILY_STUDY_TARGETS.score,
+												),
+											)}>
+											{calculateDayScore(
+												todaysProgressData.totalQuestionsDone,
+												todaysProgressData.totalTimeStudiedMs,
+											).toLocaleString()}
+										</TableCell>
+									</TableRow>
+								</TableFooter>
+							</Table>
+						</div>
+					</CardContent>
+				</Card>
+				<div className='w-full col-span-2 row-span-4 rounded-4xl px-3 bg-primary/5 py-2 flex flex-col gap-4 items-center justify-center'>
+					<Button
+						variant={'outline'}
+						className={cn(
+							'bg-transparent w-[70%] aspect-square rounded-full h-auto border border-primary flex items-center justify-evenly text-8xl font-clock cursor-pointer',
+							getColorsClassAsPerPercentage(
+								(todaysProgressData.totalQuestionsDone * 100) /
+									DAILY_STUDY_TARGETS.questionsDone,
+							),
+						)}
+						disabled={!currentStudySession.isStudySessionActive}
+						onClick={() => {
+							incrementQuestionStreak(
+								String(currentActiveSessionStreakDetails[0]._id),
+								String(currentActiveSessionStreakDetails[0].subject._id),
+							);
+						}}>
+						{currentStudySession.isStudySessionActive
+							? String(currentActiveSessionStreakDetails[0]?.questionsDone || 0)
+							: todaysProgressData.totalQuestionsDone}
+					</Button>
+					<div className='w-full h-auto text-center font-heading text-xl uppercase'>
+						{currentStudySession.isStudySessionActive
+							? currentStudySession.subjectDetails.subjectName
+							: 'No Active Session'}
 					</div>
-					<div className='col-span-5 h-full w-full border border-primary/10 rounded-4xl'>
-						<Table>
-							<TableCaption>Todays Study</TableCaption>
-							<TableHeader>
-								<TableRow>
-									<TableHead>Subject</TableHead>
-									<TableHead className=''>
-										<span>Time Studied</span> <br />
-										<Badge>
-											{formatMilliseconds(DAILY_STUDY_TARGETS.timeStudied)}
-										</Badge>
-									</TableHead>
-									<TableHead className=''>
-										<span>Questions Done</span> <br />
-										<Badge>
-											{DAILY_STUDY_TARGETS.questionsDone.toLocaleString()}
-										</Badge>
-									</TableHead>
-									<TableHead className=''>
-										<span>Score </span> <br />
-										<Badge>{DAILY_STUDY_TARGETS.score.toLocaleString()}</Badge>
-									</TableHead>
-								</TableRow>
-							</TableHeader>
-							<TableBody>
-								<TableRow>
-									<TableCell>Physics</TableCell>
-									<TableCell>
-										{formatMilliseconds(
-											todaysProgressData.physics.totalTimeStudiedMs,
-										)}
-									</TableCell>
-									<TableCell>
-										{todaysProgressData.physics.totalQuestionsDone.toLocaleString()}
-									</TableCell>
-									<TableCell>
-										{calculateDayScore(
-											todaysProgressData.physics.totalQuestionsDone,
-											todaysProgressData.physics.totalTimeStudiedMs,
-										).toLocaleString()}
-									</TableCell>
-								</TableRow>
-								<TableRow>
-									<TableCell>Chemistry</TableCell>
-									<TableCell>
-										{formatMilliseconds(
-											todaysProgressData.chemistry.totalTimeStudiedMs,
-										)}
-									</TableCell>
-									<TableCell>
-										{todaysProgressData.chemistry.totalQuestionsDone.toLocaleString()}
-									</TableCell>
-									<TableCell>
-										{calculateDayScore(
-											todaysProgressData.chemistry.totalQuestionsDone,
-											todaysProgressData.chemistry.totalTimeStudiedMs,
-										).toLocaleString()}
-									</TableCell>
-								</TableRow>
-								<TableRow>
-									<TableCell>Mathematics</TableCell>
-									<TableCell>
-										{formatMilliseconds(
-											todaysProgressData.mathematics.totalTimeStudiedMs,
-										)}
-									</TableCell>
-									<TableCell>
-										{todaysProgressData.mathematics.totalQuestionsDone.toLocaleString()}
-									</TableCell>
-									<TableCell>
-										{calculateDayScore(
-											todaysProgressData.mathematics.totalQuestionsDone,
-											todaysProgressData.mathematics.totalTimeStudiedMs,
-										).toLocaleString()}
-									</TableCell>
-								</TableRow>
-							</TableBody>
-							<TableFooter>
-								<TableRow>
-									<TableCell className='bg-primary/5 text-primary'>
-										Total
-									</TableCell>
-									<TableCell
-										className={cn(
-											getColorsClassAsPerPercentage(
-												(todaysProgressData.totalTimeStudiedMs * 100) /
-													DAILY_STUDY_TARGETS.timeStudied,
-											),
-										)}>
-										{formatMilliseconds(todaysProgressData.totalTimeStudiedMs)}
-									</TableCell>
-									<TableCell
-										className={cn(
-											getColorsClassAsPerPercentage(
-												(todaysProgressData.totalQuestionsDone * 100) /
-													DAILY_STUDY_TARGETS.questionsDone,
-											),
-										)}>
-										{todaysProgressData.totalQuestionsDone.toLocaleString()}
-									</TableCell>
-									<TableCell
-										className={cn(
-											getColorsClassAsPerPercentage(
-												(calculateDayScore(
-													todaysProgressData.totalQuestionsDone,
-													todaysProgressData.totalTimeStudiedMs,
-												) *
-													100) /
-													DAILY_STUDY_TARGETS.score,
-											),
-										)}>
-										{calculateDayScore(
-											todaysProgressData.totalQuestionsDone,
-											todaysProgressData.totalTimeStudiedMs,
-										).toLocaleString()}
-									</TableCell>
-								</TableRow>
-							</TableFooter>
-						</Table>
-					</div>
-				</CardContent>
-			</Card>
-			<div className='w-full col-span-2 row-span-4 rounded-4xl px-3 bg-primary/5 py-2 flex flex-col gap-4 items-center justify-center'>
-				<Button
-					variant={'outline'}
-					className={cn(
-						'bg-transparent w-[70%] aspect-square rounded-full h-auto border border-primary flex items-center justify-evenly text-8xl font-clock cursor-pointer',
-						getColorsClassAsPerPercentage(
-							(todaysProgressData.totalQuestionsDone * 100) /
-								DAILY_STUDY_TARGETS.questionsDone,
-						),
-					)}
-					disabled={!currentStudySession.isStudySessionActive}
-					onClick={() => {
-						incrementQuestionStreak(
-							String(currentActiveSessionStreakDetails[0]._id),
-							String(currentActiveSessionStreakDetails[0].subject._id),
-						);
-					}}>
-					{currentStudySession.isStudySessionActive
-						? String(currentActiveSessionStreakDetails[0]?.questionsDone || 0)
-						: todaysProgressData.totalQuestionsDone}
-				</Button>
-				<div className='w-full h-auto text-center font-heading text-xl uppercase'>
-					{currentStudySession.isStudySessionActive
-						? currentStudySession.subjectDetails.subjectName
-						: 'No Active Session'}
 				</div>
-			</div>
-			<Card className='w-full col-span-2 row-span-2 col-start-7 rounded-4xl border border-primary bg-primary/5'>
-				<CardHeader>
-					<CardTitle className='font-heading text-xl'>
-						Today Total Time Studied:{' '}
-					</CardTitle>
-					<CardDescription>
-						{formatDate(String(subjectStreaks[0]?.date || new Date()))}
-					</CardDescription>
-				</CardHeader>
-				<CardContent className='font-clock flex items-center justify-center h-full text-5xl'>
-					{currentStudySession.isStudySessionActive
-						? formatMilliseconds(
-								liveTimestamp + todaysProgressData.totalTimeStudiedMs,
-							)
-						: formatMilliseconds(todaysProgressData.totalTimeStudiedMs)}
-				</CardContent>
-			</Card>
-			<Card className='w-full col-span-2 row-span-2 col-start-7 row-star-11 rounded-4xl border border-primary bg-primary/5'>
-				<CardHeader>
-					<CardTitle className='font-heading text-xl'>
-						Today Study Sessions:
-						<Badge>
-							{todaySessionsList.docs
-								.map((_) => _.workingSessions)
-								.flat()
-								.length.toLocaleString()}
-						</Badge>
-					</CardTitle>
-				</CardHeader>
-				<CardContent className='font-clock  overflow-scroll no-scrollbar w-full h-full'>
-					<Table>
-						<TableCaption>Brief Session Details:</TableCaption>
-						<TableHeader>
-							<TableRow>
-								<TableHead>S.No.</TableHead>
-								<TableHead>Subject</TableHead>
-								<TableHead>TotalTime</TableHead>
-							</TableRow>
-						</TableHeader>
-						<TableBody>
-							{todaySessionsList.docs
-								.map((_) =>
-									_.workingSessions.map((__) => ({
-										...__,
-										_id: _._id,
-										subjectDetails: _.subjectDetails,
-									})),
+				<Card className='w-full col-span-2 row-span-2 col-start-7 rounded-4xl border border-primary bg-primary/5'>
+					<CardHeader>
+						<CardTitle className='font-heading text-xl'>
+							Today Total Time Studied:{' '}
+						</CardTitle>
+						<CardDescription>
+							{formatDate(String(subjectStreaks[0]?.date || new Date()))}
+						</CardDescription>
+					</CardHeader>
+					<CardContent className='font-clock flex items-center justify-center h-full text-5xl'>
+						{currentStudySession.isStudySessionActive
+							? formatMilliseconds(
+									liveTimestamp + todaysProgressData.totalTimeStudiedMs,
 								)
-								.flat()
-								.sort((a, b) => b.totalTime - a.totalTime)
-								.map((task, index) => (
-									<TableRow key={String(task._id) + index.toLocaleString()}>
-										<TableCell>{index + 1}</TableCell>
-										<TableCell className='capitalize'>
-											{task.subjectDetails.name}
-										</TableCell>
-										<TableCell>{formatMilliseconds(task.totalTime)}</TableCell>
-									</TableRow>
+							: formatMilliseconds(todaysProgressData.totalTimeStudiedMs)}
+					</CardContent>
+				</Card>
+				<Card className='w-full col-span-2 row-span-2 col-start-7 row-star-11 rounded-4xl border border-primary bg-primary/5'>
+					<CardHeader>
+						<CardTitle className='font-heading text-xl'>
+							Today Study Sessions:
+							<Badge>
+								{todaySessionsList.docs
+									.map((_) => _.workingSessions)
+									.flat()
+									.length.toLocaleString()}
+							</Badge>
+						</CardTitle>
+					</CardHeader>
+					<CardContent className='font-clock  overflow-scroll no-scrollbar w-full h-full'>
+						<Table>
+							<TableCaption>Brief Session Details:</TableCaption>
+							<TableHeader>
+								<TableRow>
+									<TableHead>S.No.</TableHead>
+									<TableHead>Subject</TableHead>
+									<TableHead>TotalTime</TableHead>
+								</TableRow>
+							</TableHeader>
+							<TableBody>
+								{todaySessionsList.docs
+									.map((_) =>
+										_.workingSessions.map((__) => ({
+											...__,
+											_id: _._id,
+											subjectDetails: _.subjectDetails,
+										})),
+									)
+									.flat()
+									.sort(
+										(a, b) => Number(new Date(b.end)) - Number(new Date(a.end)),
+									)
+									.map((task, index) => (
+										<TableRow key={String(task._id) + index.toLocaleString()}>
+											<TableCell>{index + 1}</TableCell>
+											<TableCell className='capitalize'>
+												{task.subjectDetails.name}
+											</TableCell>
+											<TableCell>
+												{formatMilliseconds(task.totalTime)}
+											</TableCell>
+										</TableRow>
+									))}
+							</TableBody>
+						</Table>
+					</CardContent>
+				</Card>
+				<Card className='w-full col-span-6 row-span-8 row-start-5 col-start-9 bg-transparent border border-primary rounded-4xl py-4 px-3'>
+					<CardHeader>
+						<CardTitle>Study-System:</CardTitle>
+						<CardAction>
+							<Button variant='link' asChild>
+								<Link href={'/system/'}>
+									<FcLink className='w-5 h-5' />
+								</Link>
+							</Button>
+						</CardAction>
+					</CardHeader>
+					<CardContent className='h-full w-full flex flex-col items-center justify-center gap-2'>
+						<Card size='sm' className='w-full h-full rounded-4xl'>
+							<CardHeader>
+								<CardTitle>Chapters InProgress</CardTitle>
+							</CardHeader>
+							<CardContent className='flex flex-wrap gap-2 overflow-scroll no-scrollbar'>
+								{InProgressChaptersList.map((chapter, index) => (
+									<Item key={String(chapter._id)} variant={'outline'}>
+										<ItemMedia variant='icon'>
+											{index + 1}
+											<FcRight />
+										</ItemMedia>
+										<ItemContent>
+											<ItemTitle>{chapter.name}</ItemTitle>
+										</ItemContent>
+										<ItemActions>
+											<Badge
+												className={getColorsClassAsPerPercentage(
+													chapter.totalTopicsCompletedPercentage,
+												)}>
+												{chapter.totalTopicsCompleted}/{chapter.totalTopics}
+											</Badge>
+											<Button
+												size={'sm'}
+												onClick={() => {
+													handleMarkAsUnfinished(String(chapter._id));
+												}}>
+												Mark Unfinished
+											</Button>
+											<Dialog>
+												<DialogTrigger>
+													<FcOpenedFolder />
+												</DialogTrigger>
+												<DialogContent className='max-w-[60vh]!'>
+													<DialogHeader>
+														<DialogTitle>List of Topics:</DialogTitle>
+														<DialogDescription>
+															This is all the list topics of {chapter.name}
+														</DialogDescription>
+														<Table className='w-full'>
+															<TableCaption>
+																Topics of the chapters
+															</TableCaption>
+															<TableHeader>
+																<TableRow>
+																	<TableHead>S.No.</TableHead>
+																	<TableHead>Topic Name</TableHead>
+																	<TableHead>Theory</TableHead>
+																	<TableHead>In-Text Qs</TableHead>
+																	<TableHead>In-Class Qs</TableHead>
+																	<TableHead>Done</TableHead>
+																</TableRow>
+															</TableHeader>
+															<TableBody>
+																{chapter.topicsList.map((topic) => (
+																	<TableRow key={String(topic._id)}>
+																		<TableCell>{topic.seqNumber}</TableCell>
+																		<TableCell className='capitalize'>
+																			{topic.name}
+																		</TableCell>
+																		<TableCell>
+																			{' '}
+																			<Checkbox
+																				onClick={() => {
+																					updateTopicTags(
+																						'theory',
+																						String(topic._id),
+																						String(chapter._id),
+																					);
+																				}}
+																				checked={topic.theory}
+																			/>{' '}
+																		</TableCell>
+																		<TableCell>
+																			{' '}
+																			<Checkbox
+																				onClick={() => {
+																					updateTopicTags(
+																						'inTextQuestions',
+																						String(topic._id),
+																						String(chapter._id),
+																					);
+																				}}
+																				checked={topic.inTextQuestions}
+																			/>{' '}
+																		</TableCell>
+																		<TableCell>
+																			{' '}
+																			<Checkbox
+																				onClick={() => {
+																					updateTopicTags(
+																						'inClassQuestions',
+																						String(topic._id),
+																						String(chapter._id),
+																					);
+																				}}
+																				checked={topic.inClassQuestions}
+																			/>{' '}
+																		</TableCell>
+																		<TableCell>
+																			{' '}
+																			<Checkbox
+																				onClick={() => {
+																					updateTopicTags(
+																						'done',
+																						String(topic._id),
+																						String(chapter._id),
+																					);
+																				}}
+																				checked={topic.done}
+																			/>{' '}
+																		</TableCell>
+																	</TableRow>
+																))}
+															</TableBody>
+														</Table>
+													</DialogHeader>
+												</DialogContent>
+											</Dialog>
+										</ItemActions>
+									</Item>
 								))}
-						</TableBody>
-					</Table>
-				</CardContent>
-			</Card>
-			<Card className='w-full col-span-6 row-span-8 row-start-5 col-start-9 bg-transparent border border-primary rounded-4xl py-4 px-3'>
-				<CardHeader>
-					<CardTitle>Study-System:</CardTitle>
-				</CardHeader>
-				<CardContent className='h-full w-full flex flex-col items-center justify-center gap-2'>
-					<Card size='sm' className='w-full h-full rounded-4xl'>
-						<CardHeader>
-							<CardTitle>Chapters InProgress</CardTitle>
-						</CardHeader>
-						<CardContent className='flex flex-wrap gap-2 overflow-scroll no-scrollbar'>
-							{InProgressChaptersList.map((chapter, index) => (
-								<Item key={String(chapter._id)} variant={'outline'}>
-									<ItemMedia variant='icon'>
-										{index + 1}
-										<FcRight />
-									</ItemMedia>
-									<ItemContent>
-										<ItemTitle>{chapter.name}</ItemTitle>
-									</ItemContent>
-									<ItemActions>
-										<Button
-											size={'sm'}
-											onClick={() => {
-												handleMarkAsUnfinished(String(chapter._id));
-											}}>
-											Mark Unfinished
-										</Button>
-									</ItemActions>
-								</Item>
-							))}
-						</CardContent>
-					</Card>
-					<Card size='sm' className='w-full h-full rounded-4xl'>
-						<CardHeader>
-							<CardTitle>Chapters&apos; Tasks</CardTitle>
-						</CardHeader>
-						<CardContent className='overflow-scroll no-scrollbar flex flex-wrap gap-2'>
-							{InProgressChaptersList.map((chapter, index) => {
-								if (!(chapter.totalTopics - chapter.totalTopicsCompleted)) {
-									const tag = CHAPTER_COMPLETION_SEQUENCE.filter(
-										(tag) => !chapter[tag],
+							</CardContent>
+						</Card>
+						<Card size='sm' className='w-full h-full rounded-4xl'>
+							<CardHeader>
+								<CardTitle>Chapters&apos; Tasks</CardTitle>
+							</CardHeader>
+							<CardContent className='overflow-scroll no-scrollbar flex flex-wrap gap-2'>
+								{InProgressChaptersList.map((chapter, index) => {
+									if (!(chapter.totalTopics - chapter.totalTopicsCompleted)) {
+										const tag = CHAPTER_COMPLETION_SEQUENCE.filter(
+											(tag) => !chapter[tag],
+										)[0];
+										return (
+											<Item variant={'outline'} key={String(chapter._id)}>
+												<ItemMedia variant='icon'>
+													{index + 1}
+													<FcRight />
+												</ItemMedia>
+												<ItemContent>
+													<ItemTitle className='capitalize'>
+														Complete {chapter.name}&apos; {tag}
+													</ItemTitle>
+												</ItemContent>
+												<ItemActions>
+													<Button
+														disabled={Boolean(
+															CurrentTaskList.docs.filter(
+																(task) =>
+																	String(task.refDetails.chapter) ==
+																	String(chapter._id),
+															).length,
+														)}
+														variant={'outline'}
+														size={'sm'}
+														onClick={() => {
+															handleCreateStudyTask(
+																eStudyTaskOptions.Chapter,
+																String(chapter._id),
+																tag === 'theory'
+																	? eStudyTaskOptionsChapterTags.Theory
+																	: tag === 'shortNotes'
+																		? eStudyTaskOptionsChapterTags.ShortNotes
+																		: tag === 'PYQ_Advanced'
+																			? eStudyTaskOptionsChapterTags.PYQ_Advanced
+																			: tag === 'PYQ_Mains'
+																				? eStudyTaskOptionsChapterTags.PYQ_Mains
+																				: tag === 'Book'
+																					? eStudyTaskOptionsChapterTags.Book
+																					: tag === 'DPP1'
+																						? eStudyTaskOptionsChapterTags.DPP1
+																						: tag === 'DPP2'
+																							? eStudyTaskOptionsChapterTags.DPP2
+																							: tag === 'Module'
+																								? eStudyTaskOptionsChapterTags.Module
+																								: eStudyTaskOptionsChapterTags.mindMap,
+															);
+														}}>
+														Start
+													</Button>
+												</ItemActions>
+											</Item>
+										);
+									}
+									const topic = chapter.topicsList.filter(
+										(topic) => !topic.done,
 									)[0];
 									return (
-										<Item variant={'outline'} key={String(chapter._id)}>
+										<Item variant={'outline'} key={String(topic._id)}>
 											<ItemMedia variant='icon'>
 												{index + 1}
 												<FcRight />
 											</ItemMedia>
 											<ItemContent>
 												<ItemTitle className='capitalize'>
-													Complete {chapter.name}&apos; {tag}
+													Complete {chapter.name}&apos; Topic- {topic.name}
 												</ItemTitle>
 											</ItemContent>
 											<ItemActions>
-												<Button
-													disabled={Boolean(
-														CurrentTaskList.docs.filter(
-															(task) =>
-																String(task.refDetails.chapter) ==
-																String(chapter._id),
-														).length,
-													)}
-													variant={'outline'}
-													size={'sm'}
-													onClick={() => {
-														handleCreateStudyTask(
-															eStudyTaskOptions.Chapter,
-															String(chapter._id),
-															tag === 'theory'
-																? eStudyTaskOptionsChapterTags.Theory
-																: tag === 'shortNotes'
-																	? eStudyTaskOptionsChapterTags.ShortNotes
-																	: tag === 'PYQ_Advanced'
-																		? eStudyTaskOptionsChapterTags.PYQ_Advanced
-																		: tag === 'PYQ_Mains'
-																			? eStudyTaskOptionsChapterTags.PYQ_Mains
-																			: tag === 'Book'
-																				? eStudyTaskOptionsChapterTags.Book
-																				: tag === 'DPP1'
-																					? eStudyTaskOptionsChapterTags.DPP1
-																					: tag === 'DPP2'
-																						? eStudyTaskOptionsChapterTags.DPP2
-																						: tag === 'Module'
-																							? eStudyTaskOptionsChapterTags.Module
-																							: eStudyTaskOptionsChapterTags.mindMap,
-														);
-													}}>
-													Start
-												</Button>
+												<Dialog>
+													<DialogTrigger asChild>
+														<Button
+															disabled={Boolean(
+																CurrentTaskList.docs.filter(
+																	(task) =>
+																		String(task.refDetails.chapter) ==
+																		String(String(chapter._id)),
+																).length,
+															)}
+															variant={'outline'}
+															size={'sm'}>
+															Start
+														</Button>
+													</DialogTrigger>
+													<DialogContent>
+														<DialogHeader>
+															<DialogTitle>{topic.name}</DialogTitle>
+															<DialogDescription>
+																Make this topic the current task.
+															</DialogDescription>
+														</DialogHeader>
+														<div className='flex w-full gap-2 items-center justify-center'>
+															{TOPIC_COMPLETION_SEQUENCE.filter(
+																(tag) => !topic[tag],
+															).map((tag, index) => (
+																<Button
+																	key={String(topic._id) + tag}
+																	disabled={
+																		Boolean(index) ||
+																		Boolean(
+																			CurrentTaskList.docs.filter(
+																				(task) =>
+																					String(task.refDetails.chapter) ==
+																					String(String(chapter._id)),
+																			).length,
+																		)
+																	}
+																	variant={'outline'}
+																	size={'sm'}
+																	onClick={() => {
+																		handleCreateStudyTask(
+																			eStudyTaskOptions.Topic,
+																			String(topic._id),
+																			tag === 'theory'
+																				? eStudyTaskOptionsTopicTags.Theory
+																				: tag === 'inClassQuestions'
+																					? eStudyTaskOptionsTopicTags.InClassQuestions
+																					: eStudyTaskOptionsTopicTags.InTextQuestions,
+																		);
+																	}}>
+																	{tag}
+																</Button>
+															))}
+														</div>
+													</DialogContent>
+												</Dialog>
 											</ItemActions>
 										</Item>
 									);
-								}
-								const topic = chapter.topicsList.filter(
-									(topic) => !topic.done,
-								)[0];
-								return (
-									<Item variant={'outline'} key={String(topic._id)}>
-										<ItemMedia variant='icon'>
-											{index + 1}
-											<FcRight />
-										</ItemMedia>
-										<ItemContent>
-											<ItemTitle className='capitalize'>
-												Complete {chapter.name}&apos; Topic- {topic.name}
-											</ItemTitle>
-										</ItemContent>
-										<ItemActions>
-											<Dialog>
-												<DialogTrigger asChild>
-													<Button
-														disabled={Boolean(
-															CurrentTaskList.docs.filter(
-																(task) =>
-																	String(task.refDetails.chapter) ==
-																	String(String(chapter._id)),
-															).length,
-														)}
-														variant={'outline'}
-														size={'sm'}>
-														Start
-													</Button>
-												</DialogTrigger>
-												<DialogContent>
-													<DialogHeader>
-														<DialogTitle>{topic.name}</DialogTitle>
-														<DialogDescription>
-															Make this topic the current task.
-														</DialogDescription>
-													</DialogHeader>
-													<div className='flex w-full gap-2 items-center justify-center'>
-														{TOPIC_COMPLETION_SEQUENCE.filter(
-															(tag) => !topic[tag],
-														).map((tag, index) => (
-															<Button
-																key={String(topic._id) + tag}
-																disabled={
-																	Boolean(index) ||
-																	Boolean(
-																		CurrentTaskList.docs.filter(
-																			(task) =>
-																				String(task.refDetails.chapter) ==
-																				String(String(chapter._id)),
-																		).length,
-																	)
-																}
-																variant={'outline'}
-																size={'sm'}
-																onClick={() => {
-																	handleCreateStudyTask(
-																		eStudyTaskOptions.Topic,
-																		String(topic._id),
-																		tag === 'theory'
-																			? eStudyTaskOptionsTopicTags.Theory
-																			: tag === 'inClassQuestions'
-																				? eStudyTaskOptionsTopicTags.InClassQuestions
-																				: eStudyTaskOptionsTopicTags.InTextQuestions,
-																	);
-																}}>
-																{tag}
-															</Button>
-														))}
-													</div>
-												</DialogContent>
-											</Dialog>
-										</ItemActions>
-									</Item>
-								);
-							})}
-						</CardContent>
-					</Card>
-				</CardContent>
-			</Card>
-		</div>
-	);
+								})}
+							</CardContent>
+						</Card>
+					</CardContent>
+				</Card>
+			</SidebarInset>
+		);
 };
 
 export default Dashboard;
@@ -1569,6 +1960,7 @@ function TimeBlock({ className }: { className?: string }) {
 			<Badge variant={'outline'} className='text-2xl py-4 px-3'>
 				{currentDate}
 			</Badge>
+			<SidebarTrigger />
 		</div>
 	);
 }

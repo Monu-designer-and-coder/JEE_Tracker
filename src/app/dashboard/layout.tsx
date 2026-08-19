@@ -1,3 +1,7 @@
+'use client';
+
+import { SidebarInset, SidebarProvider } from '@/components/ui/sidebar';
+import { TooltipProvider } from '@/components/ui/tooltip';
 import { cn } from '@/lib/utils';
 import { JSX, ReactNode } from 'react';
 
@@ -9,9 +13,10 @@ import { JSX, ReactNode } from 'react';
  * Enhanced layout props interface with better typing
  * @description Props interface for the dashboard layout component
  */
-interface EnhancedDashboardLayoutProps {
+interface iDashboardLayoutProps {
 	/** Child components to render within the layout */
 	children: ReactNode;
+	sidebar: ReactNode;
 }
 
 // * ============================================================================
@@ -20,15 +25,21 @@ interface EnhancedDashboardLayoutProps {
 
 export default function Layout({
 	children,
-}: EnhancedDashboardLayoutProps): JSX.Element {
+	sidebar,
+}: iDashboardLayoutProps): JSX.Element {
 	return (
-		<section className='h-full relative w-full'>
-			<main
-				className={cn(
-					'mx-auto w-[95%] my-1 h-[93vh] border rounded-4xl border-primary/70 bg-background',
-				)}>
-				{children}
-			</main>
-		</section>
+		<TooltipProvider>
+			<div className='h-full w-full'>
+				<SidebarProvider defaultOpen={false}>
+					{sidebar}
+					<SidebarInset
+						className={cn(
+							'mx-auto w-[95%] my-1 h-[93vh] lg:border rounded-4xl border-primary/70',
+						)}>
+						{children}
+					</SidebarInset>
+				</SidebarProvider>
+			</div>
+		</TooltipProvider>
 	);
 }

@@ -131,14 +131,17 @@ export async function PUT(request: Request) {
 			if (refType === 'chapter') {
 				await ChapterModel.findByIdAndUpdate(refId, { [tag]: true });
 			} else {
-				if (tag === 'inTextQuestions' || tag === "inClassQuestions") {
+				if (tag === 'inTextQuestions' || tag === 'inClassQuestions') {
 					await TopicModel.findByIdAndUpdate(refId, {
 						[tag]: true,
 					});
 					await TopicModel.findByIdAndUpdate(refId, {
 						done: true,
 					});
-					return;
+					return NextResponse.json<iApiResponse>(
+						ApiResponse(true, 'completed the study task.'),
+						{ status: 200 },
+					);
 				}
 				await TopicModel.findByIdAndUpdate(refId, { [tag]: true });
 			}

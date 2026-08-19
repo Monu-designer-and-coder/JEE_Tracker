@@ -32,12 +32,12 @@
 	--color-border: var(--border);
 	--color-destructive: var(--destructive);
 	--color-destructive-1: oklch(0.577 0.245 27.325);
-	--color-progressive: oklch(88.052% 0.26109 141.284);
-	--color-progressive-1: oklch(70.404% 0.20541 141.294);
-	--color-informative: oklch(63.663% 0.17864 264.426);
-	--color-informative-1: oklch(54.384% 0.17868 264.084);
-	--color-cautionary: oklch(85.821% 0.13438 84.778);
-	--color-cautionary-1: oklch(81.804% 0.15592 80.653);
+	--color-progressive: oklch(0.88052 0.26109 141.284);
+	--color-progressive-1: oklch(0.51095 0.173863 142.495339);
+	--color-informative: oklch(0.6617 0.1926 264.43);
+	--color-informative-1: oklch(0.3709 0.2382 264.08);
+	--color-cautionary: oklch(0.8769 0.1105 84.78);
+	--color-cautionary-1: oklch(0.6306 0.1422 80.66);
 	--color-accent-foreground: var(--accent-foreground);
 	--color-accent: var(--accent);
 
@@ -165,4 +165,26 @@
 
 * {
 	@apply [&::-webkit-scrollbar]:w-0.5 [&::-webkit-scrollbar-thumb]:bg-mist-700 dark:[&::-webkit-scrollbar-thumb]:bg-mist-300 no-scrollbar;
+}
+
+#nprogress .peg {
+	animation: pulse-glow 1.5s infinite ease-in-out;
+}
+
+@keyframes pulse-glow {
+	0%,
+	100% {
+		box-shadow:
+			0 0 4px #fff,
+			0 0 10px #944d5d,
+			0 0 20px #944d5d,
+			0 0 4px #944d5d;
+	}
+	50% {
+		box-shadow:
+			0 0 6px #fff,
+			0 0 16px #944d5d,
+			0 0 35px #944d5d,
+			0 0 6px #944d5d;
+	}
 }

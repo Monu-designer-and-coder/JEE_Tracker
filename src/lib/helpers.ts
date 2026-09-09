@@ -120,3 +120,16 @@ export function capitalizeWords(str: string) {
 		.map((word) => word.charAt(0).toUpperCase() + word.slice(1))
 		.join(' ');
 }
+
+export function getColorsClassAsPerPercentage(percentage: number) {
+	if (percentage > 100)
+		return 'bg-purple-300 text-purple-900 dark:bg-purple-900 dark:text-purple-200';
+	if (percentage >= 90)
+		return 'bg-progressive-1 text-progressive dark:bg-progressive dark:text-progressive-1';
+	if (90 > percentage && percentage >= 70)
+		return 'bg-informative-1 text-informative dark:bg-informative dark:text-informative-1';
+	if (70 > percentage && percentage >= 50)
+		return 'dark:bg-cautionary bg-cautionary-1 dark:text-cautionary-1 text-cautionary';
+	if (50 > percentage)
+		return 'dark:bg-destructive bg-destructive-1 dark:text-destructive-1 text-destructive';
+}

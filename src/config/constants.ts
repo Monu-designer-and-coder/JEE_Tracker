@@ -29,9 +29,9 @@ export const CHAPTER_COMPLETION_SEQUENCE = [
 	'theory',
 	'shortNotes',
 	'PYQ_Mains',
-	'PYQ_Advanced', // * 1st inProgress round
+	'mindMap',  // * 1st inProgress round
 	'DPP1',
-	'mindMap',
+	'PYQ_Advanced',
 	'Module', // * 2nd inProgress round
 	'DPP2',
 	'Book', // * 3rd / final inProgress round
@@ -51,16 +51,36 @@ export interface iSTUDY_TARGETS {
 }
 
 export function calculateDayScore(questions: number, timeStudied: number) {
-	return Math.round((questions * 1000000 + timeStudied) / 200000);
+	// return Math.round((questions * 1000000 + timeStudied) / 200000); //? Prev
+	return Math.round((questions * 120000 + timeStudied) / 60000)
 }
 export function convertHoursToMilliseconds(time: number) {
 	return time * 60 * 60 * 1000;
 }
 
+const DAILY_TARGETED_HOUR: string = process.env
+	.NEXT_PUBLIC_DAILY_TARGETED_HOUR as string;
+const DAILY_TARGETED_QUESTIONS: string = process.env
+	.NEXT_PUBLIC_DAILY_TARGETED_QUESTIONS as string;
+
+if (!DAILY_TARGETED_HOUR) {
+	throw new Error(
+		'Please define the DAILY_TARGETED_HOUR environment variable inside .env',
+	);
+}
+if (!DAILY_TARGETED_QUESTIONS) {
+	throw new Error(
+		'Please define the DAILY_TARGETED_QUESTIONS environment variable inside .env',
+	);
+}
+
 export const DAILY_STUDY_TARGETS: iSTUDY_TARGETS = {
-	questionsDone: 50,
-	timeStudied: convertHoursToMilliseconds(6),
-	score: calculateDayScore(50, convertHoursToMilliseconds(6)),
+	questionsDone: Number(DAILY_TARGETED_QUESTIONS),
+	timeStudied: convertHoursToMilliseconds(Number(DAILY_TARGETED_HOUR)),
+	score: calculateDayScore(
+		Number(DAILY_TARGETED_QUESTIONS),
+		convertHoursToMilliseconds(Number(DAILY_TARGETED_HOUR)),
+	),
 };
 
 export const WEEKLY_STUDY_TARGETS: {
@@ -89,7 +109,7 @@ export function CALCULATE_PERCENT_TARGET_ACHIEVED(
 				(current.questionsDone * 100) / DAILY_STUDY_TARGETS.questionsDone,
 			timeStudied:
 				(current.timeStudied * 100) / DAILY_STUDY_TARGETS.timeStudied,
-			score: (current.score * 100) / DAILY_STUDY_TARGETS.timeStudied,
+			score: (current.score * 100) / DAILY_STUDY_TARGETS.score,
 		};
 	} else if (type === 'w8') {
 		return {
@@ -99,7 +119,7 @@ export function CALCULATE_PERCENT_TARGET_ACHIEVED(
 			timeStudied:
 				(current.timeStudied * 100) /
 				WEEKLY_STUDY_TARGETS.weekly_8D.timeStudied,
-			score: (current.score * 100) / WEEKLY_STUDY_TARGETS.weekly_8D.timeStudied,
+			score: (current.score * 100) / WEEKLY_STUDY_TARGETS.weekly_8D.score,
 		};
 	} else {
 		return {
@@ -109,7 +129,7 @@ export function CALCULATE_PERCENT_TARGET_ACHIEVED(
 			timeStudied:
 				(current.timeStudied * 100) /
 				WEEKLY_STUDY_TARGETS.weekly_7D.timeStudied,
-			score: (current.score * 100) / WEEKLY_STUDY_TARGETS.weekly_7D.timeStudied,
+			score: (current.score * 100) / WEEKLY_STUDY_TARGETS.weekly_7D.score,
 		};
 	}
 }

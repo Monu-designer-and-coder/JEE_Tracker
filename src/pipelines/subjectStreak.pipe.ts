@@ -225,11 +225,11 @@ export const peakDaysPipeline: PipelineStage[] = [
 							$divide: [
 								{
 									$add: [
-										{ $multiply: ['$totalQuestions', 1000000] },
+										{ $multiply: ['$totalQuestions', 120000] },
 										'$totalTime',
 									],
 								},
-								200000,
+								60000,
 							],
 						},
 					},
@@ -262,11 +262,11 @@ export const peakDaysPipeline: PipelineStage[] = [
 							$divide: [
 								{
 									$add: [
-										{ $multiply: ['$dailyQuestions', 1000000] },
+										{ $multiply: ['$dailyQuestions', 120000] },
 										'$dailyTime',
 									],
 								},
-								200000,
+								60000,
 							],
 						},
 					},
@@ -369,11 +369,11 @@ export const detailedPeakDaysPipeline: PipelineStage[] = [
 							$divide: [
 								{
 									$add: [
-										{ $multiply: ['$questionsDone', 1000000] },
+										{ $multiply: ['$questionsDone', 120000] },
 										'$timeStudied',
 									],
 								},
-								200000,
+								60000,
 							],
 						},
 					},
@@ -437,12 +437,12 @@ export const detailedPeakDaysPipeline: PipelineStage[] = [
 													{
 														$add: [
 															{
-																$multiply: ['$$d.totalQuestionsDone', 1000000],
+																$multiply: ['$$d.totalQuestionsDone', 120000],
 															},
 															'$$d.totalTimeStudied',
 														],
 													},
-													200000,
+													60000,
 												],
 											},
 										},

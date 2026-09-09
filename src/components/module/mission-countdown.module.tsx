@@ -76,7 +76,7 @@ export const MissionCountdownCard = ({ className }: { className?: string }) => {
   }, []);
 
   return (
-    <Card className={cn('relative overflow-hidden my-2 border border-primary/30 rounded-4xl', className)}>
+    <Card className={cn('relative overflow-hidden border border-primary/30 rounded-4xl', className)}>
       <CardHeader >
         <CardTitle className='flex items-center gap-3 '>
           <FcOvertime />

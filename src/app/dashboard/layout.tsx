@@ -17,6 +17,7 @@ interface iDashboardLayoutProps {
 	/** Child components to render within the layout */
 	children: ReactNode;
 	sidebar: ReactNode;
+	header: ReactNode;
 }
 
 // * ============================================================================
@@ -26,16 +27,18 @@ interface iDashboardLayoutProps {
 export default function Layout({
 	children,
 	sidebar,
+	header,
 }: iDashboardLayoutProps): JSX.Element {
 	return (
 		<TooltipProvider>
-			<div className='h-full w-full'>
+			<div className='h-full w-full lg:w-11/12 2xl:w-10/12 mx-auto'>
 				<SidebarProvider defaultOpen={false}>
 					{sidebar}
 					<SidebarInset
 						className={cn(
-							'mx-auto w-[95%] my-1 h-[93vh] lg:border rounded-4xl border-primary/70',
+							'mx-auto w-[95%] my-1 h-[93vh] lg:border rounded-4xl border-primary/70 bg-complementary/1',
 						)}>
+						{header}
 						{children}
 					</SidebarInset>
 				</SidebarProvider>

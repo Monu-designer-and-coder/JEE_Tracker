@@ -6,10 +6,19 @@ import { Badge } from '@/components/ui/badge';
 import {
 	Card,
 	CardContent,
+	CardDescription,
 	CardFooter,
 	CardHeader,
 	CardTitle,
 } from '@/components/ui/card';
+import {
+	Dialog,
+	DialogContent,
+	DialogDescription,
+	DialogHeader,
+	DialogTitle,
+	DialogTrigger,
+} from '@/components/ui/dialog';
 import { Progress } from '@/components/ui/progress';
 import { Skeleton } from '@/components/ui/skeleton';
 import { axiosConfig } from '@/config/axios.config';
@@ -31,8 +40,8 @@ import {
 } from '@/lib/helpers';
 import { cn } from '@/lib/utils';
 import { iApiResponse } from '@/types/backend/apiResponse.types';
-import { iDetailedChapterResponse } from '@/types/res/chapter.res.types';
 import { iExtendedDetailedSubjectStreakDocumentResponse } from '@/types/res/subjectStreak.res.types';
+import { iExtendedSyllabusDetails } from '@/types/res/syllabus.res.types';
 import { iStudyTaskListItem } from '@/types/res/system.res.types';
 import axios, { AxiosResponse } from 'axios';
 import { AggregatePaginateResult } from 'mongoose';
@@ -55,6 +64,23 @@ const dateFormatter = new Intl.DateTimeFormat('en-IN', {
 	year: 'numeric',
 });
 
+interface iTodayProgressData {
+	totalQuestionsDone: number;
+	totalTimeStudiedMs: number;
+	physics: {
+		totalQuestionsDone: number;
+		totalTimeStudiedMs: number;
+	};
+	chemistry: {
+		totalQuestionsDone: number;
+		totalTimeStudiedMs: number;
+	};
+	mathematics: {
+		totalQuestionsDone: number;
+		totalTimeStudiedMs: number;
+	};
+}
+
 export default function SidebarHeader() {
 	const currentStudySession = useAppSelector((state) => state.studySession);
 
@@ -72,45 +98,44 @@ export default function SidebarHeader() {
 		hasNextPage: false,
 	});
 
-	const [InProgressChaptersList, setInProgressChaptersList] = useState<
-		iDetailedChapterResponse[]
-	>([]);
-
 	const [subjectStreaks, setSubjectStreaks] = useState<
 		iExtendedDetailedSubjectStreakDocumentResponse[]
 	>([]);
 
-	const [todaysProgressData, setTodaysProgressData] = useState<{
-		totalQuestionsDone: number;
-		totalTimeStudiedMs: number;
-		physics: {
-			totalQuestionsDone: number;
-			totalTimeStudiedMs: number;
-		};
-		chemistry: {
-			totalQuestionsDone: number;
-			totalTimeStudiedMs: number;
-		};
-		mathematics: {
-			totalQuestionsDone: number;
-			totalTimeStudiedMs: number;
-		};
-	}>({
-		totalQuestionsDone: 0,
-		totalTimeStudiedMs: 0,
-		physics: {
+	const [todaysProgressData, setTodaysProgressData] =
+		useState<iTodayProgressData>({
 			totalQuestionsDone: 0,
 			totalTimeStudiedMs: 0,
-		},
-		chemistry: {
-			totalQuestionsDone: 0,
-			totalTimeStudiedMs: 0,
-		},
-		mathematics: {
-			totalQuestionsDone: 0,
-			totalTimeStudiedMs: 0,
-		},
-	});
+			physics: {
+				totalQuestionsDone: 0,
+				totalTimeStudiedMs: 0,
+			},
+			chemistry: {
+				totalQuestionsDone: 0,
+				totalTimeStudiedMs: 0,
+			},
+			mathematics: {
+				totalQuestionsDone: 0,
+				totalTimeStudiedMs: 0,
+			},
+		});
+
+	const [syllabusData, setSyllabusData] = useState<iExtendedSyllabusDetails[]>(
+		[],
+	);
+
+	const [currentTimeMs, setCurrentTimeMs] = useState<number>(Date.now());
+
+	// ! DERIVED STATE CALCULATIONS (Memoized for performance)
+	const { totalDaysRemaining } = useMemo(() => {
+		const timeLeftMs = Math.max(0, TARGET_DATE.getTime() - currentTimeMs);
+		// * Time breakdown math
+		const d = Math.floor(timeLeftMs / (1000 * 60 * 60 * 24));
+
+		return {
+			totalDaysRemaining: d, // * Original metric calculation preserved
+		};
+	}, [currentTimeMs]);
 
 	const fetchTodayStreaks = async () => {
 		try {
@@ -128,16 +153,6 @@ export default function SidebarHeader() {
 		}
 	};
 
-	function fetchChaptersInProgressLists() {
-		axios
-			.request(axiosConfig('system', 'get'))
-			.then(
-				(response: AxiosResponse<iApiResponse<iDetailedChapterResponse[]>>) => {
-					setInProgressChaptersList(response.data.data);
-				},
-			);
-	}
-
 	function fetchTodayTasksList() {
 		axios
 			.request(axiosConfig('system/today', 'get'))
@@ -153,13 +168,24 @@ export default function SidebarHeader() {
 			.catch((error) => console.log({ error }));
 	}
 
+	function fetchSyllabusData() {
+		axios
+			.get('/api/syllabus')
+			.then((res: AxiosResponse<iApiResponse<iExtendedSyllabusDetails[]>>) => {
+				setSyllabusData(res.data.data);
+			});
+	}
+
 	useEffect(() => {
 		setIsMounted(true);
-		fetchChaptersInProgressLists();
 	}, []);
+
 	useEffect(() => {
 		fetchTodayStreaks();
 		fetchTodayTasksList();
+		fetchSyllabusData();
+
+		setCurrentTimeMs(Date.now());
 	}, [currentStudySession]);
 
 	useEffect(() => {
@@ -248,20 +274,41 @@ export default function SidebarHeader() {
 				</div>
 				<div className='w-full px-4'>
 					<div className='flex justify-end items-end'>
-						<span className='text-primary text-xs md:text-sm xl:text-base font-clock font-thin'>
-							Completed{' '}
-							{todayCompletedTaskList.docs.filter(
-								(task) => task.studyTask.enum == 'topic',
-							).length / 2}{' '}
-							Topics Out of{' '}
-							{Math.ceil(
-								(InProgressChaptersList.map(
-									(chapter) => chapter.topicsList.length,
-								).reduce((prev, curr) => (prev += curr), 0) *
-									1.2) /
-									7,
-							)}
-						</span>
+						<Dialog>
+							<DialogTrigger>
+								<span className='text-primary text-xs md:text-sm xl:text-base font-clock font-thin'>
+									Completed{' '}
+									{todayCompletedTaskList.docs.filter(
+										(task) => task.studyTask.enum == 'topic',
+									).length / 2}{' '}
+									Topics Out of{' '}
+									{Math.ceil(
+										syllabusData
+											.map((subject) =>
+												subject.chapterList.reduce((acc, currentChapter) => {
+													return acc + (currentChapter.totalTopics || 0);
+												}, 0),
+											)
+											.reduce((acc, curr) => {
+												return acc + curr;
+											}, 0) / totalDaysRemaining,
+									)}
+								</span>
+							</DialogTrigger>
+							<DialogContent className='max-h-[80vh]! overflow-scroll bg-transparent'>
+								<DialogHeader>
+									<DialogTitle>List of Topics to complete Today:</DialogTitle>
+									<DialogDescription>
+										Subject wise daily topics target
+									</DialogDescription>
+								</DialogHeader>
+								<TopicsToCompletePerSubject
+									syllabusDataProp={syllabusData}
+									totalDaysRemainingProp={totalDaysRemaining}
+									todayCompletedTaskListProp={todayCompletedTaskList.docs}
+								/>
+							</DialogContent>
+						</Dialog>
 					</div>
 
 					{/* * Shadcn Progress with customized height and inner shadow styling */}
@@ -274,11 +321,15 @@ export default function SidebarHeader() {
 									2) *
 									100) /
 								Math.ceil(
-									(InProgressChaptersList.map(
-										(chapter) => chapter.topicsList.length,
-									).reduce((prev, curr) => (prev += curr), 0) *
-										1.2) /
-										7,
+									syllabusData
+										.map((subject) =>
+											subject.chapterList.reduce((acc, currentChapter) => {
+												return acc + (currentChapter.totalTopics || 0);
+											}, 0),
+										)
+										.reduce((acc, curr) => {
+											return acc + curr;
+										}, 0) / totalDaysRemaining,
 								)
 							}
 							className='h-3 rounded-full bg-transparent'
@@ -288,11 +339,30 @@ export default function SidebarHeader() {
 				</div>
 				<div className='w-full px-4'>
 					<div className='flex justify-end items-end'>
-						<span className='text-primary text-xs md:text-sm xl:text-base font-clock font-thin'>
-							Studied{' '}
-							{formatMilliseconds(todaysProgressData.totalTimeStudiedMs)} Hours
-							Out of {formatMilliseconds(DAILY_STUDY_TARGETS.timeStudied)}
-						</span>
+						<Dialog>
+							<DialogTrigger>
+								<span className='text-primary text-xs md:text-sm xl:text-base font-clock font-thin'>
+									Studied{' '}
+									{formatMilliseconds(todaysProgressData.totalTimeStudiedMs)}{' '}
+									Hours Out of{' '}
+									{formatMilliseconds(DAILY_STUDY_TARGETS.timeStudied)}
+								</span>
+							</DialogTrigger>
+							<DialogContent className='max-h-[80vh]! overflow-scroll bg-transparent'>
+								<DialogHeader>
+									<DialogTitle>List of Topics to complete Today:</DialogTitle>
+									<DialogDescription>
+										Subject wise daily topics target
+									</DialogDescription>
+								</DialogHeader>
+								<TimeToStudyPerSubject
+									syllabusDataProp={syllabusData}
+									totalDaysRemainingProp={totalDaysRemaining}
+									todayCompletedTaskListProp={todayCompletedTaskList.docs}
+									todaysProgressDataProp={todaysProgressData}
+								/>
+							</DialogContent>
+						</Dialog>
 					</div>
 
 					{/* * Shadcn Progress with customized height and inner shadow styling */}
@@ -325,7 +395,7 @@ function MissionCountBlock({ className }: { className?: string }) {
 		minutes,
 		seconds,
 		percentageElapsed,
-		totalDaysRemaining,
+		totalHoursRemaining,
 	} = useMemo(() => {
 		// * Calculate exact bounds
 		const totalTimeSpanMs = Math.max(
@@ -353,7 +423,7 @@ function MissionCountBlock({ className }: { className?: string }) {
 			minutes: m,
 			seconds: s,
 			percentageElapsed: pElapsed,
-			totalDaysRemaining: d * 24 + h, // * Original metric calculation preserved
+			totalHoursRemaining: d * 24 + h, // * Original metric calculation preserved
 		};
 	}, [currentTimeMs]);
 
@@ -387,7 +457,7 @@ function MissionCountBlock({ className }: { className?: string }) {
 						{
 							label: 'Hours',
 							value: String(hours).padStart(2, '0'),
-							subtext: `${totalDaysRemaining} total left`,
+							subtext: `${totalHoursRemaining} total left`,
 							className:
 								'text-xs md:text-sm xl:text-base 2xl:text-lg font-clock font-black border-0',
 						},
@@ -456,9 +526,12 @@ function TimeBlock({ className }: { className?: string }) {
 		<Card className={cn(className, 'py-2 px-4')}>
 			<div className='w-full h-full rounded-4xl flex flex-col items-center justify-center gap-2'>
 				<h3 className='text-base sm:text-lg md:text-xl xl:text-2xl 2xl:text-3xl font-clock font-black text-complementary w-full text-center flex items-center justify-around'>
-					<FcClock onClick={()=>{
-						toast("watch ep: " + getRandomInt(1, 18).toLocaleString())
-					}} className='text-lg md:text-xl xl:text-2xl 2xl:text-3xl font-clock font-black text-complementary' />
+					<FcClock
+						onClick={() => {
+							toast('watch ep: ' + getRandomInt(1, 18).toLocaleString());
+						}}
+						className='text-lg md:text-xl xl:text-2xl 2xl:text-3xl font-clock font-black text-complementary'
+					/>
 					{currentTime}
 				</h3>
 				<Badge
@@ -468,6 +541,162 @@ function TimeBlock({ className }: { className?: string }) {
 					{currentDate}
 				</Badge>
 			</div>
+		</Card>
+	);
+}
+function TopicsToCompletePerSubject({
+	className,
+	syllabusDataProp,
+	totalDaysRemainingProp,
+	todayCompletedTaskListProp,
+}: {
+	className?: string;
+	syllabusDataProp: iExtendedSyllabusDetails[];
+	totalDaysRemainingProp: number;
+	todayCompletedTaskListProp: iStudyTaskListItem[];
+}) {
+	return (
+		<Card
+			size='sm'
+			className={cn(className, 'border border-primary/10 bg-card/30')}>
+			<CardHeader>
+				<CardTitle>Topics Details:</CardTitle>
+			</CardHeader>
+			<CardContent className='flex flex-col gap-1'>
+				{syllabusDataProp.map((subject) => {
+					return (
+						<Card key={String(subject._id)} className='w-full bg-card/20'>
+							<CardHeader>
+								<CardTitle className='capitalize text-center font-heading text-background rounded-full bg-foreground/50'>
+									{subject.name}
+								</CardTitle>
+								<CardDescription className='text-foreground text-sm text-center font-content-primary'>
+									{todayCompletedTaskListProp.filter(
+										(task) =>
+											task.studyTask.enum == 'topic' &&
+											String(task.subjectDetails._id) == String(subject._id),
+									).length / 2}{' '}
+									Topics Out of{' '}
+									{Math.ceil(
+										subject.chapterList.reduce((acc, currentChapter) => {
+											return acc + (currentChapter.totalTopics || 0);
+										}, 0) / totalDaysRemainingProp,
+									)}
+								</CardDescription>
+							</CardHeader>
+							<CardContent className=''>
+								<Progress
+									value={
+										((todayCompletedTaskListProp.filter(
+											(task) =>
+												task.studyTask.enum == 'topic' &&
+												String(task.subjectDetails._id) == String(subject._id),
+										).length /
+											2) *
+											100) /
+										Math.ceil(
+											subject.chapterList.reduce((acc, currentChapter) => {
+												return acc + (currentChapter.totalTopics || 0);
+											}, 0) / totalDaysRemainingProp,
+										)
+									}
+									className='h-3 rounded-full'
+									aria-label='Countdown Progress'
+								/>
+							</CardContent>
+						</Card>
+					);
+				})}
+			</CardContent>
+		</Card>
+	);
+}
+function TimeToStudyPerSubject({
+	className,
+	syllabusDataProp,
+	totalDaysRemainingProp,
+	todaysProgressDataProp,
+}: {
+	className?: string;
+	syllabusDataProp: iExtendedSyllabusDetails[];
+	totalDaysRemainingProp: number;
+	todayCompletedTaskListProp: iStudyTaskListItem[];
+	todaysProgressDataProp: iTodayProgressData;
+}) {
+	const totalTopicsToComplete = Math.ceil(
+		syllabusDataProp
+			.map((subject) =>
+				subject.chapterList.reduce((acc, currentChapter) => {
+					return acc + (currentChapter.totalTopics || 0);
+				}, 0),
+			)
+			.reduce((acc, curr) => {
+				return acc + curr;
+			}, 0) / totalDaysRemainingProp,
+	);
+	const subjectWiseTarget = syllabusDataProp.map((_) => ({
+		name: _.name,
+		_id: _._id,
+		target:
+			DAILY_STUDY_TARGETS.timeStudied *
+			(_.chapterList.reduce((acc, currentChapter) => {
+				return acc + (currentChapter.totalTopics || 0);
+			}, 0) /
+				totalDaysRemainingProp /
+				totalTopicsToComplete),
+	}));
+
+	return (
+		<Card
+			size='sm'
+			className={cn(className, 'border border-primary/10 bg-card/30')}>
+			<CardHeader>
+				<CardTitle>Topics Details:</CardTitle>
+			</CardHeader>
+			<CardContent className='flex flex-col gap-1'>
+				{subjectWiseTarget.map((subject) => {
+					return (
+						<Card key={String(subject._id)} className='w-full bg-card/80'>
+							<CardHeader>
+								<CardTitle className='capitalize text-center font-heading text-background rounded-full bg-foreground/50'>
+									{subject.name}
+								</CardTitle>
+								<CardDescription className='text-primary text-sm text-center font-content-primary'>
+									{subject.name == 'physics'
+										? formatMilliseconds(
+												todaysProgressDataProp.physics.totalTimeStudiedMs,
+											)
+										: subject.name == 'chemistry'
+											? formatMilliseconds(
+													todaysProgressDataProp.chemistry.totalTimeStudiedMs,
+												)
+											: formatMilliseconds(
+													todaysProgressDataProp.mathematics.totalTimeStudiedMs,
+												)}{' '}
+									<span className='text-accent-foreground'> Out of </span>{' '}
+									{formatMilliseconds(DAILY_STUDY_TARGETS.timeStudied / 3)}
+								</CardDescription>
+								<CardContent>
+									<Progress
+										value={
+											((subject.name == 'physics'
+												? todaysProgressDataProp.physics.totalTimeStudiedMs
+												: subject.name == 'chemistry'
+													? todaysProgressDataProp.chemistry.totalTimeStudiedMs
+													: todaysProgressDataProp.mathematics
+															.totalTimeStudiedMs) *
+												100) /
+											(DAILY_STUDY_TARGETS.timeStudied / 3)
+										}
+										className='h-3 rounded-full bg-transparent'
+										aria-label='Countdown Progress'
+									/>
+								</CardContent>
+							</CardHeader>
+						</Card>
+					);
+				})}
+			</CardContent>
 		</Card>
 	);
 }

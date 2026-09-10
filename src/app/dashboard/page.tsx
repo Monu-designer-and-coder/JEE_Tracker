@@ -11,6 +11,8 @@ import {
 } from '@/components/ui/card';
 import {
 	ChartContainer,
+	ChartLegend,
+	ChartLegendContent,
 	ChartTooltip,
 	ChartTooltipContent,
 	type ChartConfig,
@@ -34,12 +36,11 @@ import { axiosConfig } from '@/config/axios.config';
 import { RefObject, useEffect, useMemo, useRef, useState } from 'react';
 import {
 	capitalizeWords,
-	formatDate,
 	formatMilliseconds,
-	formatTime,
 	getDaysAgoText,
 	getRandomInt,
 	getColorsClassAsPerPercentage,
+	formatTime,
 } from '@/lib/helpers';
 import { Skeleton } from '@/components/ui/skeleton';
 
@@ -53,7 +54,6 @@ import {
 	TableBody,
 	TableCaption,
 	TableCell,
-	TableFooter,
 	TableHead,
 	TableHeader,
 	TableRow,
@@ -80,6 +80,7 @@ import {
 	ItemActions,
 	ItemContent,
 	ItemDescription,
+	ItemHeader,
 	ItemMedia,
 	ItemTitle,
 } from '@/components/ui/item';
@@ -94,8 +95,9 @@ import {
 } from '@/components/ui/dialog';
 import { Checkbox } from '@/components/ui/checkbox';
 import Link from 'next/link';
-import { Bubble, BubbleContent, BubbleReactions } from '@/components/ui/bubble';
 import { RadialProgress } from '@/components/ui/radial-progress';
+import { iExtendedSyllabusDetails } from '@/types/res/syllabus.res.types';
+import { Progress } from '@/components/ui/progress';
 
 export default function Dashboard() {
 	// ! HOOKS
@@ -108,20 +110,6 @@ export default function Dashboard() {
 	const [isMounted, setIsMounted] = useState<boolean>(false);
 
 	const [todaySessionsList, setTodaySessionsList] = useState<
-		AggregatePaginateResult<iStudyTaskListItem>
-	>({
-		docs: [],
-		totalDocs: 0,
-		limit: 20,
-		page: 1,
-		totalPages: 1,
-		pagingCounter: 1,
-		hasPrevPage: false,
-		hasNextPage: false,
-		prevPage: null,
-		nextPage: null,
-	});
-	const [todayCompletedTaskList, setTodayTaskList] = useState<
 		AggregatePaginateResult<iStudyTaskListItem>
 	>({
 		docs: [],
@@ -174,6 +162,10 @@ export default function Dashboard() {
 		[],
 	);
 
+	const [syllabusData, setSyllabusData] = useState<iExtendedSyllabusDetails[]>(
+		[],
+	);
+
 	const [todaysProgressData, setTodaysProgressData] = useState<{
 		totalQuestionsDone: number;
 		totalTimeStudiedMs: number;
@@ -204,6 +196,18 @@ export default function Dashboard() {
 			totalQuestionsDone: 0,
 			totalTimeStudiedMs: 0,
 		},
+	});
+
+	const [todayCompletedTaskList, setTodayTaskList] = useState<
+		AggregatePaginateResult<iStudyTaskListItem>
+	>({
+		docs: [],
+		totalDocs: 0,
+		limit: 20,
+		totalPages: 1,
+		pagingCounter: 1,
+		hasPrevPage: false,
+		hasNextPage: false,
 	});
 
 	const [now, setNow] = useState<Date | null>(null);
@@ -274,21 +278,6 @@ export default function Dashboard() {
 			);
 	}
 
-	function fetchTodayTasksList() {
-		axios
-			.request(axiosConfig('system/today', 'get'))
-			.then(
-				(
-					response: AxiosResponse<
-						iApiResponse<AggregatePaginateResult<iStudyTaskListItem>>
-					>,
-				) => {
-					setTodayTaskList(response.data.data);
-				},
-			)
-			.catch((error) => console.log({ error }));
-	}
-
 	function fetchTodaySessionsList() {
 		axios
 			.request(axiosConfig('system/today?type=sessions', 'get'))
@@ -328,7 +317,6 @@ export default function Dashboard() {
 			.finally(() => {
 				fetchCurrentTasksList();
 				if (action === 'done' || action === 'end') {
-					fetchTodayTasksList();
 					fetchTodaySessionsList();
 					fetchChaptersInProgressLists();
 				}
@@ -552,6 +540,29 @@ export default function Dashboard() {
 			);
 	}
 
+	function fetchSyllabusData() {
+		axios
+			.get('/api/syllabus')
+			.then((res: AxiosResponse<iApiResponse<iExtendedSyllabusDetails[]>>) => {
+				setSyllabusData(res.data.data);
+			});
+	}
+
+	function fetchTodayTasksList() {
+		axios
+			.request(axiosConfig('system/today', 'get'))
+			.then(
+				(
+					response: AxiosResponse<
+						iApiResponse<AggregatePaginateResult<iStudyTaskListItem>>
+					>,
+				) => {
+					setTodayTaskList(response.data.data);
+				},
+			)
+			.catch((error) => console.log({ error }));
+	}
+
 	// * ==========================================================================
 	// * API Methods
 	// * ==========================================================================
@@ -773,9 +784,10 @@ export default function Dashboard() {
 		fetchCurrentTasksList();
 		fetchTodayStreaks();
 		fetchStudyTrackerChartData();
-		fetchTodayTasksList();
 		fetchTodaySessionsList();
 		fetchChaptersInProgressLists();
+
+		fetchSyllabusData();
 
 		syncTime(); //* Set initial time on mount
 
@@ -929,6 +941,8 @@ export default function Dashboard() {
 		setCurrentActiveSessionStreakDetails(
 			filteredCurrentArrayOfCurrentStudySessionsSubjectsDetails,
 		);
+
+		fetchTodayTasksList();
 	}, [currentStudySession, subjectStreaks]);
 
 	useEffect(() => {
@@ -946,7 +960,6 @@ export default function Dashboard() {
 			(new Date().getTime() < todayMidnight && !hasFired2359.current.fired)
 		) {
 			fetchTodayStreaks();
-			fetchTodayTasksList();
 			fetchTodaySessionsList();
 			fetchStudyTrackerChartData();
 		}
@@ -1172,62 +1185,66 @@ export default function Dashboard() {
 									Sessions
 								</Badge>{' '}
 							</DialogTrigger>
-							<DialogContent className='min-w-[85vh] max-w-[90vh]! max-h-[80vh]! overflow-scroll bg-transparent'>
+							<DialogContent className='min-w-[85vh] max-w-[90vh]! max-h-[80vh]! overflow-scroll bg-card/80'>
 								<DialogHeader>
-									<DialogTitle>Todays Time Studied:</DialogTitle>
+									<DialogTitle>Todays Progress</DialogTitle>
 									<DialogDescription>
-										`` Total Subject-wise time Studied for:
+										List of todays tasks and sessions
 									</DialogDescription>
 								</DialogHeader>
-								{['chemistry', 'physics', 'mathematics'].map(
-									(subject, index) => {
-										type tSubjectKEYSforTimeStudied =
-											| 'physics'
-											| 'chemistry'
-											| 'mathematics';
-										const subjectKEYSforTimeStudied =
-											subject as tSubjectKEYSforTimeStudied;
-										return (
-											<Item key={String(subject)} variant={'default'}>
-												<ItemMedia variant='icon'>
-													{index + 1}
-													<FcRight />
-												</ItemMedia>
-												<ItemContent>
-													<ItemTitle className='capitalize'>
-														{subject}
-													</ItemTitle>
-													<div className='w-1/2 mx-auto flex items-center justify-between'>
-														<Bubble className='w-2/5'>
-															<BubbleContent>
-																{formatMilliseconds(
-																	todaysProgressData[subjectKEYSforTimeStudied]
-																		?.totalTimeStudiedMs,
-																) || '00.00.00'}
-															</BubbleContent>
-															<BubbleReactions>
-																<span className='text-xs'>
-																	total time studied
-																</span>
-															</BubbleReactions>
-														</Bubble>
-														<Bubble className='w-2/5'>
-															<BubbleContent>
-																{todaysProgressData[subjectKEYSforTimeStudied]
-																	?.totalQuestionsDone || '00'}
-															</BubbleContent>
-															<BubbleReactions>
-																<span className='text-xs'>
-																	total question done
-																</span>
-															</BubbleReactions>
-														</Bubble>
-													</div>
-												</ItemContent>
-											</Item>
-										);
-									},
-								)}
+								<div className='grid grid-cols-2 gap-3'>
+									<div className='flex flex-col gap-1'>
+										<h3>Todays Study Sessions:</h3>
+										{todayCompletedTaskList.docs.map((__) => {
+											return (
+												<Item
+													key={String(__._id)}
+													variant={'outline'}
+													className=''>
+													<ItemHeader className='capitalize'>
+														{__.subjectDetails.name}
+													</ItemHeader>
+													<ItemContent>
+														<ItemTitle className='capitalize'>
+															{__.studyTask.enum}: {__.refDetails.name}
+														</ItemTitle>
+														<ItemDescription className='uppercase'>
+															{__.studyTask.tag}:
+															<Badge>
+																{__.workingSessions.length} Sessions
+															</Badge>
+														</ItemDescription>
+													</ItemContent>
+												</Item>
+											);
+										})}
+									</div>
+									<div className='flex flex-col gap-1'>
+										<h3>Todays Study Sessions:</h3>
+										{todaySessionsList.docs.map((__) =>
+											__.workingSessions.map((_) => {
+												return (
+													<Item key={String(_.start)} variant={'outline'}>
+														<ItemHeader className='capitalize'>
+															{__.subjectDetails.name}
+														</ItemHeader>
+														<ItemContent>
+															<ItemTitle>
+																From {formatTime(_.start.toLocaleString())}, To{' '}
+																{formatTime(_.end.toLocaleString())}:{' '}
+																{formatMilliseconds(_.totalTime)}
+															</ItemTitle>
+															<ItemDescription>
+																{__.refDetails.name}: {__.studyTask.enum}:{' '}
+																{__.studyTask.tag}
+															</ItemDescription>
+														</ItemContent>
+													</Item>
+												);
+											}),
+										)}
+									</div>
+								</div>
 							</DialogContent>
 						</Dialog>
 					</CardTitle>
@@ -1263,6 +1280,22 @@ export default function Dashboard() {
 					<Card size='sm' className='w-full h-full rounded-4xl'>
 						<CardHeader>
 							<CardTitle>Chapters InProgress</CardTitle>
+							<CardAction>
+								<Dialog>
+									<DialogTrigger>
+										<FcOpenedFolder />
+									</DialogTrigger>
+									<DialogContent className='min-w-[85vh] max-w-[90vh]! max-h-[80vh]! overflow-scroll bg-transparent'>
+										<DialogHeader>
+											<DialogTitle>List of Topics:</DialogTitle>
+											<DialogDescription>
+												Quick Overview of the Syllabus
+											</DialogDescription>
+										</DialogHeader>
+										<SyllabusOverview syllabusDataProp={syllabusData} />
+									</DialogContent>
+								</Dialog>
+							</CardAction>
 						</CardHeader>
 						<CardContent className='flex flex-wrap gap-2 overflow-scroll no-scrollbar'>
 							{InProgressChaptersList.map((chapter, index) => (
@@ -1284,6 +1317,7 @@ export default function Dashboard() {
 										<Button
 											size={'sm'}
 											onClick={() => {
+												fetchSyllabusData();
 												handleMarkAsUnfinished(String(chapter._id));
 											}}>
 											Mark Unfinished
@@ -1384,6 +1418,22 @@ export default function Dashboard() {
 					<Card size='sm' className='w-full h-full rounded-4xl'>
 						<CardHeader>
 							<CardTitle>Chapters&apos; Tasks</CardTitle>
+							<CardAction>
+								<Dialog>
+									<DialogTrigger>
+										<FcOpenedFolder />
+									</DialogTrigger>
+									<DialogContent className='min-w-[85vh] max-w-[90vh]! max-h-[80vh]! overflow-scroll bg-transparent'>
+										<DialogHeader>
+											<DialogTitle>List of Topics:</DialogTitle>
+											<DialogDescription>
+												Quick Overview of the Syllabus
+											</DialogDescription>
+										</DialogHeader>
+										<TopicsOverview syllabusDataProp={syllabusData} />
+									</DialogContent>
+								</Dialog>
+							</CardAction>
 						</CardHeader>
 						<CardContent className='overflow-scroll no-scrollbar flex flex-wrap gap-2'>
 							{InProgressChaptersList.map((chapter, index) => {
@@ -1749,6 +1799,221 @@ function StudyTrackerDisplay({
 						<Bar dataKey={activeChart} fill={`var(--color-${activeChart})`} />
 					</BarChart>
 				</ChartContainer>
+			</CardContent>
+		</Card>
+	);
+}
+
+function SyllabusOverview({
+	className,
+	syllabusDataProp,
+}: {
+	className?: string;
+	syllabusDataProp: iExtendedSyllabusDetails[];
+}) {
+	interface iChartData {
+		subjectName: string;
+		totalChapters: number;
+		completedTheory: number;
+		completedMainsPYQs: number;
+		completedAdvancedPYQs: number;
+		completedChapters: number;
+	}
+
+	const chartConfig = {
+		totalChapters: {
+			label: 'Total Chapters',
+			color: 'var(--chart-1)',
+		},
+		completedTheory: {
+			label: 'Theory Completed',
+			color: 'var(--chart-2)',
+		},
+		completedMainsPYQs: {
+			label: 'Mains PYQs',
+			color: 'var(--chart-3)',
+		},
+		completedAdvancedPYQs: {
+			label: 'Advanced PYQs',
+			color: 'var(--chart-4)',
+		},
+		completedChapters: {
+			label: 'Completed Chapters',
+			color: 'var(--chart-5)',
+		},
+	} satisfies ChartConfig;
+
+	const [chartData, setChartData] = useState<iChartData[]>([]);
+
+	useEffect(() => {
+		const FilteredChartData: iChartData[] = syllabusDataProp.map((subject) => ({
+			subjectName: subject.name,
+			totalChapters: subject.totalChapters,
+			completedTheory: subject.completedTheory,
+			completedMainsPYQs: subject.completedMainsPYQs,
+			completedAdvancedPYQs: subject.completedAdvancedPYQs,
+			completedChapters: subject.completedChapters,
+		}));
+		setChartData(FilteredChartData);
+	}, [syllabusDataProp]);
+
+	return (
+		<section
+			className={cn(className, 'w-full py-2 px-3 gap-2 grid grid-cols-12')}>
+			<Card size='sm' className='col-span-12'>
+				<CardHeader>
+					<CardTitle>Syllabus Progress</CardTitle>
+					<CardDescription>Track the syllabus Progress.</CardDescription>
+				</CardHeader>
+				<CardContent className='w-full'>
+					<ChartContainer config={chartConfig} className='w-full h-[30vh]'>
+						<BarChart accessibilityLayer data={chartData}>
+							<CartesianGrid />
+							<XAxis
+								dataKey='subjectName'
+								tickLine={false}
+								tickMargin={10}
+								axisLine={false}
+								// tickFormatter={(value) => value.slice(0, 3)}
+							/>
+							<ChartTooltip
+								cursor={false}
+								content={<ChartTooltipContent indicator='line' />}
+							/>
+
+							<ChartLegend content={<ChartLegendContent />} />
+							<Bar
+								dataKey='totalChapters'
+								fill='var(--color-totalChapters)'
+								radius={4}
+							/>
+							<Bar
+								dataKey='completedTheory'
+								fill='var(--color-completedTheory)'
+								radius={4}
+							/>
+							<Bar
+								dataKey='completedMainsPYQs'
+								fill='var(--color-completedMainsPYQs)'
+								radius={4}
+							/>
+							<Bar
+								dataKey='completedAdvancedPYQs'
+								fill='var(--color-completedAdvancedPYQs)'
+								radius={4}
+							/>
+							<Bar
+								dataKey='completedChapters'
+								fill='var(--color-completedChapters)'
+								radius={4}
+							/>
+						</BarChart>
+					</ChartContainer>
+				</CardContent>
+			</Card>
+		</section>
+	);
+}
+
+function TopicsOverview({
+	className,
+	syllabusDataProp,
+}: {
+	className?: string;
+	syllabusDataProp: iExtendedSyllabusDetails[];
+}) {
+	return (
+		<Card
+			size='sm'
+			className={cn(
+				className,
+				'col-span-12 border border-primary/50 bg-primary/10',
+			)}>
+			<CardHeader>
+				<CardTitle>Topics Details:</CardTitle>
+			</CardHeader>
+			<CardContent className='flex flex-col gap-1'>
+				{syllabusDataProp.map((subject) => {
+					const totalTopicsInTheSubject = subject.chapterList.reduce(
+						(acc, currentChapter) => {
+							return acc + (currentChapter.totalTopics || 0);
+						},
+						0,
+					);
+					const totalCompletedTopicsInTheSubject = subject.chapterList.reduce(
+						(acc, currentChapter) => {
+							return acc + (currentChapter.totalTopicsCompleted || 0);
+						},
+						0,
+					);
+					const totalCompletedTheoryTopicsInTheSubject =
+						subject.chapterList.reduce((acc, currentChapter) => {
+							return acc + (currentChapter.totalTopicsTheoryCompleted || 0);
+						}, 0);
+					const totalCompletedTopicsInTheSubjectPercent =
+						(totalCompletedTopicsInTheSubject * 100) / totalTopicsInTheSubject;
+					const totalCompletedTheoryTopicsInTheSubjectPercent =
+						(totalCompletedTheoryTopicsInTheSubject * 100) /
+						totalTopicsInTheSubject;
+					return (
+						<div
+							key={String(subject._id)}
+							className='w-full rounded-full border border-primary/30  px-10 py-6 space-y-4 flex items-center justify-center gap-2'>
+							<div className='w-1/2'>
+								<div className='flex justify-between items-end text-xs font-medium'>
+									<span className='text-muted-foreground capitalize'>
+										Total Topics Theory Completed: {subject.name}
+										<Badge>
+											{totalCompletedTheoryTopicsInTheSubject}/
+											{totalTopicsInTheSubject}
+										</Badge>
+									</span>
+									<span className='text-primary text-lg font-bold'>
+										{totalCompletedTheoryTopicsInTheSubject
+											? totalCompletedTheoryTopicsInTheSubjectPercent.toFixed(3)
+											: 0}
+										%
+									</span>
+								</div>
+								<div className='relative overflow-hidden rounded-full bg-accent/50 p-1 shadow-inner'>
+									<Progress
+										value={totalCompletedTheoryTopicsInTheSubjectPercent}
+										className='h-3 rounded-full bg-transparent'
+										aria-label='Countdown Progress'
+									/>
+								</div>
+							</div>
+							<div className='w-1/2'>
+								<div className='flex justify-between items-end text-xs font-medium'>
+									<span className='text-muted-foreground capitalize'>
+										Total Topics Completed: {subject.name}
+										<Badge>
+											{totalCompletedTopicsInTheSubject}/
+											{totalTopicsInTheSubject}
+										</Badge>
+									</span>
+									<span className='text-primary text-lg font-bold'>
+										{totalCompletedTopicsInTheSubject
+											? totalCompletedTopicsInTheSubjectPercent.toFixed(3)
+											: 0}
+										%
+									</span>
+									<span className='text-foreground/60 text-sm font-bold'>
+										{totalTopicsInTheSubject - totalCompletedTopicsInTheSubject}
+										Topics Left
+									</span>
+								</div>
+								<div className='relative overflow-hidden rounded-full bg-accent/50 p-1 shadow-inner'>
+									<Progress
+										value={totalCompletedTopicsInTheSubjectPercent}
+										className='h-3 rounded-full bg-transparent'
+										aria-label='Countdown Progress'
+									/>
+								</div>
+							</div>
+						</div>
+					);
+				})}
 			</CardContent>
 		</Card>
 	);

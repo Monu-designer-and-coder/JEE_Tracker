@@ -4,7 +4,10 @@ import * as React from 'react';
 import { Progress as ProgressPrimitive } from 'radix-ui';
 
 import { cn } from '@/lib/utils';
-import { getColorsClassAsPerPercentage } from '@/lib/helpers';
+import {
+	getColorsClassAsPerPercentage,
+	getDynamicGradientStyle,
+} from '@/lib/helpers';
 
 function Progress({
 	className,
@@ -23,9 +26,12 @@ function Progress({
 				data-slot='progress-indicator'
 				className={cn(
 					'size-full flex-1 transition-all',
-					getColorsClassAsPerPercentage(Number(value)),
+					getColorsClassAsPerPercentage(),
 				)}
-				style={{ transform: `translateX(-${100 - (value || 0)}%)` }}
+				style={{
+					transform: `translateX(-${100 - (value || 0)}%)`,
+					...getDynamicGradientStyle(Number(value)),
+				}}
 			/>
 		</ProgressPrimitive.Root>
 	);

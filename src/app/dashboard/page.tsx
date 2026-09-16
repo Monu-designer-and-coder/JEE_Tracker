@@ -41,6 +41,7 @@ import {
 	getRandomInt,
 	getColorsClassAsPerPercentage,
 	formatTime,
+	getDynamicGradientStyle,
 } from '@/lib/helpers';
 import { Skeleton } from '@/components/ui/skeleton';
 
@@ -1137,20 +1138,18 @@ export default function Dashboard() {
 					strokeWidth={4}
 					className='w-[70%] aspect-square'
 					// Reuses the exact same color function as the button, so ring + button always match
-					indicatorClassName={getColorsClassAsPerPercentage(
-						(todaysProgressData.totalQuestionsDone * 100) /
-							DAILY_STUDY_TARGETS.questionsDone,
-					)}>
+					indicatorClassName={getColorsClassAsPerPercentage()}>
 					<Button
 						variant={'outline'}
 						className={cn(
 							// Changed from w-[70%] to w-full h-full: sizing is now controlled
 							// by the RadialProgress wrapper above, not the Button itself
 							'bg-transparent w-full h-full rounded-full border border-primary flex items-center justify-evenly text-4xl font-clock cursor-pointer',
-							getColorsClassAsPerPercentage(
-								(todaysProgressData.totalQuestionsDone * 100) /
-									DAILY_STUDY_TARGETS.questionsDone,
-							),
+							getColorsClassAsPerPercentage(),
+						)}
+						style={getDynamicGradientStyle(
+							(todaysProgressData.totalQuestionsDone * 100) /
+								DAILY_STUDY_TARGETS.questionsDone,
 						)}
 						disabled={!currentStudySession.isStudySessionActive}
 						onClick={() => {
@@ -1194,7 +1193,7 @@ export default function Dashboard() {
 								</DialogHeader>
 								<div className='grid grid-cols-2 gap-3'>
 									<div className='flex flex-col gap-1'>
-										<h3>Todays Study Sessions:</h3>
+										<h3>Todays Finished Tasks:</h3>
 										{todayCompletedTaskList.docs.map((__) => {
 											return (
 												<Item
@@ -1210,8 +1209,18 @@ export default function Dashboard() {
 														</ItemTitle>
 														<ItemDescription className='uppercase'>
 															{__.studyTask.tag}:
-															<Badge>
+															<Badge className='capitalize'>
 																{__.workingSessions.length} Sessions
+															</Badge>
+															<Badge className='capitalize'>
+																Took{' '}
+																{formatMilliseconds(
+																	__.workingSessions.reduce(
+																		(acc, curr) => curr.totalTime + acc,
+																		0,
+																	),
+																)}{' '}
+																Hours
 															</Badge>
 														</ItemDescription>
 													</ItemContent>
@@ -1230,9 +1239,15 @@ export default function Dashboard() {
 														</ItemHeader>
 														<ItemContent>
 															<ItemTitle>
-																From {formatTime(_.start.toLocaleString())}, To{' '}
-																{formatTime(_.end.toLocaleString())}:{' '}
-																{formatMilliseconds(_.totalTime)}
+																From
+																<Badge variant={'outline'}>
+																	{formatTime(_.start.toLocaleString())}
+																</Badge>
+																To{' '}
+																<Badge variant={'secondary'}>
+																	{formatTime(_.end.toLocaleString())}:{' '}
+																</Badge>
+																<Badge>{formatMilliseconds(_.totalTime)}</Badge>
 															</ItemTitle>
 															<ItemDescription>
 																{__.refDetails.name}: {__.studyTask.enum}:{' '}
@@ -1251,11 +1266,12 @@ export default function Dashboard() {
 				</CardHeader>
 				<CardContent
 					className={cn(
-						getColorsClassAsPerPercentage(
-							(todaysProgressData.totalTimeStudiedMs * 100) /
-								DAILY_STUDY_TARGETS.timeStudied,
-						),
+						getColorsClassAsPerPercentage(),
 						'font-clock flex items-center justify-center h-full text-4xl',
+					)}
+					style={getDynamicGradientStyle(
+						(todaysProgressData.totalTimeStudiedMs * 100) /
+							DAILY_STUDY_TARGETS.timeStudied,
 					)}>
 					{currentStudySession.isStudySessionActive
 						? formatMilliseconds(
@@ -1309,7 +1325,8 @@ export default function Dashboard() {
 									</ItemContent>
 									<ItemActions>
 										<Badge
-											className={getColorsClassAsPerPercentage(
+											className={getColorsClassAsPerPercentage()}
+											style={getDynamicGradientStyle(
 												chapter.totalTopicsCompletedPercentage,
 											)}>
 											{chapter.totalTopicsCompleted}/{chapter.totalTopics}
@@ -1684,8 +1701,11 @@ function StudyTrackerDisplay({
 								data-active={activeChart === chart}
 								className={cn(
 									'relative z-30 flex flex-1 flex-col justify-center gap-1 border-t px-6 py-4 text-left even:border-l data-[active=true]:opacity-100 opacity-85 sm:border-t-0 sm:border-l sm:px-8 sm:py-6',
+									getColorsClassAsPerPercentage(),
+								)}
+								style={
 									chart === 'questionsDone'
-										? getColorsClassAsPerPercentage(
+										? getDynamicGradientStyle(
 												CALCULATE_PERCENT_TARGET_ACHIEVED('w8', {
 													score: total.score,
 													timeStudied: total.totalTimeStudied,
@@ -1693,23 +1713,21 @@ function StudyTrackerDisplay({
 												}).questionsDone,
 											)
 										: chart === 'totalTimeStudied'
-											? getColorsClassAsPerPercentage(
+											? getDynamicGradientStyle(
 													CALCULATE_PERCENT_TARGET_ACHIEVED('w8', {
 														score: total.score,
 														timeStudied: total.totalTimeStudied,
 														questionsDone: total.questionsDone,
 													}).timeStudied,
 												)
-											: chart === 'score'
-												? getColorsClassAsPerPercentage(
-														CALCULATE_PERCENT_TARGET_ACHIEVED('w8', {
-															score: total.score,
-															timeStudied: total.totalTimeStudied,
-															questionsDone: total.questionsDone,
-														}).score,
-													)
-												: '',
-								)}
+											: getDynamicGradientStyle(
+													CALCULATE_PERCENT_TARGET_ACHIEVED('w8', {
+														score: total.score,
+														timeStudied: total.totalTimeStudied,
+														questionsDone: total.questionsDone,
+													}).score,
+												)
+								}
 								onClick={() => setActiveChart(chart)}>
 								<span className='text-xs text-white'>
 									{chartConfig[chart].label}
@@ -1922,15 +1940,52 @@ function TopicsOverview({
 	className?: string;
 	syllabusDataProp: iExtendedSyllabusDetails[];
 }) {
+	const totalTopicsToComplete = Math.ceil(
+		syllabusDataProp
+			.map((subject) =>
+				subject.chapterList.reduce((acc, currentChapter) => {
+					return acc + (currentChapter.totalTopics || 0);
+				}, 0),
+			)
+			.reduce((acc, curr) => {
+				return acc + curr;
+			}, 0),
+	);
+	const totalTopicsCompleted = Math.ceil(
+		syllabusDataProp
+			.map((subject) =>
+				subject.chapterList.reduce((acc, currentChapter) => {
+					return acc + (currentChapter.totalTopicsCompleted || 0);
+				}, 0),
+			)
+			.reduce((acc, curr) => {
+				return acc + curr;
+			}, 0),
+	);
 	return (
 		<Card
 			size='sm'
 			className={cn(
 				className,
-				'col-span-12 border border-primary/50 bg-primary/10',
+				'col-span-12 border border-primary/50 bg-card/70',
 			)}>
 			<CardHeader>
 				<CardTitle>Topics Details:</CardTitle>
+				<CardDescription>
+					<Progress
+						value={(totalTopicsCompleted * 100) / totalTopicsToComplete}
+						className='h-3 rounded-full'
+						aria-label='Countdown Progress'
+					/>
+				</CardDescription>
+				<CardAction>
+					<Badge>
+						{totalTopicsCompleted}/{totalTopicsToComplete}
+					</Badge>
+					<Badge>
+						{((totalTopicsCompleted * 100) / totalTopicsToComplete).toFixed(3)}%
+					</Badge>
+				</CardAction>
 			</CardHeader>
 			<CardContent className='flex flex-col gap-1'>
 				{syllabusDataProp.map((subject) => {
@@ -1958,57 +2013,65 @@ function TopicsOverview({
 					return (
 						<div
 							key={String(subject._id)}
-							className='w-full rounded-full border border-primary/30  px-10 py-6 space-y-4 flex items-center justify-center gap-2'>
-							<div className='w-1/2'>
-								<div className='flex justify-between items-end text-xs font-medium'>
-									<span className='text-muted-foreground capitalize'>
-										Total Topics Theory Completed: {subject.name}
-										<Badge>
-											{totalCompletedTheoryTopicsInTheSubject}/
-											{totalTopicsInTheSubject}
-										</Badge>
-									</span>
-									<span className='text-primary text-lg font-bold'>
-										{totalCompletedTheoryTopicsInTheSubject
-											? totalCompletedTheoryTopicsInTheSubjectPercent.toFixed(3)
-											: 0}
-										%
-									</span>
+							className='w-full rounded-full border border-primary/30  px-4 py-2 flex items-center justify-center gap-0.5 flex-col'>
+							<h2 className='capitalize text-center text-lg font-clock'>
+								{subject.name}
+							</h2>
+							<div className='w-full flex items-center justify-center gap-2 px-2'>
+								<div className='w-1/2'>
+									<div className='flex justify-between items-end text-xs font-medium'>
+										<span className='text-muted-foreground capitalize'>
+											Total Topics Theory Completed: {subject.name}
+											<Badge>
+												{totalCompletedTheoryTopicsInTheSubject}/
+												{totalTopicsInTheSubject}
+											</Badge>
+										</span>
+										<span className='text-primary text-lg font-bold'>
+											{totalCompletedTheoryTopicsInTheSubject
+												? totalCompletedTheoryTopicsInTheSubjectPercent.toFixed(
+														3,
+													)
+												: 0}
+											%
+										</span>
+									</div>
+									<div className='relative overflow-hidden rounded-full bg-accent/50 p-1 shadow-inner'>
+										<Progress
+											value={totalCompletedTheoryTopicsInTheSubjectPercent}
+											className='h-3 rounded-full bg-transparent'
+											aria-label='Countdown Progress'
+										/>
+									</div>
 								</div>
-								<div className='relative overflow-hidden rounded-full bg-accent/50 p-1 shadow-inner'>
-									<Progress
-										value={totalCompletedTheoryTopicsInTheSubjectPercent}
-										className='h-3 rounded-full bg-transparent'
-										aria-label='Countdown Progress'
-									/>
-								</div>
-							</div>
-							<div className='w-1/2'>
-								<div className='flex justify-between items-end text-xs font-medium'>
-									<span className='text-muted-foreground capitalize'>
-										Total Topics Completed: {subject.name}
-										<Badge>
-											{totalCompletedTopicsInTheSubject}/
-											{totalTopicsInTheSubject}
-										</Badge>
-									</span>
-									<span className='text-primary text-lg font-bold'>
-										{totalCompletedTopicsInTheSubject
-											? totalCompletedTopicsInTheSubjectPercent.toFixed(3)
-											: 0}
-										%
-									</span>
-									<span className='text-foreground/60 text-sm font-bold'>
-										{totalTopicsInTheSubject - totalCompletedTopicsInTheSubject}
-										Topics Left
-									</span>
-								</div>
-								<div className='relative overflow-hidden rounded-full bg-accent/50 p-1 shadow-inner'>
-									<Progress
-										value={totalCompletedTopicsInTheSubjectPercent}
-										className='h-3 rounded-full bg-transparent'
-										aria-label='Countdown Progress'
-									/>
+								<div className='w-1/2'>
+									<div className='flex justify-between items-end text-xs font-medium'>
+										<span className='text-muted-foreground capitalize'>
+											Total Topics Completed: {subject.name}
+											<Badge>
+												{totalCompletedTopicsInTheSubject}/
+												{totalTopicsInTheSubject}
+											</Badge>
+										</span>
+										<span className='text-primary text-lg font-bold'>
+											{totalCompletedTopicsInTheSubject
+												? totalCompletedTopicsInTheSubjectPercent.toFixed(3)
+												: 0}
+											%
+										</span>
+										<span className='text-foreground/60 text-sm font-bold'>
+											{totalTopicsInTheSubject -
+												totalCompletedTopicsInTheSubject}
+											Topics Left
+										</span>
+									</div>
+									<div className='relative overflow-hidden rounded-full bg-accent/50 p-1 shadow-inner'>
+										<Progress
+											value={totalCompletedTopicsInTheSubjectPercent}
+											className='h-3 rounded-full bg-transparent'
+											aria-label='Countdown Progress'
+										/>
+									</div>
 								</div>
 							</div>
 						</div>

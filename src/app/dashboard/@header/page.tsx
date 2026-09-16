@@ -3,8 +3,10 @@
 
 import { CardBlockUI } from '@/components/module/card-block.module';
 import { Badge } from '@/components/ui/badge';
+import { Button } from '@/components/ui/button';
 import {
 	Card,
+	CardAction,
 	CardContent,
 	CardDescription,
 	CardFooter,
@@ -36,7 +38,9 @@ import { useAppSelector } from '@/hooks/actions';
 import {
 	formatMilliseconds,
 	getColorsClassAsPerPercentage,
+	getDynamicGradientStyle,
 	getRandomInt,
+	PROGRESS_STOPS_COLORS,
 } from '@/lib/helpers';
 import { cn } from '@/lib/utils';
 import { iApiResponse } from '@/types/backend/apiResponse.types';
@@ -45,8 +49,8 @@ import { iExtendedSyllabusDetails } from '@/types/res/syllabus.res.types';
 import { iStudyTaskListItem } from '@/types/res/system.res.types';
 import axios, { AxiosResponse } from 'axios';
 import { AggregatePaginateResult } from 'mongoose';
-import { useEffect, useMemo, useState } from 'react';
-import { FcClock, FcOvertime } from 'react-icons/fc';
+import React, { useEffect, useMemo, useState } from 'react';
+import { FcClock, FcOvertime, FcRefresh } from 'react-icons/fc';
 import { FcPlanner } from 'react-icons/fc';
 import { toast } from 'react-toastify';
 
@@ -250,15 +254,14 @@ export default function SidebarHeader() {
 					<h3 className='text-sm md:text-base xl:text-lg 2xl:text-xl font-clock font-black'>
 						Todays&apos; Goals:{' '}
 						<Badge
-							className={cn(
-								getColorsClassAsPerPercentage(
-									(calculateDayScore(
-										todaysProgressData.totalQuestionsDone,
-										todaysProgressData.totalTimeStudiedMs,
-									) *
-										100) /
-										DAILY_STUDY_TARGETS.score,
-								),
+							className={cn(getColorsClassAsPerPercentage())}
+							style={getDynamicGradientStyle(
+								(calculateDayScore(
+									todaysProgressData.totalQuestionsDone,
+									todaysProgressData.totalTimeStudiedMs,
+								) *
+									100) /
+									DAILY_STUDY_TARGETS.score,
 							)}
 							variant={'outline'}>
 							{' '}
@@ -270,6 +273,12 @@ export default function SidebarHeader() {
 							/{`							${DAILY_STUDY_TARGETS.score.toLocaleString()} `}
 						</Badge>
 						<Badge>{todayCompletedTaskList.docs.length.toLocaleString()}</Badge>
+						<Button
+							variant={'ghost'}
+							size={'icon-sm'}
+							onClick={fetchTodayTasksList}>
+							<FcRefresh />
+						</Button>
 					</h3>
 				</div>
 				<div className='w-full px-4'>
@@ -283,7 +292,7 @@ export default function SidebarHeader() {
 									).length / 2}{' '}
 									Topics Out of{' '}
 									{Math.ceil(
-										syllabusData
+										(syllabusData
 											.map((subject) =>
 												subject.chapterList.reduce((acc, currentChapter) => {
 													return acc + (currentChapter.totalTopics || 0);
@@ -291,7 +300,9 @@ export default function SidebarHeader() {
 											)
 											.reduce((acc, curr) => {
 												return acc + curr;
-											}, 0) / totalDaysRemaining,
+											}, 0) /
+											totalDaysRemaining) *
+											1.5,
 									)}
 								</span>
 							</DialogTrigger>
@@ -443,6 +454,116 @@ function MissionCountBlock({ className }: { className?: string }) {
 					<FcOvertime />
 					Mission Countdown
 				</CardTitle>
+				<CardAction className='w-full h-full grid grid-cols-12'>
+					<div
+						style={
+							{
+								'--ref-light-bg': `var(--color-${PROGRESS_STOPS_COLORS.destructive.lBg})`,
+								'--ref-dark-bg': `var(--color-${PROGRESS_STOPS_COLORS.destructive.dBg})`,
+							} as React.CSSProperties
+						}
+						className={cn(
+							`bg-(--ref-light-bg) dark:bg-(--ref-dark-bg)`,
+							'col-span-1 flex items-center justify-center p-1 border-2 border-(--ref-dark-bg)/40 dark:border-(--ref-light-bg)/40',
+						)}>
+						00%
+					</div>
+					<div
+						style={
+							{
+								'--ref-light-bg-from': `var(--color-${PROGRESS_STOPS_COLORS.destructive.lBg})`,
+								'--ref-light-bg-to': `var(--color-${PROGRESS_STOPS_COLORS.radiative.lBg})`,
+								'--ref-dark-bg-from': `var(--color-${PROGRESS_STOPS_COLORS.destructive.dBg})`,
+								'--ref-dark-bg-to': `var(--color-${PROGRESS_STOPS_COLORS.radiative.dBg})`,
+							} as React.CSSProperties
+						}
+						className={cn(
+							`bg-linear-to-r from-(--ref-light-bg-from) to-(--ref-light-bg-to) dark:from-(--ref-dark-bg-from) dark:to-(--ref-dark-bg-to)`,
+							'col-span-2',
+						)}
+					/>
+					<div
+						style={
+							{
+								'--ref-light-bg': `var(--color-${PROGRESS_STOPS_COLORS.radiative.lBg})`,
+								'--ref-dark-bg': `var(--color-${PROGRESS_STOPS_COLORS.radiative.dBg})`,
+							} as React.CSSProperties
+						}
+						className={cn(
+							`bg-(--ref-light-bg) dark:bg-(--ref-dark-bg)`,
+							'col-span-1 flex items-center justify-center p-1 border-2 border-(--ref-dark-bg)/40 dark:border-(--ref-light-bg)/40',
+						)}>
+						50%
+					</div>
+					<div
+						style={
+							{
+								'--ref-light-bg-from': `var(--color-${PROGRESS_STOPS_COLORS.radiative.lBg})`,
+								'--ref-light-bg-to': `var(--color-${PROGRESS_STOPS_COLORS.cautionary.lBg})`,
+								'--ref-dark-bg-from': `var(--color-${PROGRESS_STOPS_COLORS.radiative.dBg})`,
+								'--ref-dark-bg-to': `var(--color-${PROGRESS_STOPS_COLORS.cautionary.dBg})`,
+							} as React.CSSProperties
+						}
+						className={cn(
+							`bg-linear-to-r from-(--ref-light-bg-from) to-(--ref-light-bg-to) dark:from-(--ref-dark-bg-from) dark:to-(--ref-dark-bg-to)`,
+							'col-span-2',
+						)}
+					/>
+					<div
+						style={
+							{
+								'--ref-light-bg': `var(--color-${PROGRESS_STOPS_COLORS.cautionary.lBg})`,
+								'--ref-dark-bg': `var(--color-${PROGRESS_STOPS_COLORS.cautionary.dBg})`,
+							} as React.CSSProperties
+						}
+						className={cn(
+							`bg-(--ref-light-bg) dark:bg-(--ref-dark-bg)`,
+							'col-span-1 flex items-center justify-center p-1 border-2 border-(--ref-dark-bg)/40 dark:border-(--ref-light-bg)/40',
+						)}>
+						70%
+					</div>
+					<div
+						style={
+							{
+								'--ref-light-bg-from': `var(--color-${PROGRESS_STOPS_COLORS.cautionary.lBg})`,
+								'--ref-light-bg-to': `var(--color-${PROGRESS_STOPS_COLORS.progressive.lBg})`,
+								'--ref-dark-bg-from': `var(--color-${PROGRESS_STOPS_COLORS.cautionary.dBg})`,
+								'--ref-dark-bg-to': `var(--color-${PROGRESS_STOPS_COLORS.progressive.dBg})`,
+							} as React.CSSProperties
+						}
+						className={cn(
+							`bg-linear-to-r from-(--ref-light-bg-from) to-(--ref-light-bg-to) dark:from-(--ref-dark-bg-from) dark:to-(--ref-dark-bg-to)`,
+							'col-span-2',
+						)}
+					/>
+					<div
+						style={
+							{
+								'--ref-light-bg': `var(--color-${PROGRESS_STOPS_COLORS.progressive.lBg})`,
+								'--ref-dark-bg': `var(--color-${PROGRESS_STOPS_COLORS.progressive.dBg})`,
+							} as React.CSSProperties
+						}
+						className={cn(
+							`bg-(--ref-light-bg) dark:bg-(--ref-dark-bg)`,
+							'col-span-1 flex items-center justify-center p-1 border-2 border-(--ref-dark-bg)/40 dark:border-(--ref-light-bg)/40',
+						)}>
+						90%
+					</div>
+					<div
+						style={
+							{
+								'--ref-light-bg-from': `var(--color-${PROGRESS_STOPS_COLORS.progressive.lBg})`,
+								'--ref-light-bg-to': `var(--color-${PROGRESS_STOPS_COLORS.informative.lBg})`,
+								'--ref-dark-bg-from': `var(--color-${PROGRESS_STOPS_COLORS.progressive.dBg})`,
+								'--ref-dark-bg-to': `var(--color-${PROGRESS_STOPS_COLORS.informative.dBg})`,
+							} as React.CSSProperties
+						}
+						className={cn(
+							`bg-linear-to-r from-(--ref-light-bg-from) to-(--ref-light-bg-to) dark:from-(--ref-dark-bg-from) dark:to-(--ref-dark-bg-to)`,
+							'col-span-2',
+						)}
+					/>
+				</CardAction>
 			</CardHeader>
 			<CardContent>
 				<CardBlockUI
@@ -595,9 +716,11 @@ function TopicsToCompletePerSubject({
 											2) *
 											100) /
 										Math.ceil(
-											subject.chapterList.reduce((acc, currentChapter) => {
+											(subject.chapterList.reduce((acc, currentChapter) => {
 												return acc + (currentChapter.totalTopics || 0);
-											}, 0) / totalDaysRemainingProp,
+											}, 0) /
+												totalDaysRemainingProp) *
+												1.5,
 										)
 									}
 									className='h-3 rounded-full'

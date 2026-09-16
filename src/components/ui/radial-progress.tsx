@@ -3,6 +3,7 @@
 
 import * as React from 'react';
 import { cn } from '@/lib/utils';
+import { getDynamicGradientStyle } from '@/lib/helpers';
 
 interface RadialProgressProps {
 	/** Progress value — can exceed 100 (e.g. for an "overachieved" state), it's clamped internally for the visual arc */
@@ -70,6 +71,7 @@ function RadialProgress({
 						'stroke-current transition-all duration-700 ease-out',
 						indicatorClassName,
 					)}
+					style={getDynamicGradientStyle(value)}
 				/>
 			</svg>
 

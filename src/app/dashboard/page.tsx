@@ -42,6 +42,7 @@ import {
 	getColorsClassAsPerPercentage,
 	formatTime,
 	getDynamicGradientStyle,
+	__getColorsClassAsPerPercentage,
 } from '@/lib/helpers';
 import { Skeleton } from '@/components/ui/skeleton';
 
@@ -320,6 +321,7 @@ export default function Dashboard() {
 				if (action === 'done' || action === 'end') {
 					fetchTodaySessionsList();
 					fetchChaptersInProgressLists();
+					fetchTodayTasksList();
 				}
 			});
 	}
@@ -1138,7 +1140,10 @@ export default function Dashboard() {
 					strokeWidth={4}
 					className='w-[70%] aspect-square'
 					// Reuses the exact same color function as the button, so ring + button always match
-					indicatorClassName={getColorsClassAsPerPercentage()}>
+					indicatorClassName={__getColorsClassAsPerPercentage(
+						(todaysProgressData.totalQuestionsDone * 100) /
+							DAILY_STUDY_TARGETS.questionsDone,
+					)}>
 					<Button
 						variant={'outline'}
 						className={cn(

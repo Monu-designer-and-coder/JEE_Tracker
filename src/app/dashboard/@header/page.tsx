@@ -22,6 +22,7 @@ import {
 	DialogTrigger,
 } from '@/components/ui/dialog';
 import { Progress } from '@/components/ui/progress';
+import { RadialProgress } from '@/components/ui/radial-progress';
 import { Skeleton } from '@/components/ui/skeleton';
 import { axiosConfig } from '@/config/axios.config';
 import {
@@ -332,7 +333,7 @@ export default function SidebarHeader() {
 									2) *
 									100) /
 								Math.ceil(
-									syllabusData
+									(syllabusData
 										.map((subject) =>
 											subject.chapterList.reduce((acc, currentChapter) => {
 												return acc + (currentChapter.totalTopics || 0);
@@ -340,7 +341,9 @@ export default function SidebarHeader() {
 										)
 										.reduce((acc, curr) => {
 											return acc + curr;
-										}, 0) / totalDaysRemaining,
+										}, 0) /
+										totalDaysRemaining) *
+										1.5,
 								)
 							}
 							className='h-3 rounded-full bg-transparent'
@@ -646,15 +649,26 @@ function TimeBlock({ className }: { className?: string }) {
 	return (
 		<Card className={cn(className, 'py-2 px-4')}>
 			<div className='w-full h-full rounded-4xl flex flex-col items-center justify-center gap-2'>
-				<h3 className='text-base sm:text-lg md:text-xl xl:text-2xl 2xl:text-3xl font-clock font-black text-complementary w-full text-center flex items-center justify-around'>
-					<FcClock
-						onClick={() => {
-							toast('watch ep: ' + getRandomInt(1, 18).toLocaleString());
-						}}
-						className='text-lg md:text-xl xl:text-2xl 2xl:text-3xl font-clock font-black text-complementary'
-					/>
-					{currentTime}
-				</h3>
+				<div className='flex items-center justify-center gap-2 h-3/4 w-full'>
+					<RadialProgress
+						value={
+							now
+								? (1440 - (now?.getHours() * 60 + now?.getMinutes())) / 14.4
+								: 0
+						}
+						strokeWidth={12}
+						className='w-full h-3/5'>
+						<FcClock
+							onClick={() => {
+								toast('watch ep: ' + getRandomInt(1, 18).toLocaleString());
+							}}
+							className='text-lg md:text-xl xl:text-2xl 2xl:text-3xl font-clock font-black text-complementary'
+						/>
+					</RadialProgress>
+					<h3 className='text-base sm:text-lg md:text-xl xl:text-2xl 2xl:text-3xl font-clock font-black text-complementary w-full text-center flex items-center justify-around'>
+						{currentTime}{' '}
+					</h3>
+				</div>
 				<Badge
 					variant={'outline'}
 					className=' text-sm md:text-base xl:text-lg 2xl:text-xl font-clock font-black text-primary py-6 px-2'>
@@ -699,9 +713,11 @@ function TopicsToCompletePerSubject({
 									).length / 2}{' '}
 									Topics Out of{' '}
 									{Math.ceil(
-										subject.chapterList.reduce((acc, currentChapter) => {
+										(subject.chapterList.reduce((acc, currentChapter) => {
 											return acc + (currentChapter.totalTopics || 0);
-										}, 0) / totalDaysRemainingProp,
+										}, 0) /
+											totalDaysRemainingProp) *
+											1.5,
 									)}
 								</CardDescription>
 							</CardHeader>

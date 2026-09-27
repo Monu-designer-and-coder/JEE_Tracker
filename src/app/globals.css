@@ -39,6 +39,8 @@
 	--color-informative-1: oklch(0.3709 0.2382 264.08);
 	--color-cautionary: oklch(0.8769 0.1105 84.78);
 	--color-cautionary-1: oklch(0.6306 0.1422 80.66);
+	--color-radiative: oklch(78.865% 0.10009 46.108);
+	--color-radiative-1: oklch(67.587% 0.21745 38.79);
 	--color-accent-foreground: var(--accent-foreground);
 	--color-accent: var(--accent);
 

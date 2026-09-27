@@ -50,11 +50,13 @@ export const getDaysAgoText = (dateText: string) => {
 
 	let className = '';
 	if (diffInDays >= 0) {
-		className = 'text-progressive-1';
-	} else if (diffInDays === -1) {
 		className = 'text-informative-1';
+	} else if (diffInDays === -1) {
+		className = 'text-progressive-1';
 	} else if (diffInDays === -2) {
 		className = 'text-cautionary-1';
+	} else if (diffInDays === -3) {
+		className = 'text-radiative-1';
 	} else {
 		className = 'text-destructive-1';
 	}
@@ -248,16 +250,16 @@ export function getReferenceGradientProps() {
 // *Legacy
 export function __getColorsClassAsPerPercentage(percentage: number) {
 	if (percentage > 100) {
-		return 'bg-purple-300 text-purple-900 dark:bg-purple-900 dark:text-purple-200';
+		return 'bg-informative-1 text-informative dark:bg-informative dark:text-informative-1';
 	}
 	if (percentage >= 90) {
 		return 'bg-progressive-1 text-progressive dark:bg-progressive dark:text-progressive-1';
 	}
 	if (90 > percentage && percentage >= 70) {
-		return 'bg-radiative-1 text-informative dark:bg-informative dark:text-informative-1';
+		return 'bg-cautionary-1 text-cautionary dark:bg-cautionary dark:text-cautionary-1';
 	}
 	if (70 > percentage && percentage >= 50) {
-		return 'dark:bg-cautionary bg-cautionary-1 dark:text-cautionary-1 text-cautionary';
+		return 'dark:bg-radiative bg-radiative-1 dark:text-radiative-1 text-radiative';
 	}
 	if (50 > percentage) {
 		// const colorMixPercentage = percentage * 2;

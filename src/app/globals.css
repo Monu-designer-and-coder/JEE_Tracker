@@ -2,6 +2,8 @@
 
 @import 'tw-animate-css';
 @import 'shadcn/tailwind.css';
+@import "tw-animate-css";
+@import "shadcn/tailwind.css";
 
 @custom-variant dark (&:is(.dark *));
 
@@ -81,87 +83,92 @@
 }
 
 :root {
-	--background: oklch(1 0 0);
-	--foreground: oklch(0.148 0.004 228.8);
 	--card: oklch(1 0 0);
-	--card-foreground: oklch(0.148 0.004 228.8);
+	--card-foreground: oklch(0.145 0 0);
 	--popover: oklch(1 0 0);
-	--popover-foreground: oklch(0.148 0.004 228.8);
-	--primary: oklch(0.511 0.096 186.391);
-	--primary-foreground: oklch(0.984 0.014 180.72);
+	--popover-foreground: oklch(0.145 0 0);
+	--primary: oklch(0.508 0.118 165.612);
+	--primary-foreground: oklch(0.979 0.021 166.113);
 	--complementary: oklch(0.51085 0.09642 6.686);
 	--complementary-foreground: oklch(95.523% 0.02372 1.07);
 	--secondary: oklch(0.967 0.001 286.375);
 	--secondary-foreground: oklch(0.21 0.006 285.885);
-	--muted: oklch(0.963 0.002 197.1);
-	--muted-foreground: oklch(0.56 0.021 213.5);
-	--accent: oklch(0.963 0.002 197.1);
-	--accent-foreground: oklch(0.218 0.008 223.9);
-	--destructive: oklch(78.537% 0.12131 16.992);
+	--muted: oklch(0.97 0 0);
+	--muted-foreground: oklch(0.556 0 0);
+	--accent: oklch(0.508 0.118 165.612);
+	--accent-foreground: oklch(0.979 0.021 166.113);
+	--destructive: oklch(0.577 0.245 27.325);
 	--color-destructive: oklch(78.537% 0.12131 16.992);
 	--color-destructive-1: oklch(0.577 0.245 27.325);
+	--color-radiative: oklch(78.865% 0.10009 46.108);
+	--color-radiative-1: oklch(67.587% 0.21745 38.79);
+	--color-cautionary: oklch(0.8769 0.1105 84.78);
+	--color-cautionary-1: oklch(0.6306 0.1422 80.66);
 	--color-progressive: oklch(0.88052 0.26109 141.284);
 	--color-progressive-1: oklch(0.51095 0.173863 142.495339);
 	--color-informative: oklch(0.6617 0.1926 264.43);
 	--color-informative-1: oklch(0.3709 0.2382 264.08);
-	--color-cautionary: oklch(0.8769 0.1105 84.78);
-	--color-cautionary-1: oklch(0.6306 0.1422 80.66);
-	--color-radiative: oklch(78.865% 0.10009 46.108);
-	--color-radiative-1: oklch(67.587% 0.21745 38.79);
-	--border: oklch(0.925 0.005 214.3);
-	--input: oklch(0.925 0.005 214.3);
-	--ring: oklch(0.723 0.014 214.4);
-	--chart-1: oklch(0.64 0.12 186.391);
-	--chart-2: oklch(0.64 0.14 286.375);
-	--chart-3: oklch(0.74 0.15 65);
-	--chart-4: oklch(0.64 0.16 345);
-	--chart-5: oklch(0.64 0.13 240);
+	--color-mystical: oklch(0.612 0.201 285.3);
+	--color-mystical-1: oklch(0.384 0.222 286.1);
+	--color-majestic: oklch(0.654 0.228 318.5);
+	--color-majestic-1: oklch(0.421 0.247 319.2);
+
+	--border: oklch(0.922 0 0);
+	--input: oklch(0.922 0 0);
+	--ring: oklch(0.708 0 0);
+	--chart-1: oklch(0.837 0.128 66.29);
+	--chart-2: oklch(0.705 0.213 47.604);
+	--chart-3: oklch(0.646 0.222 41.116);
+	--chart-4: oklch(0.553 0.195 38.402);
+	--chart-5: oklch(0.47 0.157 37.304);
 	--radius: 0.875rem;
-	--sidebar: oklch(0.987 0.002 197.1);
-	--sidebar-foreground: oklch(0.148 0.004 228.8);
-	--sidebar-primary: oklch(0.6 0.118 184.704);
-	--sidebar-primary-foreground: oklch(0.984 0.014 180.72);
-	--sidebar-accent: oklch(0.963 0.002 197.1);
-	--sidebar-accent-foreground: oklch(0.218 0.008 223.9);
-	--sidebar-border: oklch(0.925 0.005 214.3);
-	--sidebar-ring: oklch(0.723 0.014 214.4);
+	--sidebar: oklch(0.985 0 0);
+	--sidebar-foreground: oklch(0.145 0 0);
+	--sidebar-primary: oklch(0.596 0.145 163.225);
+	--sidebar-primary-foreground: oklch(0.979 0.021 166.113);
+	--sidebar-accent: oklch(0.97 0 0);
+	--sidebar-accent-foreground: oklch(0.205 0 0);
+	--sidebar-border: oklch(0.922 0 0);
+	--sidebar-ring: oklch(0.708 0 0);
+	--background: oklch(1 0 0);
+	--foreground: oklch(0.145 0 0);
 }
 
 .dark {
-	--background: oklch(0.148 0.004 228.8);
-	--foreground: oklch(0.987 0.002 197.1);
-	--card: oklch(0.218 0.008 223.9);
-	--card-foreground: oklch(0.987 0.002 197.1);
-	--popover: oklch(0.218 0.008 223.9);
-	--popover-foreground: oklch(0.987 0.002 197.1);
-	--primary: oklch(0.437 0.078 188.216);
-	--primary-foreground: oklch(0.984 0.014 180.72);
+	--background: oklch(0.145 0 0);
+	--foreground: oklch(0.985 0 0);
+	--card: oklch(0.205 0 0);
+	--card-foreground: oklch(0.985 0 0);
+	--popover: oklch(0.205 0 0);
+	--popover-foreground: oklch(0.985 0 0);
+	--primary: oklch(0.432 0.095 166.913);
+	--primary-foreground: oklch(0.979 0.021 166.113);
 	--secondary: oklch(0.274 0.006 286.033);
 	--secondary-foreground: oklch(0.985 0 0);
-	--muted: oklch(0.275 0.011 216.9);
-	--muted-foreground: oklch(0.723 0.014 214.4);
-	--accent: oklch(0.275 0.011 216.9);
-	--accent-foreground: oklch(0.987 0.002 197.1);
+	--muted: oklch(0.269 0 0);
+	--muted-foreground: oklch(0.708 0 0);
+	--accent: oklch(0.432 0.095 166.913);
+	--accent-foreground: oklch(0.979 0.021 166.113);
 	--destructive: oklch(0.704 0.191 22.216);
 	--progressive: oklab(70.404% -0.16029 0.12845);
 	--informative: oklch(60.813% 0.17845 264.425);
 	--cautionary: oklch(87.909% 0.16905 92.74);
 	--border: oklch(1 0 0 / 10%);
 	--input: oklch(1 0 0 / 15%);
-	--ring: oklch(0.56 0.021 213.5);
-	--chart-1: oklch(0.64 0.12 186.391);
-	--chart-2: oklch(0.64 0.14 286.375);
-	--chart-3: oklch(0.74 0.15 65);
-	--chart-4: oklch(0.64 0.16 345);
-	--chart-5: oklch(0.64 0.13 240);
-	--sidebar: oklch(0.218 0.008 223.9);
-	--sidebar-foreground: oklch(0.987 0.002 197.1);
-	--sidebar-primary: oklch(0.704 0.14 182.503);
-	--sidebar-primary-foreground: oklch(0.277 0.046 192.524);
-	--sidebar-accent: oklch(0.275 0.011 216.9);
-	--sidebar-accent-foreground: oklch(0.987 0.002 197.1);
+	--ring: oklch(0.556 0 0);
+	--chart-1: oklch(0.837 0.128 66.29);
+	--chart-2: oklch(0.705 0.213 47.604);
+	--chart-3: oklch(0.646 0.222 41.116);
+	--chart-4: oklch(0.553 0.195 38.402);
+	--chart-5: oklch(0.47 0.157 37.304);
+	--sidebar: oklch(0.205 0 0);
+	--sidebar-foreground: oklch(0.985 0 0);
+	--sidebar-primary: oklch(0.696 0.17 162.48);
+	--sidebar-primary-foreground: oklch(0.262 0.051 172.552);
+	--sidebar-accent: oklch(0.269 0 0);
+	--sidebar-accent-foreground: oklch(0.985 0 0);
 	--sidebar-border: oklch(1 0 0 / 10%);
-	--sidebar-ring: oklch(0.56 0.021 213.5);
+	--sidebar-ring: oklch(0.556 0 0);
 }
 
 @layer base {
@@ -174,6 +181,9 @@
 	button:not(:disabled),
 	[role='button']:not(:disabled) {
 		cursor: pointer;
+	}
+  html {
+    @apply font-sans;
 	}
 }
 

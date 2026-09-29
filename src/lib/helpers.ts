@@ -163,6 +163,18 @@ export const PROGRESS_STOPS_COLORS = {
 		lText: 'foreground',
 		dText: 'foreground',
 	},
+	mystical: {
+		lBg: 'mystical',
+		dBg: 'mystical-1',
+		lText: 'foreground',
+		dText: 'foreground',
+	},
+	majestic: {
+		lBg: 'majestic',
+		dBg: 'majestic-1',
+		lText: 'foreground',
+		dText: 'foreground',
+	},
 };
 
 export function getDynamicGradientStyle(
@@ -173,10 +185,10 @@ export function getDynamicGradientStyle(
 	// 100% or above (Solid Purple)
 	if (p >= 100) {
 		return {
-			'--mix-light-bg': `var(--color-${PROGRESS_STOPS_COLORS.informative.lBg})`,
-			'--mix-dark-bg': `var(--color-${PROGRESS_STOPS_COLORS.informative.dBg})`,
-			'--mix-light-text': `var(--color-${PROGRESS_STOPS_COLORS.informative.lText})`,
-			'--mix-dark-text': `var(--color-${PROGRESS_STOPS_COLORS.informative.dText})`,
+			'--mix-light-bg': `var(--color-${PROGRESS_STOPS_COLORS.majestic.lBg})`,
+			'--mix-dark-bg': `var(--color-${PROGRESS_STOPS_COLORS.majestic.dBg})`,
+			'--mix-light-text': `var(--color-${PROGRESS_STOPS_COLORS.majestic.lText})`,
+			'--mix-dark-text': `var(--color-${PROGRESS_STOPS_COLORS.majestic.dText})`,
 		} as React.CSSProperties;
 	}
 
@@ -184,21 +196,35 @@ export function getDynamicGradientStyle(
 	let c1 = PROGRESS_STOPS_COLORS.destructive,
 		c2 = PROGRESS_STOPS_COLORS.radiative,
 		p1 = 0,
-		p2 = 50;
+		p2 = 30;
 
-	if (p >= 50 && p < 70) {
+	if (p >= 30 && p < 45) {
 		c1 = PROGRESS_STOPS_COLORS.radiative;
 		c2 = PROGRESS_STOPS_COLORS.cautionary;
-		p1 = 50;
-		p2 = 70;
-	} else if (p >= 70 && p < 90) {
+		p1 = 30;
+		p2 = 45;
+	} 
+	else if (p >= 45 && p < 60) {
 		c1 = PROGRESS_STOPS_COLORS.cautionary;
 		c2 = PROGRESS_STOPS_COLORS.progressive;
-		p1 = 70;
-		p2 = 90;
-	} else if (p >= 90) {
+		p1 = 45;
+		p2 = 60;
+	}
+	else if (p >= 60 && p < 75) {
 		c1 = PROGRESS_STOPS_COLORS.progressive;
 		c2 = PROGRESS_STOPS_COLORS.informative;
+		p1 = 60;
+		p2 = 75;
+	}
+	else if (p >= 75 && p < 90) {
+		c1 = PROGRESS_STOPS_COLORS.informative;
+		c2 = PROGRESS_STOPS_COLORS.mystical;
+		p1 = 75;
+		p2 = 90;
+	}
+	 else if (p >= 90) {
+		c1 = PROGRESS_STOPS_COLORS.mystical;
+		c2 = PROGRESS_STOPS_COLORS.majestic;
 		p1 = 90;
 		p2 = 100;
 	}
@@ -219,10 +245,12 @@ export function getReferenceGradientProps() {
 	// 1. Map the STOPS to their specific percentages in strict ascending order
 	const orderedStops = [
 		{ stop: PROGRESS_STOPS_COLORS.destructive, percent: 0 },
-		{ stop: PROGRESS_STOPS_COLORS.radiative, percent: 50 },
-		{ stop: PROGRESS_STOPS_COLORS.cautionary, percent: 70 },
-		{ stop: PROGRESS_STOPS_COLORS.progressive, percent: 90 },
-		{ stop: PROGRESS_STOPS_COLORS.informative, percent: 100 },
+		{ stop: PROGRESS_STOPS_COLORS.radiative, percent: 30 },
+		{ stop: PROGRESS_STOPS_COLORS.cautionary, percent: 45 },
+		{ stop: PROGRESS_STOPS_COLORS.progressive, percent: 60 },
+		{ stop: PROGRESS_STOPS_COLORS.informative, percent: 75 },
+		{ stop: PROGRESS_STOPS_COLORS.mystical, percent: 90 },
+		{ stop: PROGRESS_STOPS_COLORS.majestic, percent: 100 },
 	];
 
 	// 2. Build the CSS linear-gradient string for Light Mode
@@ -249,21 +277,25 @@ export function getReferenceGradientProps() {
 // ! getColorsClassAsPerPercentage:
 // *Legacy
 export function __getColorsClassAsPerPercentage(percentage: number) {
-	if (percentage > 100) {
+	if (percentage >= 100) {
+		return 'bg-majestic-1 text-majestic dark:bg-majestic dark:text-majestic-1';
+	}
+	if (100 > percentage && percentage >= 90) {
+		return 'bg-mystical-1 text-mystical dark:bg-mystical dark:text-mystical-1';
+	}
+	if (90 > percentage && percentage >= 75) {
 		return 'bg-informative-1 text-informative dark:bg-informative dark:text-informative-1';
 	}
-	if (percentage >= 90) {
+	if (75 > percentage && percentage >= 60) {
 		return 'bg-progressive-1 text-progressive dark:bg-progressive dark:text-progressive-1';
 	}
-	if (90 > percentage && percentage >= 70) {
+	if (60 > percentage && percentage >= 45) {
 		return 'bg-cautionary-1 text-cautionary dark:bg-cautionary dark:text-cautionary-1';
 	}
-	if (70 > percentage && percentage >= 50) {
+	if (45 > percentage && percentage >= 30) {
 		return 'dark:bg-radiative bg-radiative-1 dark:text-radiative-1 text-radiative';
 	}
-	if (50 > percentage) {
-		// const colorMixPercentage = percentage * 2;
-		// return `dark:bg-[color-mix(in_srgb,red_50%,blue)] bg-[color-mix(in_srgb,var(--color-cautionary)_${colorMixPercentage}%,var(--color-destructive-1))] dark:text-destructive-1 text-destructive`;
+	if (30 > percentage) {
 		return `dark:bg-destructive bg-destructive-1 dark:text-destructive-1 text-destructive`;
 	}
 }

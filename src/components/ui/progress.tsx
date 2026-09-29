@@ -1,9 +1,8 @@
 'use client';
 
 import * as React from 'react';
+import { cn } from 'cn';
 import { Progress as ProgressPrimitive } from 'radix-ui';
-
-import { cn } from '@/lib/utils';
 import {
 	getColorsClassAsPerPercentage,
 	getDynamicGradientStyle,
@@ -18,7 +17,7 @@ function Progress({
 		<ProgressPrimitive.Root
 			data-slot='progress'
 			className={cn(
-				'relative flex h-3 w-full items-center overflow-x-hidden rounded-4xl bg-muted',
+				'relative flex h-2 w-full items-center overflow-x-hidden rounded-4xl bg-transparent border-muted',
 				className,
 			)}
 			{...props}>

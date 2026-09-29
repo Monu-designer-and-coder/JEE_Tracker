@@ -457,115 +457,186 @@ function MissionCountBlock({ className }: { className?: string }) {
 					<FcOvertime />
 					Mission Countdown
 				</CardTitle>
-				<CardAction className='w-full h-full grid grid-cols-12'>
-					<div
-						style={
-							{
-								'--ref-light-bg': `var(--color-${PROGRESS_STOPS_COLORS.destructive.lBg})`,
-								'--ref-dark-bg': `var(--color-${PROGRESS_STOPS_COLORS.destructive.dBg})`,
-							} as React.CSSProperties
-						}
-						className={cn(
-							`bg-(--ref-light-bg) dark:bg-(--ref-dark-bg)`,
-							'col-span-1 flex items-center justify-center p-1 border-2 border-(--ref-dark-bg)/40 dark:border-(--ref-light-bg)/40',
-						)}>
-						00%
+				<CardAction className='w-5/6 h-2/3 grid grid-cols-12'>
+					<div className='col-span-2 grid grid-cols-3 h-full w-full'>
+						<div
+							style={
+								{
+									'--ref-light-bg': `var(--color-${PROGRESS_STOPS_COLORS.destructive.lBg})`,
+									'--ref-dark-bg': `var(--color-${PROGRESS_STOPS_COLORS.destructive.dBg})`,
+								} as React.CSSProperties
+							}
+							className={cn(
+								`bg-(--ref-light-bg) dark:bg-(--ref-dark-bg)`,
+								'col-span-1 flex items-center justify-center p-1 border-2 border-(--ref-dark-bg)/40 dark:border-(--ref-light-bg)/40',
+							)}>
+							00%
+						</div>
+						<div
+							style={
+								{
+									'--ref-light-bg-from': `var(--color-${PROGRESS_STOPS_COLORS.destructive.lBg})`,
+									'--ref-light-bg-to': `var(--color-${PROGRESS_STOPS_COLORS.radiative.lBg})`,
+									'--ref-dark-bg-from': `var(--color-${PROGRESS_STOPS_COLORS.destructive.dBg})`,
+									'--ref-dark-bg-to': `var(--color-${PROGRESS_STOPS_COLORS.radiative.dBg})`,
+								} as React.CSSProperties
+							}
+							className={cn(
+								`bg-linear-to-r from-(--ref-light-bg-from) to-(--ref-light-bg-to) dark:from-(--ref-dark-bg-from) dark:to-(--ref-dark-bg-to)`,
+								'col-span-2',
+							)}
+						/>
 					</div>
-					<div
-						style={
-							{
-								'--ref-light-bg-from': `var(--color-${PROGRESS_STOPS_COLORS.destructive.lBg})`,
-								'--ref-light-bg-to': `var(--color-${PROGRESS_STOPS_COLORS.radiative.lBg})`,
-								'--ref-dark-bg-from': `var(--color-${PROGRESS_STOPS_COLORS.destructive.dBg})`,
-								'--ref-dark-bg-to': `var(--color-${PROGRESS_STOPS_COLORS.radiative.dBg})`,
-							} as React.CSSProperties
-						}
-						className={cn(
-							`bg-linear-to-r from-(--ref-light-bg-from) to-(--ref-light-bg-to) dark:from-(--ref-dark-bg-from) dark:to-(--ref-dark-bg-to)`,
-							'col-span-2',
-						)}
-					/>
-					<div
-						style={
-							{
-								'--ref-light-bg': `var(--color-${PROGRESS_STOPS_COLORS.radiative.lBg})`,
-								'--ref-dark-bg': `var(--color-${PROGRESS_STOPS_COLORS.radiative.dBg})`,
-							} as React.CSSProperties
-						}
-						className={cn(
-							`bg-(--ref-light-bg) dark:bg-(--ref-dark-bg)`,
-							'col-span-1 flex items-center justify-center p-1 border-2 border-(--ref-dark-bg)/40 dark:border-(--ref-light-bg)/40',
-						)}>
-						50%
+
+					<div className='col-span-2 grid grid-cols-3 h-full w-full'>
+						<div
+							style={
+								{
+									'--ref-light-bg': `var(--color-${PROGRESS_STOPS_COLORS.radiative.lBg})`,
+									'--ref-dark-bg': `var(--color-${PROGRESS_STOPS_COLORS.radiative.dBg})`,
+								} as React.CSSProperties
+							}
+							className={cn(
+								`bg-(--ref-light-bg) dark:bg-(--ref-dark-bg)`,
+								'col-span-1 flex items-center justify-center p-1 border-2 border-(--ref-dark-bg)/40 dark:border-(--ref-light-bg)/40',
+							)}>
+							30%
+						</div>
+						<div
+							style={
+								{
+									'--ref-light-bg-from': `var(--color-${PROGRESS_STOPS_COLORS.radiative.lBg})`,
+									'--ref-light-bg-to': `var(--color-${PROGRESS_STOPS_COLORS.cautionary.lBg})`,
+									'--ref-dark-bg-from': `var(--color-${PROGRESS_STOPS_COLORS.radiative.dBg})`,
+									'--ref-dark-bg-to': `var(--color-${PROGRESS_STOPS_COLORS.cautionary.dBg})`,
+								} as React.CSSProperties
+							}
+							className={cn(
+								`bg-linear-to-r from-(--ref-light-bg-from) to-(--ref-light-bg-to) dark:from-(--ref-dark-bg-from) dark:to-(--ref-dark-bg-to)`,
+								'col-span-2',
+							)}
+						/>
 					</div>
-					<div
-						style={
-							{
-								'--ref-light-bg-from': `var(--color-${PROGRESS_STOPS_COLORS.radiative.lBg})`,
-								'--ref-light-bg-to': `var(--color-${PROGRESS_STOPS_COLORS.cautionary.lBg})`,
-								'--ref-dark-bg-from': `var(--color-${PROGRESS_STOPS_COLORS.radiative.dBg})`,
-								'--ref-dark-bg-to': `var(--color-${PROGRESS_STOPS_COLORS.cautionary.dBg})`,
-							} as React.CSSProperties
-						}
-						className={cn(
-							`bg-linear-to-r from-(--ref-light-bg-from) to-(--ref-light-bg-to) dark:from-(--ref-dark-bg-from) dark:to-(--ref-dark-bg-to)`,
-							'col-span-2',
-						)}
-					/>
-					<div
-						style={
-							{
-								'--ref-light-bg': `var(--color-${PROGRESS_STOPS_COLORS.cautionary.lBg})`,
-								'--ref-dark-bg': `var(--color-${PROGRESS_STOPS_COLORS.cautionary.dBg})`,
-							} as React.CSSProperties
-						}
-						className={cn(
-							`bg-(--ref-light-bg) dark:bg-(--ref-dark-bg)`,
-							'col-span-1 flex items-center justify-center p-1 border-2 border-(--ref-dark-bg)/40 dark:border-(--ref-light-bg)/40',
-						)}>
-						70%
+
+					<div className='col-span-2 grid grid-cols-3 h-full w-full'>
+						<div
+							style={
+								{
+									'--ref-light-bg': `var(--color-${PROGRESS_STOPS_COLORS.cautionary.lBg})`,
+									'--ref-dark-bg': `var(--color-${PROGRESS_STOPS_COLORS.cautionary.dBg})`,
+								} as React.CSSProperties
+							}
+							className={cn(
+								`bg-(--ref-light-bg) dark:bg-(--ref-dark-bg)`,
+								'col-span-1 flex items-center justify-center p-1 border-2 border-(--ref-dark-bg)/40 dark:border-(--ref-light-bg)/40',
+							)}>
+							45%
+						</div>
+						<div
+							style={
+								{
+									'--ref-light-bg-from': `var(--color-${PROGRESS_STOPS_COLORS.cautionary.lBg})`,
+									'--ref-light-bg-to': `var(--color-${PROGRESS_STOPS_COLORS.progressive.lBg})`,
+									'--ref-dark-bg-from': `var(--color-${PROGRESS_STOPS_COLORS.cautionary.dBg})`,
+									'--ref-dark-bg-to': `var(--color-${PROGRESS_STOPS_COLORS.progressive.dBg})`,
+								} as React.CSSProperties
+							}
+							className={cn(
+								`bg-linear-to-r from-(--ref-light-bg-from) to-(--ref-light-bg-to) dark:from-(--ref-dark-bg-from) dark:to-(--ref-dark-bg-to)`,
+								'col-span-2',
+							)}
+						/>
 					</div>
-					<div
-						style={
-							{
-								'--ref-light-bg-from': `var(--color-${PROGRESS_STOPS_COLORS.cautionary.lBg})`,
-								'--ref-light-bg-to': `var(--color-${PROGRESS_STOPS_COLORS.progressive.lBg})`,
-								'--ref-dark-bg-from': `var(--color-${PROGRESS_STOPS_COLORS.cautionary.dBg})`,
-								'--ref-dark-bg-to': `var(--color-${PROGRESS_STOPS_COLORS.progressive.dBg})`,
-							} as React.CSSProperties
-						}
-						className={cn(
-							`bg-linear-to-r from-(--ref-light-bg-from) to-(--ref-light-bg-to) dark:from-(--ref-dark-bg-from) dark:to-(--ref-dark-bg-to)`,
-							'col-span-2',
-						)}
-					/>
-					<div
-						style={
-							{
-								'--ref-light-bg': `var(--color-${PROGRESS_STOPS_COLORS.progressive.lBg})`,
-								'--ref-dark-bg': `var(--color-${PROGRESS_STOPS_COLORS.progressive.dBg})`,
-							} as React.CSSProperties
-						}
-						className={cn(
-							`bg-(--ref-light-bg) dark:bg-(--ref-dark-bg)`,
-							'col-span-1 flex items-center justify-center p-1 border-2 border-(--ref-dark-bg)/40 dark:border-(--ref-light-bg)/40',
-						)}>
-						90%
+
+					<div className='col-span-2 grid grid-cols-3 h-full w-full'>
+						<div
+							style={
+								{
+									'--ref-light-bg': `var(--color-${PROGRESS_STOPS_COLORS.progressive.lBg})`,
+									'--ref-dark-bg': `var(--color-${PROGRESS_STOPS_COLORS.progressive.dBg})`,
+								} as React.CSSProperties
+							}
+							className={cn(
+								`bg-(--ref-light-bg) dark:bg-(--ref-dark-bg)`,
+								'col-span-1 flex items-center justify-center p-1 border-2 border-(--ref-dark-bg)/40 dark:border-(--ref-light-bg)/40',
+							)}>
+							60%
+						</div>
+						<div
+							style={
+								{
+									'--ref-light-bg-from': `var(--color-${PROGRESS_STOPS_COLORS.progressive.lBg})`,
+									'--ref-light-bg-to': `var(--color-${PROGRESS_STOPS_COLORS.informative.lBg})`,
+									'--ref-dark-bg-from': `var(--color-${PROGRESS_STOPS_COLORS.progressive.dBg})`,
+									'--ref-dark-bg-to': `var(--color-${PROGRESS_STOPS_COLORS.informative.dBg})`,
+								} as React.CSSProperties
+							}
+							className={cn(
+								`bg-linear-to-r from-(--ref-light-bg-from) to-(--ref-light-bg-to) dark:from-(--ref-dark-bg-from) dark:to-(--ref-dark-bg-to)`,
+								'col-span-2',
+							)}
+						/>
 					</div>
-					<div
-						style={
-							{
-								'--ref-light-bg-from': `var(--color-${PROGRESS_STOPS_COLORS.progressive.lBg})`,
-								'--ref-light-bg-to': `var(--color-${PROGRESS_STOPS_COLORS.informative.lBg})`,
-								'--ref-dark-bg-from': `var(--color-${PROGRESS_STOPS_COLORS.progressive.dBg})`,
-								'--ref-dark-bg-to': `var(--color-${PROGRESS_STOPS_COLORS.informative.dBg})`,
-							} as React.CSSProperties
-						}
-						className={cn(
-							`bg-linear-to-r from-(--ref-light-bg-from) to-(--ref-light-bg-to) dark:from-(--ref-dark-bg-from) dark:to-(--ref-dark-bg-to)`,
-							'col-span-2',
-						)}
-					/>
+
+					<div className='col-span-2 grid grid-cols-3 h-full w-full'>
+						<div
+							style={
+								{
+									'--ref-light-bg': `var(--color-${PROGRESS_STOPS_COLORS.informative.lBg})`,
+									'--ref-dark-bg': `var(--color-${PROGRESS_STOPS_COLORS.informative.dBg})`,
+								} as React.CSSProperties
+							}
+							className={cn(
+								`bg-(--ref-light-bg) dark:bg-(--ref-dark-bg)`,
+								'col-span-1 flex items-center justify-center p-1 border-2 border-(--ref-dark-bg)/40 dark:border-(--ref-light-bg)/40',
+							)}>
+							75%
+						</div>
+						<div
+							style={
+								{
+									'--ref-light-bg-from': `var(--color-${PROGRESS_STOPS_COLORS.informative.lBg})`,
+									'--ref-light-bg-to': `var(--color-${PROGRESS_STOPS_COLORS.mystical.lBg})`,
+									'--ref-dark-bg-from': `var(--color-${PROGRESS_STOPS_COLORS.informative.dBg})`,
+									'--ref-dark-bg-to': `var(--color-${PROGRESS_STOPS_COLORS.mystical.dBg})`,
+								} as React.CSSProperties
+							}
+							className={cn(
+								`bg-linear-to-r from-(--ref-light-bg-from) to-(--ref-light-bg-to) dark:from-(--ref-dark-bg-from) dark:to-(--ref-dark-bg-to)`,
+								'col-span-2',
+							)}
+						/>
+					</div>
+
+					<div className='col-span-2 grid grid-cols-3 h-full w-full'>
+						<div
+							style={
+								{
+									'--ref-light-bg': `var(--color-${PROGRESS_STOPS_COLORS.mystical.lBg})`,
+									'--ref-dark-bg': `var(--color-${PROGRESS_STOPS_COLORS.mystical.dBg})`,
+								} as React.CSSProperties
+							}
+							className={cn(
+								`bg-(--ref-light-bg) dark:bg-(--ref-dark-bg)`,
+								'col-span-1 flex items-center justify-center p-1 border-2 border-(--ref-dark-bg)/40 dark:border-(--ref-light-bg)/40',
+							)}>
+							90%
+						</div>
+						<div
+							style={
+								{
+									'--ref-light-bg-from': `var(--color-${PROGRESS_STOPS_COLORS.mystical.lBg})`,
+									'--ref-light-bg-to': `var(--color-${PROGRESS_STOPS_COLORS.majestic.lBg})`,
+									'--ref-dark-bg-from': `var(--color-${PROGRESS_STOPS_COLORS.mystical.dBg})`,
+									'--ref-dark-bg-to': `var(--color-${PROGRESS_STOPS_COLORS.majestic.dBg})`,
+								} as React.CSSProperties
+							}
+							className={cn(
+								`bg-linear-to-r from-(--ref-light-bg-from) to-(--ref-light-bg-to) dark:from-(--ref-dark-bg-from) dark:to-(--ref-dark-bg-to)`,
+								'col-span-2',
+							)}
+						/>
+					</div>
 				</CardAction>
 			</CardHeader>
 			<CardContent>

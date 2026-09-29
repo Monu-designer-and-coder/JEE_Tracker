@@ -46,7 +46,7 @@ import {
 } from '@/lib/helpers';
 import { Skeleton } from '@/components/ui/skeleton';
 
-import { Bar, BarChart, CartesianGrid, XAxis } from 'recharts';
+import { Bar, BarChart, CartesianGrid, XAxis, YAxis } from 'recharts';
 import { cn } from '@/lib/utils';
 import { Badge } from '@/components/ui/badge';
 import { toast } from 'react-toastify';
@@ -100,6 +100,7 @@ import Link from 'next/link';
 import { RadialProgress } from '@/components/ui/radial-progress';
 import { iExtendedSyllabusDetails } from '@/types/res/syllabus.res.types';
 import { Progress } from '@/components/ui/progress';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 
 export default function Dashboard() {
 	// ! HOOKS
@@ -1306,7 +1307,7 @@ export default function Dashboard() {
 									<DialogTrigger>
 										<FcOpenedFolder />
 									</DialogTrigger>
-									<DialogContent className='min-w-[85vh] max-w-[90vh]! max-h-[80vh]! overflow-scroll bg-transparent'>
+									<DialogContent className='min-w-[80vh] max-w-[90vh]! max-h-[95vh]! overflow-scroll bg-transparent'>
 										<DialogHeader>
 											<DialogTitle>List of Topics:</DialogTitle>
 											<DialogDescription>
@@ -1834,13 +1835,23 @@ function SyllabusOverview({
 	className?: string;
 	syllabusDataProp: iExtendedSyllabusDetails[];
 }) {
-	interface iChartData {
+	interface iSubjectWiseChartData {
 		subjectName: string;
 		totalChapters: number;
 		completedTheory: number;
 		completedMainsPYQs: number;
 		completedAdvancedPYQs: number;
 		completedChapters: number;
+	}
+	interface iLengthWiseChartData {
+		subjectName: string;
+		totalTopics: number;
+		chapters: {
+			chapterName: string;
+			totalTopics: number;
+			fill?: string;
+			completedTopics?: number;
+		}[];
 	}
 
 	const chartConfig = {
@@ -1866,75 +1877,224 @@ function SyllabusOverview({
 		},
 	} satisfies ChartConfig;
 
-	const [chartData, setChartData] = useState<iChartData[]>([]);
+	const lengthDisplayChartConfig = {
+		totalTopics: {
+			label: 'total-topics',
+			color: 'var(--chart-1)',
+		},
+		done: {
+			label:'completed',
+			color: 'var(--chart-2)'
+		},
+		physics:{
+			label: 'physics',
+			color:'var(--chart-1)'
+		},
+		chemistry:{
+			label: 'physics',
+			color:'var(--chart-4)'
+		},
+		mathematics:{
+			label: 'physics',
+			color:'var(--chart-3)'
+		},
+	} satisfies ChartConfig;
+
+
+	const [chartData, setChartData] = useState<iSubjectWiseChartData[]>([]);
+	const [lengthChartData, setLengthChartData] = useState<
+		// { chapterName: string; topics: number }[]
+		iLengthWiseChartData[]
+	>([]);
 
 	useEffect(() => {
-		const FilteredChartData: iChartData[] = syllabusDataProp.map((subject) => ({
-			subjectName: subject.name,
-			totalChapters: subject.totalChapters,
-			completedTheory: subject.completedTheory,
-			completedMainsPYQs: subject.completedMainsPYQs,
-			completedAdvancedPYQs: subject.completedAdvancedPYQs,
-			completedChapters: subject.completedChapters,
-		}));
+		const FilteredChartData: iSubjectWiseChartData[] = syllabusDataProp.map(
+			(subject) => ({
+				subjectName: subject.name,
+				totalChapters: subject.totalChapters,
+				completedTheory: subject.completedTheory,
+				completedMainsPYQs: subject.completedMainsPYQs,
+				completedAdvancedPYQs: subject.completedAdvancedPYQs,
+				completedChapters: subject.completedChapters,
+			}),
+		);
+		const FilteredLengthChartData: iLengthWiseChartData[] =
+			syllabusDataProp.map((subject) => ({
+				subjectName: subject.name,
+				totalTopics: subject.chapterList.reduce((prev, curr) => {
+					return prev + curr.totalTopics;
+				}, 0),
+				chapters: subject.chapterList.map((chapter) => ({
+					chapterName: chapter.name,
+					totalTopics: chapter.totalTopics,
+					fill: `var(--color-done)`
+				})),
+			}));
+		console.log({ FilteredLengthChartData });
 		setChartData(FilteredChartData);
+		setLengthChartData(FilteredLengthChartData);
 	}, [syllabusDataProp]);
 
 	return (
-		<section
-			className={cn(className, 'w-full py-2 px-3 gap-2 grid grid-cols-12')}>
-			<Card size='sm' className='col-span-12'>
-				<CardHeader>
-					<CardTitle>Syllabus Progress</CardTitle>
-					<CardDescription>Track the syllabus Progress.</CardDescription>
-				</CardHeader>
-				<CardContent className='w-full'>
-					<ChartContainer config={chartConfig} className='w-full h-[30vh]'>
-						<BarChart accessibilityLayer data={chartData}>
-							<CartesianGrid />
-							<XAxis
-								dataKey='subjectName'
-								tickLine={false}
-								tickMargin={10}
-								axisLine={false}
-								// tickFormatter={(value) => value.slice(0, 3)}
-							/>
-							<ChartTooltip
-								cursor={false}
-								content={<ChartTooltipContent indicator='line' />}
-							/>
+		<Tabs
+			defaultValue='subject-wise'
+			className={cn(className, 'w-full py-2 px-3 gap-2')}>
+			<TabsList>
+				<TabsTrigger value='subject-wise'>Subject Wise</TabsTrigger>
+				<TabsTrigger value='length'>No. of Topics</TabsTrigger>
+			</TabsList>
+			<TabsContent value='subject-wise' className='w-full px-2'>
+				<Card size='sm' className='col-span-12'>
+					<CardHeader>
+						<CardTitle>Syllabus Progress</CardTitle>
+						<CardDescription>Track the syllabus Progress.</CardDescription>
+					</CardHeader>
+					<CardContent className='w-full'>
+						<ChartContainer config={chartConfig} className='w-full h-[30vh]'>
+							<BarChart accessibilityLayer data={chartData}>
+								<CartesianGrid />
+								<XAxis
+									dataKey='subjectName'
+									tickLine={false}
+									tickMargin={10}
+									axisLine={false}
+									// tickFormatter={(value) => value.slice(0, 3)}
+								/>
+								<ChartTooltip
+									cursor={false}
+									content={<ChartTooltipContent indicator='line' />}
+								/>
 
-							<ChartLegend content={<ChartLegendContent />} />
-							<Bar
-								dataKey='totalChapters'
-								fill='var(--color-totalChapters)'
-								radius={4}
-							/>
-							<Bar
-								dataKey='completedTheory'
-								fill='var(--color-completedTheory)'
-								radius={4}
-							/>
-							<Bar
-								dataKey='completedMainsPYQs'
-								fill='var(--color-completedMainsPYQs)'
-								radius={4}
-							/>
-							<Bar
-								dataKey='completedAdvancedPYQs'
-								fill='var(--color-completedAdvancedPYQs)'
-								radius={4}
-							/>
-							<Bar
-								dataKey='completedChapters'
-								fill='var(--color-completedChapters)'
-								radius={4}
-							/>
-						</BarChart>
-					</ChartContainer>
-				</CardContent>
-			</Card>
-		</section>
+								<ChartLegend content={<ChartLegendContent />} />
+								<Bar
+									dataKey='totalChapters'
+									fill='var(--color-totalChapters)'
+									radius={4}
+								/>
+								<Bar
+									dataKey='completedTheory'
+									fill='var(--color-completedTheory)'
+									radius={4}
+								/>
+								<Bar
+									dataKey='completedMainsPYQs'
+									fill='var(--color-completedMainsPYQs)'
+									radius={4}
+								/>
+								<Bar
+									dataKey='completedAdvancedPYQs'
+									fill='var(--color-completedAdvancedPYQs)'
+									radius={4}
+								/>
+								<Bar
+									dataKey='completedChapters'
+									fill='var(--color-completedChapters)'
+									radius={4}
+								/>
+							</BarChart>
+						</ChartContainer>
+					</CardContent>
+				</Card>
+			</TabsContent>
+			<TabsContent value='length' className='w-full mx-4'>
+
+				<Card size='sm' className=''>
+					<CardHeader>
+						<CardTitle>Length of Chapters</CardTitle>
+						<CardDescription>Length of chapter on the basis of number of topics in it.</CardDescription>
+					</CardHeader>
+					<CardContent className='w-full grid grid-cols-3'>
+						<ChartContainer
+							config={lengthDisplayChartConfig}
+							className='w-full h-[76vh]'>
+							<BarChart
+								accessibilityLayer
+								data={lengthChartData[0]?.chapters || []}
+								layout='vertical'
+								>
+								<XAxis type='number' dataKey='totalTopics' hide />
+								<YAxis
+									dataKey='chapterName'
+									type='category'
+									tickLine={false}
+									tickMargin={10}
+									axisLine={false}
+									tickFormatter={(value) => value.slice(0, 5) + '...'}
+								/>
+								<ChartTooltip
+									cursor={false}
+									content={<ChartTooltipContent indicator='line' />}
+								/>
+								<ChartLegend content={<ChartLegendContent />} />
+								<Bar
+									dataKey='totalTopics'
+									radius={50}
+									fill={`var(--color-${lengthChartData[0].subjectName})`}
+								/>
+							</BarChart>
+						</ChartContainer>
+						<ChartContainer
+							config={lengthDisplayChartConfig}
+							className='w-full h-[76vh]'>
+							<BarChart
+								accessibilityLayer
+								data={lengthChartData[1]?.chapters || []}
+								layout='vertical'
+								>
+								<XAxis type='number' dataKey='totalTopics' hide />
+								<YAxis
+									dataKey='chapterName'
+									type='category'
+									tickLine={false}
+									tickMargin={10}
+									axisLine={false}
+									tickFormatter={(value) => value.slice(0, 5) + '...'}
+								/>
+								<ChartTooltip
+									cursor={false}
+									content={<ChartTooltipContent indicator='line' />}
+								/>
+								<ChartLegend content={<ChartLegendContent />} />
+								<Bar
+									dataKey='totalTopics'
+									radius={50}
+									fill={`var(--color-${lengthChartData[1].subjectName})`}
+								/>
+							</BarChart>
+						</ChartContainer>
+						<ChartContainer
+							config={lengthDisplayChartConfig}
+							className='w-full h-[76vh]'>
+							<BarChart
+								accessibilityLayer
+								data={lengthChartData[2]?.chapters || []}
+								layout='vertical'
+								>
+								<XAxis type='number' dataKey='totalTopics' hide />
+								<YAxis
+									dataKey='chapterName'
+									type='category'
+									tickLine={false}
+									tickMargin={10}
+									axisLine={false}
+									tickFormatter={(value) => value.slice(0, 5) + '...'}
+								/>
+								<ChartTooltip
+									cursor={false}
+									content={<ChartTooltipContent indicator='line' />}
+								/>
+								<ChartLegend content={<ChartLegendContent />} />
+								<Bar
+									dataKey='totalTopics'
+									radius={50}
+									fill={`var(--color-${lengthChartData[2].subjectName})`}
+								/>
+							</BarChart>
+						</ChartContainer>
+					</CardContent>
+				</Card>
+			</TabsContent>
+		</Tabs>
 	);
 }
 
